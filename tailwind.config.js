@@ -21,9 +21,9 @@ export default {
         neutral900: "#3D3D3D",
         neutral950: "#1E1E1E",
 
-        Primary50: "#FCF3F8",  
-        Primary100: "#F9EAF4",   
-        Primary200: "#F6D4E8", 
+        primary50: "#FCF3F8",  
+        primary100: "#F9EAF4",   
+        primary200: "#F6D4E8", 
         primary300: "#EFB2D6",
         primary400: "#E482B9",
         primary500: "#D85C9E",
@@ -80,7 +80,14 @@ export default {
         sucsess800: "#255F1C",
         sucsess900: "#1E4F18",
         sucsess950: "#0C2B08",
-      }
+      },
+      fontFamily: {
+        sans: ["Plus Jakarta Sans", "sans-serif"],
+        damion: ["Damion", "cursive"]
+      },
+      lineHeight: {
+      relaxed: '1.5',
+      },
     },
   },
   plugins: [],

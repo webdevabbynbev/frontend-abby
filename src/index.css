@@ -1,10 +1,19 @@
+@import url("./assets/fontawesome/css/all.min.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url("./assets/fontawesome/css/all.min.css");
+
 
 @layer base {
-  html {
+
+  body {
     font-family: "Plus Jakarta Sans", sans-serif;
+    @apply text-neutral950;
+    @apply font-sans;
+    line-height: 150%;
+  }
+  li {
+  @apply font-normal text-neutral-700 hover:text-primary700 transition-all cursor-pointer;
   }
 }

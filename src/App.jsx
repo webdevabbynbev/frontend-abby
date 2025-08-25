@@ -1,11 +1,18 @@
-import Navbar from "./Components/navbar"
-import "./assets/fontawesome/css/all.min.css";
-import Footer from "./components/footer"
-import Home from "./Pages/Home"
+import "@/assets/fontawesome/css/all.min.css";
+import Home from "@/Pages/Home"
+import Layout from "@/Layout/Layout";
+
+
 export default function App() {
   return (
-    <div>
-      <Navbar/>
+    <div className="min-h-screen bg-bgmaincolor">
+      <Layout>
+
+        <Home/>
+
+      </Layout>
     </div>
+    
   )
+  
 }
