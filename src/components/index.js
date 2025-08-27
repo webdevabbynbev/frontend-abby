@@ -4,6 +4,10 @@ export { default as Button } from "@/components/Button.jsx";
 export { default as Navbar } from "@/components/Navbar.jsx";
 export { default as Dropdown } from "@/components/Dropdown.jsx";
 export { default as Footer } from "@/components/Footer.jsx";
-export { default as ItemCard} from "@/components/ItemCard.jsx"
-export { default as Carousel} from "@/components/Carousel.jsx"
-
+export { default as FlashSaleCard} from "@/components/FlashSaleCard.jsx";
+export { default as Carousel} from "@/components/Carousel.jsx";
+export { default as RegularCard} from "@/components/RegularCard.jsx";
+export { default as BrandCard} from "@/components/BrandCard.jsx";
+export { default as BtnIcon } from "@/components/BtnIcon.jsx";
+export { default as BtnIconToggle } from "@/components/BtnIconToggle.jsx";
+export { default as BrandList } from "@/components/BrandList.jsx";

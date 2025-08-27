@@ -13,4 +13,15 @@ export { default as Perfume } from "@/assets/Perfume.png";
 export { default as SkinCare } from "@/assets/Skincare.png";
 export { default as Product1 } from "@/assets/Product1.png";
 export { default as LogoAB } from "@/assets/Logo_SVG_AB.svg";
+export { default as TagFlashSale } from "@/assets/Tag.svg";
+export { default as TagSale } from "@/assets/sale-tag.svg";
+export { default as Product2 } from "@/assets/Product2.png";
+export { default as Carasun } from "@/assets/carasun-logo.png";
+export { default as Cosrx } from "@/assets/cosrx-logo.png";
+export { default as Facetology } from "@/assets/facetology-logo.png";
+export { default as Maybeline } from "@/assets/Maybelline-logo.png";
+export { default as Mediheal } from "@/assets/mediheal-logo.png";
+export { default as Safco } from "@/assets/safco-logo.webp";
+export { default as SK2 } from "@/assets/sk2-logo.png";
+export { default as Skintific } from "@/assets/skintific-logo.webp";
 

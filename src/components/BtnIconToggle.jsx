@@ -1,7 +1,8 @@
 import clsx from "clsx";
-
-export default function Button({
-  children,
+import { useState } from "react";
+import * as FaIcons from "react-icons/fa";
+export default function BtnIconToggle({
+  iconName,
   variant = "primary",
   size = "medium",
   className,
@@ -19,18 +20,30 @@ export default function Button({
   };
 
   const sizes = {
-    sm: "px-3 py-2 text-sm",
-    md: "px-4 py-2 text-base",
-    lg: "px-3 py-2 text-lg",
+    sm: "px-2 py-2 text-sm",
+    md: "px-3 py-3 text-base",
+    lg: "px-4 py-4 text-lg",
   };
+  const iconColors = {
+    primary: "text-white",
+    secondary: "text-primary700",
+    tertiary: "text-primary700",
+
+}
+  const [isToggled, setIsToggled] = useState(false);
+
+  const OffIcon = FaIcons[`FaReg${iconName}`] || FaIcons[`Fa${iconName}`];
+  const OnIcon = FaIcons[`Fa${iconName}`] || FaIcons[`FaReg${iconName}`];
+  const CurrentIcon = isToggled ? OnIcon : OffIcon;
 
   return (
     <button
       className={clsx(baseStyles, variants[variant], sizes[size], className)}
       disabled={disabled}
+      onClick={() => setIsToggled(!isToggled)}
       {...props}
     >
-      {children}
+      {CurrentIcon && <CurrentIcon className={iconColors[variant]}/>}
     </button>
   );
 }

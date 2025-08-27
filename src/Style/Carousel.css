@@ -1,5 +1,5 @@
 .mySwiper {
-  @apply w-full h-fit rounded-xl overflow-hidden;
+  @apply w-full h-fit rounded-lg overflow-hidden;
 }
 
 .mySwiper .swiper-slide {
