@@ -1,33 +1,76 @@
-import Logo from "@/assets/Logoabby-text.svg"
-import { Link } from "react-router-dom";
-import Button from "@/components/button"
-import {BtnIconToggle, BtnIcon} from "@/components"
+"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { BtnIcon, Button, TxtField } from ".";
+import { usePathname } from "next/navigation";
+import clsx from "clsx";
+export function Navbar() {
+  const pathname = usePathname();
 
-export default function Navbar () {
+  const links = [
+    { href: "/", label: "Home" },
+    { href: "", label: "Shop" },
+    { href: "/best-seller", label: "Best seller" },
+    { href: "/sale", label: "Sale" },
+    { href: "/new-arrival", label: "New arrival" },
+    { href: "/beauty-and-tips", label: "Beauty & tips" },
+  ];
+
   return (
-    <nav className="Navbar h-[20vh] sticky top-0 w-full transition-all items-center z-50">
-        <div className="Container px-[64px] py-[24px] bg-white border-b-[1px] border-primary700">
-            <div className="navbar-box flex-row items-center space-y-4">
-                <div className="content-navbar flex items-center justify-between">
-                    <div>English</div>
-                    <img src={Logo} alt="Logo" className="w-[200px] h-auto"></img>
-                    <ul className="flex justify-center space-x-2">
-                            <BtnIcon iconName="Search" variant="tertiary" size="md"/>
-                            <BtnIcon iconName="User" variant="tertiary" size="md"/>
-                            <BtnIcon iconName="User" variant="tertiary" size="md"/>
+    <nav className="Navbar flex h-auto px-10 py-5 sticky top-0 w-full bg-white border-b-[1px] border-primary-700 transition-all justify-between items-center z-50">
+      <div className="content-wrapper flex justify-between w-full max-w-[1536px] mx-auto">
+        <div className="content-left flex w-auto items-center justify-center space-x-6">
+          <div className="Icon-wrapper h-auto w-auto flex justify-center space-x-3">
+            <Image
+              src="/logo-abby-circle.svg"
+              alt="Logo-circle"
+              height={45}
+              width={45}
+              className="justify-center"
+            />
+            <Image
+              src="/Logoabby-text.svg"
+              alt="Logo"
+              height={0}
+              width={0}
+              className="w-[150px] h-auto justify-center"
+            />
+          </div>
+          <div className="w-auto justify-center">
+            <TxtField
+              placeholder="Wardah, Maybeline, anything. . ."
+              iconLeftName="MagnifyingGlass"
+              variant="outline"
+              size="md"
+              className="min-w-[280px]"
+            />
+          </div>
+          {links.map((link) => {
+            const isActive = pathname === link.href;
 
-                    </ul>
-                </div>
-                <ul className="flex justify-center space-x-[24px]">
-                            <Link to ="/">Home</Link>
-                            <Link to="/product">Shop</Link>
-                            <li><a href="#">Best seller</a></li>
-                            <li><a href="#">Sale</a></li>
-                            <li><a href="#">New arrivals</a></li>
-                            <li><a href="#">Beauty and tips</a></li>
-                </ul>
-            </div>
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={clsx(
+                  "items-center transition-colors",
+                  isActive ? "text-primary-700" : "hover:text-primary-500"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
+        <div className="w-auto flex justify-between space-x-4">
+          <Button variant="primary" size="sm">
+            Sign in
+          </Button>
+          {/* <BtnIcon iconName="Bell" variant="tertiary" size="md" />
+          <BtnIcon iconName="ShoppingBag" variant="tertiary" size="md"/>
+          <BtnIcon iconName="User" variant="tertiary" size="md" /> */}
+        </div>
+      </div>
     </nav>
-  )
+  );
 }

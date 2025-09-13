@@ -1,25 +1,29 @@
+"use client";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
-import { BeautyMerdeka } from "@/assets"
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-export default function HeroSlider() {
+export function HeroSlider() {
   return (
-    <div className="w-full h-[100vh]">
+    <div className="w-full h-full">
       <Swiper
         modules={[Navigation, Pagination, Autoplay]}
         pagination={{ clickable: true }}
         autoplay={{ delay: 3000 }}
         loop={true}
         className="w-full h-full"
-        direction="vertical"
+        direction="horizontal"
       >
         <SwiperSlide>
-          <div className="h-screen items-center justify-center">
-            <img src={BeautyMerdeka} alt="Beauty merdeka" className="h-full w-full object-cover"></img>
+          <div className="w-full h-screen items-center justify-center object-contain">
+            <img
+              src="Beauty-merdeka.png"
+              alt="Beauty merdeka"
+              className="h-full w-full object-contain"
+            ></img>
           </div>
         </SwiperSlide>
         <SwiperSlide>

@@ -1,22 +1,25 @@
+"use client";
 import clsx from "clsx";
 import { useState } from "react";
 import * as FaIcons from "react-icons/fa";
-export default function BtnIconToggle({
+export function BtnIconToggle({
   iconName,
   variant = "primary",
   size = "medium",
   className,
   disabled = false,
   ...props
-  
 }) {
   const baseStyles =
-    "rounded-[24px] font-bold focus:ring focus:bg transition-colors-primary700 disabled:opacity-50 disabled:cursor-not-allowed";
+    "rounded-[24px] focus:bg transition-colors-primary-700 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
-    primary: "bg-primary700 text-white hover:bg-primary600 focus:bg-primary800 transition-all",
-    secondary: "bg-secondary100 text-primary700 hover:bg-secondary200 focus:bg-Secondary300 transition-all",
-    tertiary: "bg-transparent border border-transparent font-bold text-primary700 hover:bg-secondary50 hover:border-primary700 focus:bg-primary100 transition-all",
+    primary:
+      "bg-primary-700 text-white hover:bg-primary-600 focus:bg-primary-800 transition-all duration-200",
+    secondary:
+      "bg-secondary-100 text-primary-700 hover:bg-secondary-200 focus:bg-Secondary300 transition-all duration-200",
+    tertiary:
+      "bg-transparent border border-transparent font-bold text-primary-700 hover:bg-secondary-100 transition-all duration-200",
   };
 
   const sizes = {
@@ -26,10 +29,9 @@ export default function BtnIconToggle({
   };
   const iconColors = {
     primary: "text-white",
-    secondary: "text-primary700",
-    tertiary: "text-primary700",
-
-}
+    secondary: "text-primary-700",
+    tertiary: "text-primary-700",
+  };
   const [isToggled, setIsToggled] = useState(false);
 
   const OffIcon = FaIcons[`FaReg${iconName}`] || FaIcons[`Fa${iconName}`];
@@ -43,7 +45,7 @@ export default function BtnIconToggle({
       onClick={() => setIsToggled(!isToggled)}
       {...props}
     >
-      {CurrentIcon && <CurrentIcon className={iconColors[variant]}/>}
+      {CurrentIcon && <CurrentIcon className={iconColors[variant]} />}
     </button>
   );
 }

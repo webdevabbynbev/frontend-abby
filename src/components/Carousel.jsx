@@ -1,14 +1,12 @@
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
+"use client";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/navigation";
 
-import '@/style/carousel.css';
+import { Pagination, Navigation, Autoplay } from "swiper/modules";
 
-import { Pagination, Navigation, Autoplay } from 'swiper/modules';
-
-export default function Carousel( {products, CardComponent} ) {
-  
+export function Carousel({ products, CardComponent, SlidesPerView }) {
   return (
     <>
       <Swiper
@@ -18,7 +16,7 @@ export default function Carousel( {products, CardComponent} ) {
         // autoplay={{ delay: 4000 }}
         // loop={true}
         navigation={{
-            clickable:true
+          clickable: true,
         }}
         slidesOffsetAfter={0}
         watchOverflow={true}
@@ -26,13 +24,12 @@ export default function Carousel( {products, CardComponent} ) {
         //   clickable: true,
         // }}
         className="mySwiper"
-      >         
-        {products.map((item, idx) =>  (
-        <SwiperSlide key={idx}>
-          <CardComponent {...item} />
-        </SwiperSlide>
-      ))}
-      
+      >
+        {products.map((item, idx) => (
+          <SwiperSlide key={idx} className="!w-[200px]">
+            <CardComponent item={item} />
+          </SwiperSlide>
+        ))}
       </Swiper>
     </>
   );

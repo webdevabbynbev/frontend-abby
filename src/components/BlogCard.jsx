@@ -1,29 +1,59 @@
-import { BtnIcon } from "."
-import { FaEllipsis } from "react-icons/fa6"
-import { CategoryChip } from "."
-import { DataCategoryBlog } from "../data"
+"use client";
+import { BtnIcon, BtnIconToggle } from ".";
 
-export function BlogCard (Date, Image, ImgTitle, Title, Preview ){
+export function BlogCard({
+  date,
+  image,
+  imgTitle,
+  title,
+  category,
+  article,
+  like,
+  comment,
+  share,
+}) {
   return (
-    <div className="Container flex-row bg-white p-6">
-        <div className="Content-wrapper flex">
-            <div className="wrapper-left-content space-x-2">
-                <span className="text-sm">Abby n Bev</span> 
-                <span className="bg-neutral-400 p-2 rounded-full"></span>
-                <span className="text-sm text-neutral400 "> {Date} </span>
-            </div>
-                <BtnIcon variant="tertiary" size="md" icon={FaEllipsis}></BtnIcon>
+    <div
+      className="Container flex-row bg-white p-4 w-full h-auto space-y-4 rounded-3xl
+                    hover:-translate-y-[2px] hover:outline-1 outline-primary-300 transition-all ease-in-out cursor-pointer duration-300"
+    >
+      <div className="Content-wrapper flex justify-between">
+        <div className="wrapper-left-content flex space-x-2 items-center">
+          <span className="text-sm">Abby n Bev</span>
+          <div className="w-1 h-1 rounded-full bg-neutral-400"></div>
+          <span className="text-sm text-neutral400 "> {date} </span>
         </div>
-                
-        <div className="flex-row">
-            <img src={Image} alt={ImgTitle} className=""/>
-            <div className="flex"><p>Category</p> <CategoryChip item="1"/></div>
-        </div>
+        {/* <BtnIcon variant="tertiary" size="sm" iconName="EllipsisV"/> */}
+      </div>
 
-        <div className="flex-row">
-          
+      <div className="flex-row space-y-3">
+        <img src={image} alt={imgTitle} className="rounded-lg" />
+        <div className="flex items-center space-x-2">
+          <p className="text-xs font-bold">Category</p>
+          <span className="rounded-lg text-xs px-3 py-2  text-primary-700 bg-primary-100 font-bold">
+            {category}
+          </span>
         </div>
+        <h1 className="text-bold text-sm font-bold"> {title} </h1>
+        <div className="p-2 w-full rounded-lg">
+          <p className="text-sm line-clamp-2">{article}</p>
+        </div>
+      </div>
 
+      <div className="flex space-x-4">
+        <div className="flex items-center space-x-3">
+          <BtnIconToggle variant="tertiary" size="sm" iconName="ThumbsUp" />
+          <p className="text-sm">{like}</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <BtnIcon variant="tertiary" size="sm" iconName="Comment" />
+          <p className="text-sm">{comment}</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <BtnIcon variant="tertiary" size="sm" iconName="Share" />
+          <p className="text-sm">{share}</p>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
