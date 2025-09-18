@@ -82,12 +82,16 @@ const DataBooster = [
 ];
 
 const DataSunCare = [
-
-{
-  id:1,
-  category: "Sun Screen",
-},
-
+  {
+    id: 1,
+    category: "Sun Screen",
+  },
 ];
 
-export { DataCleanser, DataMoisturizer, DataTreatment, DataBooster, DataSunCare };
+export {
+  DataCleanser,
+  DataMoisturizer,
+  DataTreatment,
+  DataBooster,
+  DataSunCare,
+};

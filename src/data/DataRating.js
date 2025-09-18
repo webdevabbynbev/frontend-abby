@@ -1,27 +1,31 @@
 export const DataRating = [
   {
     id: 1,
-    rating: "1 Star",
+    value: "1 Star",
+    star: "1 Star",
   },
 
   {
     id: 2,
-    rating: "2 Star",
+    value: "2 Stars",
+    star: "2 Stars",
   },
 
   {
     id: 3,
-    rating: "3 Star",
+    value: "3 Stars",
+    star: "3 Stars",
   },
 
   {
     id: 4,
-    rating: "4 Star",
+    value: "4 Stars",
+    star: "4 Stars",
   },
 
   {
     id: 5,
-    rating: "5 Star",
+    value: "5 Stars",
+    star: "5 Stars",
   },
 ];
-

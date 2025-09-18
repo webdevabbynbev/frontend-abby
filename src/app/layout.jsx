@@ -22,7 +22,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${damion.variable}`}>
-      <body className="font-sans">
+      <body className="font-sans bg-[#f7f7f7]">
         <Navbar />
         <main> {children}</main>
         <Footer />

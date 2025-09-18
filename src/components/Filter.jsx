@@ -50,18 +50,19 @@ import {
   DataBodyConcern,
   DataSkinConcern,
   DataHairConcern,
-  FlashSaleProducts,
   BevPick,
 } from "../data";
 
-const Filter = () => {
+export function Filter({ showBrandFilter = true }) {
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [showTooltipMin, setShowTooltipMin] = useState(false);
   const [showTooltipMax, setShowTooltipMax] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [brandSearch, setBrandSearch] = useState("");
-  const [itemSearch, setItemSearch] = useState("");
+  const [minPrice, setMinPrice] = useState();
+  const [maxPrice, setMaxPrice] = useState();
+  const [brandSearch, setBrandSearch] = useState();
+  const [itemSearch, setItemSearch] = useState();
+
+  const hasActiveFilter = selectedFilters.length > 0;
 
   // const combineData = useMemo(() => {
   //   return [
@@ -74,7 +75,7 @@ const Filter = () => {
   // }, []);
 
   const filteredBrands = DataBrand.filter((brand) =>
-    brand.brandname.toLowerCase().includes(brandSearch.toLowerCase())
+    brand.brandname.toLowerCase().includes(brandSearch?.toLowerCase() || "")
   );
 
   const handleSelect = (group, itemId) => {
@@ -101,7 +102,7 @@ const Filter = () => {
       }
     }
 
-    const numericValue = Math.min(Number(onlyNumber));
+    const numericValue = Number(onlyNumber);
 
     if (type === "min") {
       setMinPrice(numericValue ? numericValue.toString() : "");
@@ -111,20 +112,20 @@ const Filter = () => {
   };
 
   const handleReset = () => {
-    setMinPrice("");
-    setMaxPrice("");
+    setMinPrice();
+    setMaxPrice();
     setSelectedFilters([]);
   };
 
   return (
-    <div className="flex-row space-y-6 h-full max-w-[300px]">
+    <div className="flex-row space-y-4 h-full max-w-[300px]">
       <div className="TitleCat-1 flex w-full space-x-4">
         <h3 className="font-medium text-base">Category </h3>{" "}
         <hr className="w-full border-t border-primary-700 my-4" />
       </div>
       <Accordion
         type="single"
-        className="AccordionMakeup rounded-2xl w-full bg-transparent px-4 transition-all outline-1 outline-neutral-100"
+        className="AccordionMakeup rounded-2xl w-full bg-white px-4 transition-all outline-1 outline-neutral-100"
         collapsible
       >
         <AccordionItem value="item-0">
@@ -235,7 +236,7 @@ const Filter = () => {
 
       <Accordion
         type="single"
-        className="AccordionSkincare rounded-2xl max-w-[300px] w-full bg-transparent px-4 transition-all outline-1 outline-neutral-100"
+        className="AccordionSkincare rounded-2xl max-w-[300px] w-full bg-white px-4 transition-all outline-1 outline-neutral-100"
         collapsible
       >
         <AccordionItem value="item-4">
@@ -404,7 +405,7 @@ const Filter = () => {
 
       <Accordion
         type="single"
-        className="AccordionHairCare rounded-2xl max-w-[300px] w-full bg-transparent px-4 transition-all outline-1 outline-neutral-100"
+        className="AccordionHairCare rounded-2xl max-w-[300px] w-full bg-white px-4 transition-all outline-1 outline-neutral-100"
         collapsible
       >
         <AccordionItem value="item-11">
@@ -544,7 +545,7 @@ const Filter = () => {
 
       <Accordion
         type="single"
-        className="AccordionBathAndBody rounded-2xl max-w-[300px] w-full bg-transparent px-4 transition-all outline-1 outline-neutral-100"
+        className="AccordionBathAndBody rounded-2xl max-w-[300px] w-full bg-white px-4 transition-all outline-1 outline-neutral-100"
         collapsible
       >
         <AccordionItem value="item-16">
@@ -765,7 +766,7 @@ const Filter = () => {
       </div>
       <Accordion
         type="single"
-        className="AccordionSkinConcern rounded-2xl w-full bg-transparent px-4 transition-all outline-1 outline-neutral-100"
+        className="AccordionSkinConcern rounded-2xl w-full bg-white px-4 transition-all outline-1 outline-neutral-100"
         collapsible
       >
         <AccordionItem value="item-1">
@@ -859,43 +860,47 @@ const Filter = () => {
         </AccordionItem>
       </Accordion>
 
-      <div className="TitleCat-4 flex w-full space-x-4 justify-between">
-        <h3 className="w-auto font-medium text-base">Brand</h3>
-        <hr className="w-full border-t border-primary-700 my-4" />
-      </div>
-      <div className="w-full items-start space-y-4">
-        <TxtField
-          placeholder="Search brand here..."
-          iconLeftName="MagnifyingGlass"
-          variant="outline"
-          size="md"
-          className="w-full"
-          value={brandSearch}
-          onChange={(e) => setBrandSearch(e.target.value)}
-        />
+      {showBrandFilter && (
+        <>
+          <div className="TitleCat-4 flex w-full space-x-4 justify-between">
+            <h3 className="w-auto font-medium text-base">Brand</h3>
+            <hr className="w-full border-t border-primary-700 my-4" />
+          </div>
+          <div className="w-full items-start space-y-4">
+            <TxtField
+              placeholder="Search brand here..."
+              iconLeftName="MagnifyingGlass"
+              variant="outline"
+              size="md"
+              className="w-full"
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value)}
+            />
 
-        <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
-          {filteredBrands.length === 0 ? (
-            <div>brand tidak ditemukan</div>
-          ) : (
-            filteredBrands.map((item) => {
-              const uniqueId = `brand-${item.id}`;
-              const isActive = selectedFilters.includes(uniqueId);
+            <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
+              {filteredBrands.length === 0 ? (
+                <div>brand tidak ditemukan</div>
+              ) : (
+                filteredBrands.map((item) => {
+                  const uniqueId = `brand-${item.id}`;
+                  const isActive = selectedFilters.includes(uniqueId);
 
-              return (
-                <Chip
-                  key={item.id}
-                  label={item.brandname}
-                  onClick={() => handleSelect("brand", item.id)}
-                  isActive={isActive}
-                >
-                  {item.brandname}
-                </Chip>
-              );
-            })
-          )}
-        </div>
-      </div>
+                  return (
+                    <Chip
+                      key={item.id}
+                      label={item.brandname}
+                      onClick={() => handleSelect("brand", item.id)}
+                      isActive={isActive}
+                    >
+                      {item.brandname}
+                    </Chip>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="TitleCat-5 flex w-full space-x-4 justify-between items-center">
         <div className="items-center flex space-x-2">
@@ -912,11 +917,11 @@ const Filter = () => {
           return (
             <Chip
               key={item.id}
-              label={item.rating}
+              label={item.star}
               onClick={() => handleSelect("rating", item.id)}
               isActive={isActive}
             >
-              {item.rating}
+              {item.star}
             </Chip>
           );
         })}
@@ -927,20 +932,11 @@ const Filter = () => {
           onClick={handleReset}
           variant="primary"
           size="sm"
-          disabled={
-            selectedFilters.length === 0 && minPrice === "" && maxPrice === ""
-          }
-          className={`${
-            selectedFilters.length === 0 && minPrice === "" && maxPrice === ""
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-              : "bg-primary-100 text-white hover:bg-primary-800"
-          }`}
+          disabled={selectedFilters.length === 0}
         >
           Reset filter
         </Button>
       </div>
     </div>
   );
-};
-
-export default Filter;
+}

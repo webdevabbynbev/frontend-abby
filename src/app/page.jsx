@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import styles from "../components/Carousel.module.css";
+import { getBanners } from "@/services";
 import {
   HeroSlider,
   CategoryCard,
@@ -14,7 +15,7 @@ import {
 
 import { DataCategoryCard, DataBrand, BevPick, DataArticleBlog } from "../data";
 
-export default function Home() {
+export default async function Home() {
   return (
     <div className="Container flex-row items-center justify-center mx-auto">
       <div className="Hero-wrapper w-full flex justify-between h-[80vh]">

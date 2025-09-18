@@ -19,11 +19,11 @@ export function TxtField({
 
   const variants = {
     filled:
-      "rounded-full bg-neutral-50 hover:bg-neutral-100 focus:ring-2 focus:ring-primary-400 ring-1 ring-neutral-200",
+      "rounded-full bg-neutral-50 hover:bg-neutral-100 focus:ring-1 focus:ring-neutral-300 ring-1 ring-neutral-200",
     outline:
-      "rounded-full bg-white ring-1 ring-neutral-200 focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-50",
+      "rounded-full bg-white ring-1 ring-neutral-200 focus:ring-2 focus:ring-neutral-300 placeholder:text-neutral-50",
     ghost:
-      "bg-transparent ring-0 hover:bg-neutral-50 focus:ring-2 focus:ring-primary-400",
+      "bg-transparent ring-0 hover:bg-neutral-50 focus:ring-1 focus:ring-primary-400",
   };
 
   const sizes = {

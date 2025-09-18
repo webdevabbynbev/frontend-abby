@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { BevPick } from "@/data";
-import Filter from "@/components/Filter";
-import { RegularCard, Button, TxtField } from "@/components";
+import { RegularCard, Button, TxtField, Filter } from "@/components";
 
 function shuffledArray(array) {
   const shuffled = [...array];
@@ -37,7 +36,7 @@ const BestSeller = () => {
   return (
     <div className="flex w-full justify-between">
       <div className="w-[400px] pl-10 pr-5 py-6">
-        <Filter className="w-full py-24" />
+        <Filter showBrandFilter={true} className="w-full py-24" />
       </div>
 
       <div className="wrapper flex-row w-full pr-10 pl-5 py-6 space-y-6">
@@ -55,7 +54,7 @@ const BestSeller = () => {
           {currentItems.map((item) => (
             <RegularCard key={item.id} item={item} />
           ))}
-          ;{/* Pagination */}
+          {/* Pagination */}
           <div className="flex justify-center mt-6 space-x-2 col-span-full">
             <Button
               variant="secondary"

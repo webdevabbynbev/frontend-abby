@@ -1,8 +1,8 @@
+export { Filter } from "./Filter.jsx";
 export { HeroSlider } from "./HeroSlider.jsx";
 export { CategoryCard } from "./CategoryCard.jsx";
 export { Button } from "./Button.jsx";
 export { Navbar } from "./Navbar.jsx";
-export { Dropdown } from "./Dropdown.jsx";
 export { Footer } from "./Footer.jsx";
 export { FlashSaleCard } from "./FlashSaleCard.jsx";
 export { Carousel } from "./Carousel.jsx";
@@ -30,3 +30,18 @@ export {
   BreadcrumbEllipsis,
 } from "./BreadCrumb.jsx";
 export { Skeleton } from "./Skeleton.jsx";
+
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from "./Select.jsx";
+
+export { QuantityInput } from "./QuantitySelector.jsx";

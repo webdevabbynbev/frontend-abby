@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
-
+html {
+  scroll-behavior: smooth;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -108,6 +110,18 @@
   background: transparent;
 }
 
+@layer utilities {
+  .no-spinner::-webkit-inner-spin-button,
+  .no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+}
+
 @layer base {
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
@@ -138,7 +152,6 @@
     @apply 
     text-neutral-400
     font-semibold
-    hover:text-primary-700
     transition-all
     duration-100
     text-sm
