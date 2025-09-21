@@ -51,7 +51,7 @@ export default function BrandDetailClient({ brandData }) {
         </div>
 
         {/* Brand info */}
-        <div className="w-full flex flex-col md:flex-row items-center md:items-start gap-10">
+        <div className="w-full flex flex-col md:flex-row md:items-center gap-10">
           <div className="h-[150px] w-[150px] flex items-center justify-center rounded-xl bg-white shadow">
             <img
               src={`/${brandData.logo}`}

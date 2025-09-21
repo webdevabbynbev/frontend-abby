@@ -7,8 +7,11 @@ import { formatToRupiah } from "@/utils";
 import { DataReview } from "@/data";
 import { getAverageRating } from "@/utils";
 
-export function RegularCard({ item }) {
+export function RegularCard( props ) {
+  const item = props;
+
   const [wishlist, setWishlist] = useState([]);
+
 
   useEffect(() => {
     const stored = localStorage.getItem("wishlist");

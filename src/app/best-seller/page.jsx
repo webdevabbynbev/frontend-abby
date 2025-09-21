@@ -52,7 +52,7 @@ const BestSeller = () => {
 
         <div className="w-full h-auto grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-6 items-start justify-between">
           {currentItems.map((item) => (
-            <RegularCard key={item.id} item={item} />
+            <RegularCard key={item.id} {...item} />
           ))}
           {/* Pagination */}
           <div className="flex justify-center mt-6 space-x-2 col-span-full">

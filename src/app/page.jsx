@@ -1,25 +1,22 @@
 "use client";
-import Link from "next/link";
-import styles from "../components/Carousel.module.css";
-import { getBanners } from "@/services";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import {
-  HeroSlider,
+  PickCarousel,
   CategoryCard,
   Button,
-  Carousel,
-  FlashSaleCard,
-  RegularCard,
+  HeroCarousel,
   BrandCard,
   BlogCard,
-} from "../components";
+} from "@/components";
 
-import { DataCategoryCard, DataBrand, BevPick, DataArticleBlog } from "../data";
+import { DataCategoryCard, DataBrand, DataArticleBlog } from "@/data";
 
-export default async function Home() {
+export default function Home() {
   return (
     <div className="Container flex-row items-center justify-center mx-auto">
       <div className="Hero-wrapper w-full flex justify-between h-[80vh]">
-        <HeroSlider />
+        <HeroCarousel />
       </div>
 
       <div className="w-full h-auto flex px-10 py-16 max-w-[1536px] mx-auto ">
@@ -85,13 +82,13 @@ export default async function Home() {
               See more flash sale product
             </Button>
           </div>
-          <div className={`${styles.mySwiper} max-w-[50%]`}>
+          {/* <div className={`${styles.mySwiper} max-w-[50%]`}>
             <Carousel
               className="w-full"
               products={BevPick}
               CardComponent={RegularCard}
             />
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -108,11 +105,12 @@ export default async function Home() {
               See all
             </Button>
           </div>
-          <Carousel
+          <PickCarousel/>
+          {/* <Carousel
             SlidesPerView={5}
             products={BevPick}
             CardComponent={RegularCard}
-          />
+          /> */}
         </div>
 
         <div className="max-w-[1536px] mx-auto rounded-[40px] bg-primary-50 wrapper flex-row space-y-6 p-6 outline-1 outline-primary-300">
@@ -127,11 +125,12 @@ export default async function Home() {
               See all
             </Button>
           </div>
-          <Carousel
+          <PickCarousel/>
+          {/* <Carousel
             SlidesPerView={5}
             products={BevPick}
             CardComponent={RegularCard}
-          />
+          /> */}
         </div>
       </div>
 

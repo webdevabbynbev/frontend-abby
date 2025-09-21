@@ -2,7 +2,7 @@ export const DataArticleBlog = [
 {
     id: 1,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [12],
     comment: [24],
@@ -30,7 +30,7 @@ Daftar sekarang disini dan yuk mampie ke Abby n Bev store di Kota Baru Parahyang
 {
     id: 2,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [15],
     comment: [17],
@@ -65,7 +65,7 @@ Yuk, daftar sekarang lewat link ini (pendaftaran Abeauties Squad) dan jadi bagia
 {
     id: 3,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [10],
     comment: [5],
@@ -96,10 +96,10 @@ Jadi, tunggu apa lagi yuk klik link pendaftarannya dan join Abeauties Squad se
     like: [20],
     comment: [2],
     share: [7],
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     title: "Yuk, Virtual Tour ke Beauty Store Abby n Bev, Tempat Glow Up Seru Bareng Bestie!",
-    article: "ABBY N BEV – Pernah nggak, ngebayangin masuk ke beauty store yang rasanya kayak main ke tempat nongkrong favoritmu? Well, selamat datang di Abby n Bev beauty store! Disini, belanja makeup dan skincare nggak sekadar ambil item dan bayar. Tapi, kamu beneran experience the whole glow up journey. Penasaran? Yuk, kita virtual tour dulu! Belum Masuk, Udah Aesthetic! Toko kosmetik di Bandung ini langsung mencuri perhatian dari depan. Desainnya clean, modern, dan super inviting—seolah-olah ngajak kamu masuk sambil bilang, “Ayo… masuk, ada yang seru loh di dalem!” Disambut Sea Welcome Wall Begitu buka pintu, kamu langsung ketemu Welcome Wall yang minimalis. Seluruh produk yang ditata rapi langsung nyambut kamu dengan visual yang bener-bener calming, bikin kamu ngerasa nyaman. Center Island: Tempat Explore dan Selfie Di tengah store, ada Center Island yang jadi spot utama buat explore produk. Lighting-nya pas, rak estetik dan semua produk bisa kamu coba langsung. Suka selfie? Tempat ini nyaman dan instagramable banget, bisa belanja sambal update konten juga loh! Glow Room: Ruang Nyaman Buat Nyoba Begitu masuk ke Glow Room, kamu langsung ngerasain suasana cozy yang bikin betah. Di sini, kamu bebas cobain produk, duduk santai, dan konsultasi tanpa tekanan apa pun. Kamu juga bisa kenalan lebih dalam sama kondisi kulit kamu, sekaligus dapetin rekomendasi produk yang cocok banget sama skintone dan undertone-mu. Rak Produk yang Tertata Sesuai Kebutuhan Satu hal yang bikin Abby n Bev beda adalah rak produknya yang dikurasi secara niat. Semua brand lokal dan luar ditata berdasarkan fungsi dan ingredients. Jadi, kamu nggak akan bingung saat cari skincare buat kulit sensitive atau makeup buat look natural. Abby n Bev Picks Mau produk yang udah dipilihin langsung sama tim Abby n Bev? Langsung aja ke Abby n Bev Pick Shelf. Disini kamu bisa nemuin rekomendasi produk yang sesuai jenis kulit dan budget. Shelf ini selalu update, jadi nggak pernah bosen! Siap glow up bareng kita? Yuk, kunjungi beauty store Abby n Bev toko kosmetik makeup dan skincare terpercaya. Catat alamatnya di Kota Baru Parahyangan Ruko Sasakirana No. 38, RT.08/RW.03, Bojonghaleuang, Kec. Saguling, Kabupaten Bandung Barat, Jawa Barat 40553.***"
+    article: "ABBY N BEV – Pernah nggak, ngebayangin masuk ke beauty store yang rasanya kayak main ke tempat nongkrong favoritmu? Well, selamat datang di Abby n Bev beauty store! Disini, belanja makeup dan skincare nggak sekadar ambil item dan bayar. Tapi, kamu beneran experience the whole glow up journey. Penasaran? Yuk, kita virtual tour dulu! Belum Masuk, Udah Aesthetic! Toko kosmetik di Bandung ini langsung mencuri perhatian dari depan. Desainnya clean, modern, dan super inviting—seolah-olah ngajak kamu masuk sambil bilang, “Ayo… masuk, ada yang seru loh di dalem!” Disambut Sea Welcome Wall Begitu buka pintu, kamu langsung ketemu Welcome Wall yang minimalis. Seluruh produk yang ditata rapi langsung nyambut kamu dengan visual yang bener-bener calming, bikin kamu ngerasa nyaman. Center Island: Tempat Explore dan Selfie Di tengah store, ada Center Island yang jadi spot utama buat explore produk. Lighting-nya pas, rak estetik dan semua produk bisa kamu coba langsung. Suka selfie? Tempat ini nyaman dan instagramable banget, bisa belanja sambal upcreate_at konten juga loh! Glow Room: Ruang Nyaman Buat Nyoba Begitu masuk ke Glow Room, kamu langsung ngerasain suasana cozy yang bikin betah. Di sini, kamu bebas cobain produk, duduk santai, dan konsultasi tanpa tekanan apa pun. Kamu juga bisa kenalan lebih dalam sama kondisi kulit kamu, sekaligus dapetin rekomendasi produk yang cocok banget sama skintone dan undertone-mu. Rak Produk yang Tertata Sesuai Kebutuhan Satu hal yang bikin Abby n Bev beda adalah rak produknya yang dikurasi secara niat. Semua brand lokal dan luar ditata berdasarkan fungsi dan ingredients. Jadi, kamu nggak akan bingung saat cari skincare buat kulit sensitive atau makeup buat look natural. Abby n Bev Picks Mau produk yang udah dipilihin langsung sama tim Abby n Bev? Langsung aja ke Abby n Bev Pick Shelf. Disini kamu bisa nemuin rekomendasi produk yang sesuai jenis kulit dan budget. Shelf ini selalu upcreate_at, jadi nggak pernah bosen! Siap glow up bareng kita? Yuk, kunjungi beauty store Abby n Bev toko kosmetik makeup dan skincare terpercaya. Catat alamatnya di Kota Baru Parahyangan Ruko Sasakirana No. 38, RT.08/RW.03, Bojonghaleuang, Kec. Saguling, Kabupaten Bandung Barat, Jawa Barat 40553.***"
 },
 
 {
@@ -108,7 +108,7 @@ Jadi, tunggu apa lagi yuk klik link pendaftarannya dan join Abeauties Squad se
     like: [8],
     comment: [3],
     share: [1],
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     title: "Tips Memilih Toko Kosmetik dan Skincare Terpercaya",
     article: `ABBY N BEV – Pernah ketipu belanja online makeup? Tenang, kali ini kita mau share tips memilih toko kosmetik dan skincare terpercaya.
@@ -136,7 +136,7 @@ Mau cari beauty store yang aman, berpengalaman, seru dan edukatif? Ya, cuma Abby
 {
     id: 6,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [2],
     comment: [0],
@@ -165,7 +165,7 @@ See you at toko kosmetik makeup dan skincare terpercaya di Bandung ya, Abeauties
 {
     id: 7,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [1],
     comment: [0],
@@ -182,7 +182,7 @@ Jadi, daripada ambil risiko dengan produk abal-abal yang bisa bikin breakout, me
 2. Koleksi Lengkap dan Terkurasi
 Masih bingung cari produk yang cocok buat kulitmu? Tenang, Abby n Bev siap bantu kamu langsung!
 Kami sudah mengkurasi produk-produk terbaik yang udah disesuaikan dengan kebutuhan kulitmu, mulai dari yang sensitif sampai berminyak.
-Lebih dari itu, kami juga update terus tren kecantikan terkini.
+Lebih dari itu, kami juga upcreate_at terus tren kecantikan terkini.
 Mulai dari brand lokal unggulan sampai produk luar negeri yang lagi viral banget di TikTok, semua bisa kamu temuin di sini.
 Jadi, apa pun gaya kamu, mau tampil glowing natural atau bold & fierce, semua bisa terwujud dari satu tempat: Abby n Bev!
 3. Banyak Free Gift dan Promo Seru
@@ -201,7 +201,7 @@ Kalau kamu pengen kulit makin glowing tapi dompet tetap aman, yuk langsung cek 
 {
     id: 8,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [7],
     comment: [2],
@@ -232,7 +232,7 @@ Beauty store online terpercaya buat Gen Z yang pengen cantik dan tetap hemat gak
 {
     id: 9,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [9],
     comment: [10],
@@ -262,7 +262,7 @@ Penasaran sebagus apa toko kosmetik Abby n Bev? Yuk follow sosial media Instagr
 {
     id: 10,
     image: 'kol-blog.png',
-    date :"15 Agustus 2025",
+    create_at :"11 august 2025",
     category: "News",
     like: [8],
     comment: [3],

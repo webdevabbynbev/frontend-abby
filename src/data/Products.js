@@ -5,7 +5,7 @@ export const BevPick = [
     id: 1,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 1",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -27,7 +27,7 @@ export const BevPick = [
     id: 2,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 2",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -49,7 +49,7 @@ export const BevPick = [
     id: 3,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 3",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -71,7 +71,7 @@ export const BevPick = [
     id: 4,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 4",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -93,7 +93,7 @@ export const BevPick = [
     id: 5,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 5",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -115,7 +115,7 @@ export const BevPick = [
     id: 6,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 6",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -137,7 +137,7 @@ export const BevPick = [
     id: 7,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 7",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -159,7 +159,7 @@ export const BevPick = [
     id: 8,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 8",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -181,7 +181,7 @@ export const BevPick = [
     id: 9,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 9",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 
@@ -203,7 +203,7 @@ export const BevPick = [
     id: 10,
     image: "/Product1.png",
     category: "Face Mask",
-    brand: "Stunniverse",
+    brand: "Ariul",
     name: "Milky way powder 10",
     description: `Stunniverse Power Powder Mask is a wash off face mask 
     formulated with the best quality of natural ingredients, and made using 

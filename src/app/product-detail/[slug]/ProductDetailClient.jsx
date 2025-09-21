@@ -137,7 +137,7 @@ export default function ProductDetailClient({ product }) {
               {/* Rating */}
               <div className="flex items-center space-x-2">
                 <span className="flex items-center text-primary-700 font-bold">
-                  {averageRating}
+                  {averageRating }
                   <FaStar className="text-warning-300 ml-1" />
                 </span>
                 <span className="text-neutral-400">
