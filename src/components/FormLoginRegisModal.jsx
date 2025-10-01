@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser, verifyOtp, regis, OtpRegis } from "@/utils/auth";
+import { loginUser, verifyOtp, regis, OtpRegis, LoginGoogle } from "@/utils/auth";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
@@ -101,25 +101,22 @@ export function LoginRegisModalForm() {
   };
 
   const handleSuccess = async (credentialResponse) => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login-google`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: credentialResponse.credential }),
-        }
-      );
-      if (!res.ok) throw new Error("Failed to login with Google");
+  try {
+    // Ambil token dari Google
+    const token = credentialResponse.credential;
+    console.log("Google token received:", token);
 
-      const data = await res.json();
-      login({ user: data.serve.data, token: data.serve.data }); // adjust to your API shape
-      setMessage("Login berhasil!");
-    } catch (err) {
-      console.error("Login Google error:", err.message);
-      setMessage("Login Google gagal.");
-    }
-  };
+    // Panggil LoginGoogle dari utils/auth
+    const data = await LoginGoogle(token);
+
+    console.log("LoginGoogle response:", data);
+    login({ user: data.serve.data, token: data.serve.token }); // pastikan token yang benar
+    setMessage("Login berhasil!");
+  } catch (err) {
+    console.error("Login Google error:", err.message);
+    setMessage("Login Google gagal.");
+  }
+};
 
   const handleLogin = async () => {
     setLoading(true);

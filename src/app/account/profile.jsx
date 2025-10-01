@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { getUser } from "@/utils/auth";
 import { AddressCard, Button, TxtField, DialogCard } from "@/components";
 import {
   FaVenus,
@@ -13,15 +14,36 @@ import {
 } from "react-icons/fa6";
 
 export function Profilepage() {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+  async function fetchProfile() {
+    try {
+      const data = await getUser();
+      setProfile(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  fetchProfile();
+}, []);
 
-  const [user, setUser] 
+  if (loading) {
+    return <div className="p-4">Loading profile...</div>;
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="bg-transparent w-full justify-center h-auto space-y-4">
       <div className="title px-4 text-neutral-500">
-        <h1 className="font-bold text-neutral-950 text-xl">
-          Profile
-        </h1>
+        <h1 className="font-bold text-neutral-950 text-xl">Profile</h1>
       </div>
       <div className="container rounded-2xl bg-white p-4 space-y-4">
         <div className="flex sm:flex-col md:flex-row w-full h-auto md:items-center sm:items-start justify-between gap-4">
@@ -30,7 +52,7 @@ export function Profilepage() {
             <div className="space-y-2">
               <div className="name flex text-lg font-medium space-x-2 space-y-2  items-center">
                 <p className="firstname" value="first-name">
-                  Randy orton
+                  {profile.serve.firstName} {profile.serve.lastName}
                 </p>
                 <div className="items-center justify-center">
                   <span className="Gender items-center w-fit flex space-x-2 text-xs text-blue-400 bg-blue-100 py-1 px-2 rounded-full">

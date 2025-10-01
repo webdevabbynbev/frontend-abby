@@ -1,32 +1,23 @@
 import api from "@/lib/axios";
 
-export async function getUser(
-  id,
-  firstName,
-  lastName,
-  email,
-  phoneNumber,
-  address,
-  gender,
-  dob,
-  photoProfile
-) {
-  try {
-    const res = await api.get("/auth/user", {
-      id,
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-      address,
-      gender,
-      dob,
-      photoProfile,
-    });
-    return res.data;
-  } catch (err) {
-    throw new Error(err.response?.data?.message || "Fetch data profile gagal");
+export async function getUser() {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token found, please login first");
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`, // ✅
+      Accept: "application/json",
+    },
+  });
+
+  const data = await res.json(); // hanya sekali baca body
+
+  if (!res.ok) {
+    throw new Error(data?.errors?.[0]?.message || "Unauthorized");
   }
+
+  return data;
 }
 
 export async function OtpRegis(
@@ -77,21 +68,30 @@ export async function regis(
   }
 }
 
-export async function loginUser(email_or_phone, password) {
-  try {
-    const res = await api.post("/auth/login", { email_or_phone, password });
-    return res.data; // {message, serve: true/false}
-  } catch (err) {
-    throw new Error(err.response?.data?.message || "Login gagal");
-  }
-}
-
 export async function verifyOtp(email_or_phone, otp) {
   try {
     const res = await api.post("/auth/verify-login", { email_or_phone, otp });
     return res.data; // {success: true/false}
   } catch (err) {
     throw new Error(err.response?.data?.message || "Verifikasi OTP gagal");
+  }
+}
+
+export async function loginUser(email_or_phone, password) {
+  try {
+    const res = await api.post("/auth/login", { email_or_phone, password });
+    console.log("DEBUG LOGIN RESPONSE:", res.data);
+    const data = res.data;
+
+    // cek apakah ada token di response
+    if (data.serve?.token) {
+      localStorage.setItem("token", data.serve.token);
+    }
+
+    return data;
+  } catch (err) {
+    console.error("DEBUG LOGIN ERROR:", err.response?.data);
+    throw new Error(err.response?.data?.message || "Login gagal");
   }
 }
 
@@ -117,6 +117,11 @@ export async function LoginGoogle(token) {
     throw new Error(
       payload?.message || `LoginGoogle gagal (HTTP ${res.status})`
     );
+  }
+
+  if (payload.serve?.token) {
+    console.log("Google token:", payload.serve.token, typeof payload.serve.token);
+    localStorage.setItem("token", payload.serve.token);
   }
 
   return payload;
