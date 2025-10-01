@@ -43,7 +43,7 @@ export function BlogCard({
 
       <div className="flex space-x-4">
         <div className="flex items-center space-x-3">
-          <BtnIconToggle variant="tertiary" size="sm" iconName="ThumbsUp" />
+          <BtnIconToggle variant="tertiary" size="sm" iconName="ThumbsUp" > </BtnIconToggle>
           <p className="text-sm">{like}</p>
         </div>
         <div className="flex items-center space-x-3">

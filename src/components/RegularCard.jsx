@@ -6,18 +6,22 @@ import Link from "next/link";
 import { formatToRupiah } from "@/utils";
 import { DataReview } from "@/data";
 import { getAverageRating } from "@/utils";
+import { RegularCardSkeleton } from ".";
 
-export function RegularCard( props ) {
+export function RegularCard(props) {
   const item = props;
 
   const [wishlist, setWishlist] = useState([]);
-
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem("wishlist");
     if (stored) {
       setWishlist(JSON.parse(stored));
     }
+    // simulasi loading
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -40,6 +44,12 @@ export function RegularCard( props ) {
 
   const reviewsForProduct = DataReview.filter((r) => r.productID === item.id);
   const averageRating = getAverageRating(reviewsForProduct);
+
+  if (loading) {
+    return (
+      <RegularCardSkeleton/>
+    );
+  }
 
   return (
     <div className="container group relative rounded-lg bg-white h-auto w-[200px] space-y-4 transition-all overflow-hidden">
@@ -88,7 +98,7 @@ export function RegularCard( props ) {
           </div>
           <div className="price flex items-center space-x-2">
             {item.sale && (
-              <div className="text-base font-bold text-primary-700">
+              <div className="text-sm font-bold text-primary-700">
                 {formatToRupiah(item.price)}
               </div>
             )}

@@ -1,8 +1,11 @@
 "use client";
 import clsx from "clsx";
 import * as FaIcons from "react-icons/fa6";
+import { useState } from "react";
 
 export function TxtField({
+  autoComplete,
+  inputMode,
   className,
   variant = "filled",
   size = "md",
@@ -12,6 +15,7 @@ export function TxtField({
   disabled = false,
   error = false,
   fullWidth = true,
+  type = "text",
   ...props
 }) {
   const baseStyles =
@@ -32,11 +36,17 @@ export function TxtField({
     lg: "px-3 py-2 text-lg",
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const IconLeft = iconLeftName ? FaIcons[`Fa${iconLeftName}`] : null;
-  const IconRight = iconRightName ? FaIcons[`Fa${iconRightName}`] : null;
+  let IconRight = iconRightName ? FaIcons[`Fa${iconRightName}`] : null;
 
   const padLeft = IconLeft ? "pl-10" : "pl-4";
   const padRight = IconRight ? "pr-10" : "pr-4";
+
+  if (type === "Password") {
+    IconRight = showPassword ? FaIcons.FaEyeSlash : FaIcons.FaEye;
+  }
 
   return (
     <div className={clsx(fullWidth && "w-full")}>
@@ -44,14 +54,32 @@ export function TxtField({
         {IconLeft && (
           <span
             className={clsx(
-              "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-neutral-400"
+              "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-neutral-400"
             )}
           >
             <IconLeft className="h-4 w-4" aria-hidden="true" />
           </span>
         )}
 
+        {!IconLeft && IconRight && (
+          <span
+            className={clsx(
+              "absolute inset-y-0 right-0 flex items-center pr-4 text-neutral-400",
+              onRightIconClick ? "cursor-pointer" : "pointer-events-none"
+            )}
+            onClick={() =>
+              type === "Password"
+                ? setShowPassword((prev) => !prev)
+                : onRightIconClick?.()
+            }
+          >
+            <IconRight className="h-4 w-4" aria-hidden="true" />
+          </span>
+        )}
+
         <input
+          autoComplete={autoComplete}
+          inputMode={inputMode}
           className={clsx(
             baseStyles,
             variants[variant],
@@ -61,6 +89,7 @@ export function TxtField({
             error && "ring-1 ring-error-500 focus:ring-error-500",
             className
           )}
+          type={type === "password" && showPassword ? "text" : type}
           disabled={disabled}
           aria-invalid={!!error}
           {...props}

@@ -1,54 +1,75 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva } from "class-variance-authority";
+"use client";
+import clsx from "clsx";
+import * as FaIcons from "react-icons/fa";
 
-import { cn } from "@/lib/utils"
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-function Button({
+export function Button({
+  iconName,
+  children,
+  variant = "primary",
+  size = "medium",
   className,
-  variant,
-  size,
-  asChild = false,
+  disabled = false,
   ...props
 }) {
-  const Comp = asChild ? Slot : "button"
+  const baseStyles =
+    "inline-flex items-center justify-center font-bold rounded-[24px] " +
+    "p-0 leading-none select-none transition-colors " +
+    "disabled:opacity-50 disabled:cursor-not-allowed";
+
+  const variants = {
+    primary:
+      "bg-primary-700 text-white hover:bg-primary-600 focus:bg-primary-800 transition-all duration-200 cursor-pointer",
+    secondary:
+      "bg-secondary-100 text-primary-700 hover:bg-secondary-200 focus:bg-Secondary300 transition-all duration-200 cursor-pointer",
+    tertiary:
+      "bg-transparent border border-transparent font-bold text-primary-700 hover:bg-secondary-100 transition-all duration-200 cursor-pointer",
+    error:
+      "bg-transparent border border-transparent font-bold text-error-700 hover:bg-error-50 transition-all duration-200 cursor-pointer",
+  };
+
+  const sizes = {
+    sm: "h-9 px-3 text-xs", // ~36px tinggi
+    md: "h-10 px-4 text-sm", // ~40px tinggi
+    lg: "h-12 px-4 text-base", // ~52px tinggi
+  };
+
+  const iconColors = {
+    primary: "text-white",
+    secondary: "text-primary-700",
+    tertiary: "text-primary-700",
+  };
+  // const [hover, setHover] = useState(false);
+
+  const CurrentIcon = FaIcons[`FaReg${iconName}`] || FaIcons[`Fa${iconName}`];
 
   return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props} />
+    <button
+      className={clsx(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        className,
+        "items-center flex space-x-2 justify-center"
+      )}
+      disabled={disabled}
+      {...props}
+    >
+      {CurrentIcon && (
+        <CurrentIcon
+          // kunci ukuran & cegah ikon “menggelembung” tinggi baris
+          className={clsx("shrink-0", iconColors[variant], {
+            "text-[12px]": size === "sm",
+            "text-[14px]": size === "md",
+            "text-[16px]": size === "lg",
+          })}
+          aria-hidden
+        />
+      )}
+      {CurrentIcon ? (
+        <span className="ml-2 leading-none">{children}</span>
+      ) : (
+        <span className="leading-none">{children}</span>
+      )}
+    </button>
   );
 }
-
-export { Button, buttonVariants }

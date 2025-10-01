@@ -18,14 +18,12 @@ import {
   TooltipProvider,
   TxtField,
   Button,
-} from ".";
-
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./Accordion";
+} from ".";
+
 
 import {
   DataBrand,
@@ -873,7 +871,7 @@ export function Filter({ showBrandFilter = true }) {
               variant="outline"
               size="md"
               className="w-full"
-              value={brandSearch}
+              value={brandSearch ?? ""}
               onChange={(e) => setBrandSearch(e.target.value)}
             />
 

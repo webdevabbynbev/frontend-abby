@@ -1,11 +1,40 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BtnIcon, Button, TxtField } from ".";
-import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import {
+  BtnIcon,
+  Button,
+  TxtField,
+  LoginRegisModalForm,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from ".";
+import { usePathname, useRouter } from "next/navigation";
+import * as FaIcons from "react-icons/fa";
+
 import clsx from "clsx";
 export function Navbar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();          // pastikan fungsi logout clear session
+    router.push("/");        // redirect ke halaman home (atau ganti "/dashboard")
+  };
+
+  const linksidebar = [
+    { icon: "FaRegUser", href: "/account/profile", label: "Profile" },
+    { icon: "FaBox", href: "/account/my-order", label: "My order" },
+    { icon: "FaRegHeart", href: "/account/wishlist", label: "Wishlist" },
+  ];
 
   const links = [
     { href: "/", label: "Home" },
@@ -53,7 +82,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "items-center transition-colors",
+                  "items-center transition-colors text-sm",
                   isActive ? "text-primary-700" : "hover:text-primary-500"
                 )}
               >
@@ -62,14 +91,69 @@ export function Navbar() {
             );
           })}
         </div>
-        <div className="w-auto flex justify-between space-x-4">
-          <Button variant="primary" size="sm">
-            Sign in
-          </Button>
-          {/* <BtnIcon iconName="Bell" variant="tertiary" size="md" />
-          <BtnIcon iconName="ShoppingBag" variant="tertiary" size="md"/>
-          <BtnIcon iconName="User" variant="tertiary" size="md" /> */}
-        </div>
+
+        {user ? (
+          <div className="flex justify-end items-center gap-2">
+            <BtnIcon iconName="Bell" variant="tertiary" size="sm" />
+
+            <Sheet open={open} onOpenChange={() => setOpen()}>
+              <SheetTrigger asChild>
+                <BtnIcon iconName="User" variant="tertiary" size="sm" />
+              </SheetTrigger>
+
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <img
+                      src="/Logoabby-text.svg"
+                      alt="abbynbev"
+                      className="w-[150px] h-auto"
+                    />
+                  </SheetTitle>
+                  {/* keep description text-only */}
+                  <SheetDescription className="py-1">
+                    Account menu
+                  </SheetDescription>
+                </SheetHeader>
+
+                {/* links live OUTSIDE description (no div-inside-p) */}
+                <nav className="py-4 space-y-1">
+                  {linksidebar.map((linkside) => {
+                    const Icon = FaIcons[linkside.icon];
+                    const isActive = pathname === linkside.href;
+                    return (
+                      <Link
+                        onClick={()=> setOpen (false)}
+                        key={linkside.href}
+                        href={linkside.href}
+                        className={clsx(
+                          "rounded-md px-4 py-2 items-center transition-colors flex justify-between",
+                          isActive
+                            ? "text-neutral-950 bg-neutral-100"
+                            : "hover:bg-neutral-100 transition-all duration-300"
+                        )}
+                      >
+                        <span>{linkside.label}</span>
+                        {Icon ? (
+                          <Icon className="font-bold w-3.5 h-3.5" />
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                  <div className="h-full w-full flex-row items-end justify-end">
+                  <Button onClick={handleLogout} variant="tertiary" size="sm">
+                    Sign out
+                  </Button>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+        ) : (
+          <div>
+            <LoginRegisModalForm />
+          </div>
+        )}
       </div>
     </nav>
   );

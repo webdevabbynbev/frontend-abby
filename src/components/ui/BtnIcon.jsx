@@ -1,5 +1,6 @@
 "use client";
 import clsx from "clsx";
+import { cva } from "class-variance-authority";
 import { Children, useState } from "react";
 import * as FaIcons from "react-icons/fa";
 export function BtnIcon({
@@ -12,8 +13,9 @@ export function BtnIcon({
   ...props
 }) {
   const baseStyles =
-    "rounded-[24px] font-bold transition-colors-primary-700 disabled:opacity-50 disabled:cursor-not-allowed";
-
+    "inline-flex items-center justify-center font-bold rounded-[24px] " +
+    "p-0 leading-none select-none transition-colors " +
+    "disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
     primary:
       "bg-primary-700 text-white hover:bg-primary-600 focus:bg-primary-800 transition-all duration-200",
@@ -24,9 +26,9 @@ export function BtnIcon({
   };
 
   const sizes = {
-    sm: "px-2 py-2 text-sm",
-    md: "px-3 py-3 text-base",
-    lg: "px-4 py-4 text-lg",
+    sm: "h-9 px-3 text-xs", // ~36px tinggi
+    md: "h-10 px-4 text-sm", // ~340px tinggi
+    lg: "h-12 px-4 text-base", // ~52px tinggi
   };
   const iconColors = {
     primary: "text-white",
