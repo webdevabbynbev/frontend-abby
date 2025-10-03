@@ -1,23 +1,36 @@
 import api from "@/lib/axios";
 
 export async function getUser() {
-  const token = localStorage.getItem("token");
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   if (!token) throw new Error("No token found, please login first");
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
-    headers: {
-      Authorization: `Bearer ${token}`, // ✅
-      Accept: "application/json",
-    },
-  });
+   try {
+    // 2) Panggil API pakai Axios (TIDAK ada res.json / res.ok)
+    const res = await api.get("/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
 
-  const data = await res.json(); // hanya sekali baca body
-
-  if (!res.ok) {
-    throw new Error(data?.errors?.[0]?.message || "Unauthorized");
+    // 3) Normalisasi data user
+    const user = res.data?.user || res.data?.serve || null;
+    return { raw: res.data, user };
+  } catch (err) {
+    // Axios error handling
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.statusText ||
+      err?.message ||
+      "Unauthorized";
+    throw new Error(msg);
   }
+}
 
-  return data;
+export async function getAddressByQuery(userId) {
+  const res = await api.get("/addresses", { params: { user_id: userId } });
+  return res.data?.serve ?? [];
 }
 
 export async function OtpRegis(
@@ -120,7 +133,11 @@ export async function LoginGoogle(token) {
   }
 
   if (payload.serve?.token) {
-    console.log("Google token:", payload.serve.token, typeof payload.serve.token);
+    console.log(
+      "Google token:",
+      payload.serve.token,
+      typeof payload.serve.token
+    );
     localStorage.setItem("token", payload.serve.token);
   }
 

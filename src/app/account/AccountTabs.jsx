@@ -7,6 +7,12 @@ import { Profilepage } from "./profile";
 export default function AccountTabs({ slug }) {
   const router = useRouter();
 
+  const TABS = [
+  { value: "profile",  label: "Profile",   href: (v) => `/account/${v}` },
+  { value: "my-order", label: "My Order",  href: (v) => `/account/${v}` },
+  { value: "wishlist", label: "Wishlist",  href: (v) => `/account/${v}` },
+];
+
   return ( 
       <Tabs
         key={slug}

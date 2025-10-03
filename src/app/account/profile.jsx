@@ -1,7 +1,15 @@
+"use client";
+import ProfileSkeleton from "@/components/skeleton/ProfileSkeleton";
 import React from "react";
 import { useState, useEffect } from "react";
 import { getUser } from "@/utils/auth";
-import { AddressCard, Button, TxtField, DialogCard } from "@/components";
+import {
+  AddressList,
+  Button,
+  TxtField,
+  DialogCard,
+  Skeleton,
+} from "@/components";
 import {
   FaVenus,
   FaCopy,
@@ -15,50 +23,62 @@ import {
 
 export function Profilepage() {
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
-  async function fetchProfile() {
-    try {
-      const data = await getUser();
-      setProfile(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    async function fetchProfile() {
+      try {
+        const data = await getUser();
+        setProfile(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
-  fetchProfile();
-}, []);
+    fetchProfile();
+  }, []);
 
   if (loading) {
-    return <div className="p-4">Loading profile...</div>;
+    return (
+      <ProfileSkeleton/>
+    );
   }
 
   if (error) {
     return <div className="p-4 text-red-500">Error: {error}</div>;
   }
 
+  const user = profile?.user ?? null;
+
   return (
     <div className="bg-transparent w-full justify-center h-auto space-y-4">
       <div className="title px-4 text-neutral-500">
         <h1 className="font-bold text-neutral-950 text-xl">Profile</h1>
       </div>
-      <div className="container rounded-2xl bg-white p-4 space-y-4">
+      <div className="container rounded-4xl bg-white p-4 space-y-4">
         <div className="flex sm:flex-col md:flex-row w-full h-auto md:items-center sm:items-start justify-between gap-4">
           <div className="avatar rounded-full h-[100px] min-w-[100px] bg-neutral-400 animate-pulse" />
           <div className="profile-data w-full items-start flex-row space-y-2">
             <div className="space-y-2">
               <div className="name flex text-lg font-medium space-x-2 space-y-2  items-center">
                 <p className="firstname" value="first-name">
-                  {profile.serve.firstName} {profile.serve.lastName}
+                  {`${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+                    "—"}
                 </p>
                 <div className="items-center justify-center">
-                  <span className="Gender items-center w-fit flex space-x-2 text-xs text-blue-400 bg-blue-100 py-1 px-2 rounded-full">
-                    <FaMars className=" h-4 w-4" />
-                    <p className="font-bold text-sm">Male</p>
-                  </span>
+                  {user.gender === 1 ? (
+                    <span className="Gender items-center w-fit flex space-x-2 text-xs text-blue-400 bg-blue-100 py-1 px-2 rounded-full">
+                      <FaMars className=" h-4 w-4" />
+                      <p className="font-bold text-sm">Male</p>
+                    </span>
+                  ) : (
+                    <span className="Gender items-center w-fit flex space-x-2 text-xs text-primary-400 bg-primary-100 py-1 px-2 rounded-full">
+                      <FaVenus className=" h-4 w-4" />
+                      <p className="font-bold text-sm">Female</p>
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -68,8 +88,10 @@ export function Profilepage() {
                   value="phone-number"
                 >
                   <span className="space-x-4 flex items-center">
-                    <p>08712361238</p>
-                    <FaCopy className="h-4 w-4 text-neutral-300" />
+                    <FaPhone className="h-4 w-4 text-neutral-300" />
+                    <p>
+                      {user.phoneNumber ? `${user.phoneNumber}`.trim() : "—"}
+                    </p>
                   </span>
                 </div>
                 <div
@@ -77,8 +99,8 @@ export function Profilepage() {
                   value="email"
                 >
                   <span className="space-x-4 flex items-center">
-                    <p>pstoawkr@gmail.com</p>
-                    <FaCopy className="h-4 w-4 text-neutral-300" />
+                    <FaEnvelope className="h-4 w-4 text-neutral-300" />
+                    <p>{user.email ? `${user.email}`.trim() : "—"}</p>
                   </span>
                 </div>
               </div>
@@ -95,7 +117,7 @@ export function Profilepage() {
             </Button>
           </div>
         </div>
-        <div className="p-4 font-medium text-base bg-neutral-50 border-1 border-neutral-100 w-full rounded-2xl space-y-6">
+        <div className="p-4 font-medium text-base bg-muted border-1 border-neutral-100 w-full rounded-2xl space-y-6">
           <div className="flex w-full items-center justify-between">
             <h3 className="font-bold">Address list</h3>
             <Button variant="primary" size="sm" iconName="Plus">
@@ -103,53 +125,52 @@ export function Profilepage() {
             </Button>
           </div>
           <div className="AddressCard">
-            <AddressCard />
+            <AddressList/>
+            <div />
           </div>
         </div>
+      </div>
+      <div className="p-4 font-medium text-base space-y-6 bg-muted border-1 border-neutral-100 w-full rounded-2xl">
+        <div className="flex w-full items-center justify-between">
+          <h3 className="font-bold">Account management</h3>
+        </div>
 
-        <div className="p-4 font-medium text-base space-y-6 bg-neutral-50 border-1 border-neutral-100 w-full rounded-2xl">
-          <div className="flex w-full items-center justify-between">
-            <h3 className="font-bold">Account management</h3>
-          </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <DialogCard className="">
+            <div className="flex items-center space-x-2">
+              <span>
+                <FaRightFromBracket />
+              </span>
+              <h2 className="font-bold text-base">Sign out?</h2>
+            </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <DialogCard className="">
-              <div className="flex items-center space-x-2">
-                <span>
-                  <FaRightFromBracket />
-                </span>
-                <h2 className="font-bold text-base">Sign out?</h2>
-              </div>
+            <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
+              You're signing out from your beauty space. We'll be here when
+              you're ready to come back — with your favorites saved and waiting.
+            </p>
 
-              <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
-                You're signing out from your beauty space. We'll be here when
-                you're ready to come back — with your favorites saved and
-                waiting.
-              </p>
+            <Button variant="primary" size="sm">
+              Sign out
+            </Button>
+          </DialogCard>
 
-              <Button variant="primary" size="sm">
-                Sign out
-              </Button>
-            </DialogCard>
+          <DialogCard className="">
+            <div className="flex items-center space-x-2">
+              <span>
+                <FaUserXmark />
+              </span>
+              <h2 className="font-bold text-base">Deactive account</h2>
+            </div>
 
-            <DialogCard className="">
-              <div className="flex items-center space-x-2">
-                <span>
-                  <FaUserXmark />
-                </span>
-                <h2 className="font-bold text-base">Deactive account</h2>
-              </div>
+            <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
+              Once you proceed, your account and all associated data will be
+              permanently deleted. This action cannot be undone.
+            </p>
 
-              <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
-                Once you proceed, your account and all associated data will be
-                permanently deleted. This action cannot be undone.
-              </p>
-
-              <Button variant="error" size="sm">
-                Deactive account
-              </Button>
-            </DialogCard>
-          </div>
+            <Button variant="error" size="sm">
+              Deactive account
+            </Button>
+          </DialogCard>
         </div>
       </div>
     </div>
