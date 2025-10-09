@@ -1,13 +1,11 @@
-import AccountTabs from "../AccountTabs";
+import { use } from "react";
+import AccountTabs from "../AccountTabs"; // pastikan export-nya benar
 
-export default function AccountPage({ params, className }) {
-  const {slug} = params;
-  const allowed = ['profile', 'my-order', 'wishlist'];
-  const safeSlug = allowed.includes(slug) ? slug : 'profile';
-
+export default function page({ params }) {
+  const { slug } = use(params); // ✅ unwrap Promise
   return (
-  <div className="container w-full py-6 px-10 flex">
-  <AccountTabs slug={safeSlug} className="w-full" />
-  </div>
-  )
+    <div className="flex mx-auto w-full justify-center py-6 px-10">
+      <AccountTabs slug={slug} />
+    </div>
+  );
 }

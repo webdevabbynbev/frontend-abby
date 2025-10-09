@@ -42,10 +42,10 @@ const DialogContent = React.forwardRef(
         {children}
         <DialogPrimitive.Close asChild>
           <BtnIcon
-            iconName="User"
+            iconName="Xmark"
             variant="tertiary"
             size="sm"
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+            className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
           />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -80,7 +80,7 @@ const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "top-4 left-4 text-lg font-semibold leading-none tracking-tight bg-white rounded-md",
       className
     )}
     {...props}

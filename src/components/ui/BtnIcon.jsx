@@ -2,7 +2,7 @@
 import clsx from "clsx";
 import { cva } from "class-variance-authority";
 import { Children, useState } from "react";
-import * as FaIcons from "react-icons/fa";
+import * as FaIcons from "react-icons/fa6";
 export function BtnIcon({
   children,
   iconName,
@@ -26,9 +26,9 @@ export function BtnIcon({
   };
 
   const sizes = {
-    sm: "h-9 px-3 text-xs", // ~36px tinggi
-    md: "h-10 px-4 text-sm", // ~340px tinggi
-    lg: "h-12 px-4 text-base", // ~52px tinggi
+    sm: "h-9 px-3 text-sm", // ~36px tinggi
+    md: "h-10 px-4 text-base", // ~340px tinggi
+    lg: "h-12 px-4 text-lg", // ~52px tinggi
   };
   const iconColors = {
     primary: "text-white",

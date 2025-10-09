@@ -3,6 +3,8 @@ import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 
 export function Button({
+  type,
+  accept,
   iconName,
   children,
   variant = "primary",
@@ -44,6 +46,8 @@ export function Button({
 
   return (
     <button
+      type={type}
+      accept={accept}
       className={clsx(
         baseStyles,
         variants[variant],
@@ -66,7 +70,7 @@ export function Button({
         />
       )}
       {CurrentIcon ? (
-        <span className="ml-2 leading-none">{children}</span>
+        <span className="ml-1 leading-none">{children}</span>
       ) : (
         <span className="leading-none">{children}</span>
       )}

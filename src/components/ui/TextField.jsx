@@ -4,6 +4,7 @@ import * as FaIcons from "react-icons/fa6";
 import { useState } from "react";
 
 export function TxtField({
+  label,
   autoComplete,
   inputMode,
   className,
@@ -19,13 +20,13 @@ export function TxtField({
   ...props
 }) {
   const baseStyles =
-    "block w-full rounded-full transition-all duration-200 placeholder:text-neutral-400 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed";
+    "block w-full rounded-full transition-all duration-50 placeholder:text-neutral-400 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed";
 
   const variants = {
     filled:
       "rounded-full bg-neutral-50 hover:bg-neutral-100 focus:ring-1 focus:ring-neutral-300 ring-1 ring-neutral-200",
     outline:
-      "rounded-full bg-white ring-1 ring-neutral-200 focus:ring-2 focus:ring-neutral-300 placeholder:text-neutral-50",
+      "rounded-full bg-white ring-1 ring-neutral-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-neutral-50",
     ghost:
       "bg-transparent ring-0 hover:bg-neutral-50 focus:ring-1 focus:ring-primary-400",
   };
@@ -50,6 +51,11 @@ export function TxtField({
 
   return (
     <div className={clsx(fullWidth && "w-full")}>
+      {/* Label di luar */}
+      {label && (
+        <h6 className="text-sm font-medium text-gray-700 mb-1">{label}</h6>
+      )}
+
       <div className="relative">
         {IconLeft && (
           <span
@@ -78,6 +84,7 @@ export function TxtField({
         )}
 
         <input
+          label={label}
           autoComplete={autoComplete}
           inputMode={inputMode}
           className={clsx(

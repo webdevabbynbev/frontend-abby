@@ -70,3 +70,5 @@ export {
   AccordionItem,
   AccordionTrigger,
 } from "./Accordion.jsx";
+
+export { Toaster } from "./sonner.jsx"

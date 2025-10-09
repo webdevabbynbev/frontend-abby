@@ -1,31 +1,33 @@
 import api from "@/lib/axios";
 
-export async function getUser() {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  if (!token) throw new Error("No token found, please login first");
+export async function updateProfile(formData) {
+  const token = localStorage.getItem("token");
 
-   try {
-    // 2) Panggil API pakai Axios (TIDAK ada res.json / res.ok)
-    const res = await api.get("/profile", {
+  try {
+    const res = await api.put("/profile", formData, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
+        Authorization: `Bearer ${token}`, // ← pakai backtick
       },
     });
 
-    // 3) Normalisasi data user
-    const user = res.data?.user || res.data?.serve || null;
-    return { raw: res.data, user };
+    return res.data; // Axios otomatis parse JSON
   } catch (err) {
     // Axios error handling
-    const msg =
-      err?.response?.data?.message ||
-      err?.response?.statusText ||
-      err?.message ||
-      "Unauthorized";
+    const msg = err?.response?.data?.message || "Failed to update profile";
     throw new Error(msg);
   }
+}
+
+export async function getUser() {
+  const token = localStorage.getItem("token");
+  const res = await api.get("/profile", {
+    headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true, // kalau perlu
+  });
+  const payload = res.data;
+  const user =
+    payload?.user ?? payload?.serve ?? payload?.data?.user ?? payload?.data?.serve ?? null;
+  return { user };
 }
 
 export async function getAddressByQuery(userId) {

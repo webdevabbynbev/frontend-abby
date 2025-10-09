@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
 import { Profilepage } from "./profile";
@@ -18,9 +17,9 @@ export default function AccountTabs({ slug }) {
         key={slug}
         value={slug}
         onValueChange={(val) => router.push(`/account/${val}`)}
-        className="flex md:flex-row sm:flex-col gap-4 w-full justify-center"
+        className="flex md:flex-row sm:flex-col gap-4 w-full"
       >
-        <TabsList className="flex md:flex-col sm:flex-row h-fit w-[200px] items-center justify-between rounded-lg border p-2">
+        <TabsList className="flex md:flex-col sm:flex-row h-fit w-[200px] items-center justify-between rounded-lg border p-2 space-y-2">
           <TabsTrigger value="profile" className="w-full justify-start">
             Profile
           </TabsTrigger>

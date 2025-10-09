@@ -1,82 +1,99 @@
 "use client";
+import React, { useState, useEffect } from "react";
 import ProfileSkeleton from "@/components/skeleton/ProfileSkeleton";
-import React from "react";
-import { useState, useEffect } from "react";
+import { EditProfile, NewAddress } from "./popup";
 import { getUser } from "@/utils/auth";
-import {
-  AddressList,
-  Button,
-  TxtField,
-  DialogCard,
-  Skeleton,
-} from "@/components";
+import { AddressList, Button, DialogCard } from "@/components";
 import {
   FaVenus,
-  FaCopy,
   FaMars,
   FaPhone,
   FaEnvelope,
-  FaSignOutAlt,
   FaRightFromBracket,
   FaUserXmark,
 } from "react-icons/fa6";
 
 export function Profilepage() {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchProfile() {
+    (async () => {
       try {
-        const data = await getUser();
-        setProfile(data);
-      } catch (err) {
-        setError(err.message);
+        const { user: fetchedUser } = await getUser(); 
+        setProfile({ user: fetchedUser || null });
+      } catch (e) {
+        setError(e.message);
       } finally {
         setLoading(false);
       }
-    }
-    fetchProfile();
+    })();
   }, []);
 
-  if (loading) {
-    return (
-      <ProfileSkeleton/>
-    );
-  }
+  if (loading) return <ProfileSkeleton />;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
-  if (error) {
-    return <div className="p-4 text-red-500">Error: {error}</div>;
-  }
+  const currentUser = profile?.user ?? null;
+  if (!currentUser)
+    return <div className="p-4 text-neutral-500">Profile not available.</div>;
 
-  const user = profile?.user ?? null;
+  const genderNum = Number(currentUser.gender ?? 0);
+  const photoUrl = currentUser.photoProfile
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "")}/${
+        currentUser.photoProfile
+      }`
+    : "/default-avatar.png";
+
+  const handleProfileUpdated = async (updated) => {
+    // Optimistic update
+    if (updated) setProfile((prev) => ({ ...(prev || {}), user: updated }));
+    // Optional: refetch sekali biar 100% sinkron
+    try {
+      const { user: fresh } = await getUser();
+      if (fresh) setProfile({ user: fresh });
+    } catch {}
+  };
 
   return (
     <div className="bg-transparent w-full justify-center h-auto space-y-4">
+      {/* Header + avatar */}
       <div className="title px-4 text-neutral-500">
         <h1 className="font-bold text-neutral-950 text-xl">Profile</h1>
       </div>
-      <div className="container rounded-4xl bg-white p-4 space-y-4">
+
+      <div className="rounded-4xl bg-white px-6 py-10 space-y-10 w-full">
         <div className="flex sm:flex-col md:flex-row w-full h-auto md:items-center sm:items-start justify-between gap-4">
-          <div className="avatar rounded-full h-[100px] min-w-[100px] bg-neutral-400 animate-pulse" />
+          <div className="avatar rounded-full h-[100px] min-w-[100px] border-4">
+            <img
+              src={photoUrl}
+              alt="Profile photo"
+              className="h-[100px] w-[100px] rounded-full object-cover"
+            />
+          </div>
+
           <div className="profile-data w-full items-start flex-row space-y-2">
-            <div className="space-y-2">
-              <div className="name flex text-lg font-medium space-x-2 space-y-2  items-center">
-                <p className="firstname" value="first-name">
-                  {`${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-                    "—"}
-                </p>
+            <div className="items-center">
+              <div className="name flex md:flex-row sm:flex-col text-lg font-medium gap-2 py-4">
+                <h2 className="items-start space-y-2" value="name">
+                  {`${currentUser.firstName || ""} ${
+                    currentUser.lastName || ""
+                  }`.trim() || "—"}
+                </h2>
                 <div className="items-center justify-center">
-                  {user.gender === 1 ? (
+                  {genderNum === 1 ? (
                     <span className="Gender items-center w-fit flex space-x-2 text-xs text-blue-400 bg-blue-100 py-1 px-2 rounded-full">
-                      <FaMars className=" h-4 w-4" />
+                      <FaMars className="h-4 w-4" />
                       <p className="font-bold text-sm">Male</p>
                     </span>
-                  ) : (
+                  ) : genderNum === 2 ? (
                     <span className="Gender items-center w-fit flex space-x-2 text-xs text-primary-400 bg-primary-100 py-1 px-2 rounded-full">
-                      <FaVenus className=" h-4 w-4" />
+                      <FaVenus className="h-4 w-4" />
                       <p className="font-bold text-sm">Female</p>
+                    </span>
+                  ) : (
+                    <span className="Gender items-center w-fit flex space-x-2 text-xs text-neutral-500 bg-neutral-100 py-1 px-2 rounded-full">
+                      <p className="font-bold text-sm">—</p>
                     </span>
                   )}
                 </div>
@@ -90,7 +107,9 @@ export function Profilepage() {
                   <span className="space-x-4 flex items-center">
                     <FaPhone className="h-4 w-4 text-neutral-300" />
                     <p>
-                      {user.phoneNumber ? `${user.phoneNumber}`.trim() : "—"}
+                      {currentUser.phoneNumber
+                        ? `${currentUser.phoneNumber}`.trim()
+                        : "—"}
                     </p>
                   </span>
                 </div>
@@ -100,7 +119,9 @@ export function Profilepage() {
                 >
                   <span className="space-x-4 flex items-center">
                     <FaEnvelope className="h-4 w-4 text-neutral-300" />
-                    <p>{user.email ? `${user.email}`.trim() : "—"}</p>
+                    <p>
+                      {currentUser.email ? `${currentUser.email}`.trim() : "—"}
+                    </p>
                   </span>
                 </div>
               </div>
@@ -108,67 +129,61 @@ export function Profilepage() {
           </div>
 
           <div className="space-y-2 space-x-2 w-full h-auto flex md:flex-col sm:items-start sm:justify-start md:items-end md:justify-end">
-            <Button variant="tertiary" size="sm" iconName="Edit" className="">
-              Edit profile
-            </Button>
-
-            <Button variant="tertiary" size="sm" iconName="" className="">
+            <EditProfile onProfileUpdated={handleProfileUpdated} />
+            <Button variant="tertiary" size="sm">
               Change password
             </Button>
           </div>
         </div>
+
+        {/* Address list & management … */}
         <div className="p-4 font-medium text-base bg-muted border-1 border-neutral-100 w-full rounded-2xl space-y-6">
           <div className="flex w-full items-center justify-between">
             <h3 className="font-bold">Address list</h3>
-            <Button variant="primary" size="sm" iconName="Plus">
-              Add new address
-            </Button>
+            <NewAddress/>
           </div>
           <div className="AddressCard">
-            <AddressList/>
+            <AddressList />
             <div />
           </div>
         </div>
       </div>
+
       <div className="p-4 font-medium text-base space-y-6 bg-muted border-1 border-neutral-100 w-full rounded-2xl">
         <div className="flex w-full items-center justify-between">
           <h3 className="font-bold">Account management</h3>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <DialogCard className="">
+          <DialogCard>
             <div className="flex items-center space-x-2">
               <span>
                 <FaRightFromBracket />
               </span>
               <h2 className="font-bold text-base">Sign out?</h2>
             </div>
-
             <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
               You're signing out from your beauty space. We'll be here when
               you're ready to come back — with your favorites saved and waiting.
             </p>
-
             <Button variant="primary" size="sm">
               Sign out
             </Button>
           </DialogCard>
 
-          <DialogCard className="">
+          <DialogCard>
             <div className="flex items-center space-x-2">
               <span>
                 <FaUserXmark />
               </span>
-              <h2 className="font-bold text-base">Deactive account</h2>
+              <h2 className="font-bold text-base">Deactivate account</h2>
             </div>
-
             <p className="text-sm text-neutral-600 bg-neutral-100 p-4 rounded-xl">
               Once you proceed, your account and all associated data will be
               permanently deleted. This action cannot be undone.
             </p>
-
             <Button variant="error" size="sm">
-              Deactive account
+              Deactivate account
             </Button>
           </DialogCard>
         </div>

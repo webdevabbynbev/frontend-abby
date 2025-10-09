@@ -1,0 +1,294 @@
+"use client";
+import { updateProfile, getUser } from "@/utils/auth";
+import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+  SelectValue,
+  Button,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  TxtField,
+} from "@/components";
+import { useState, useEffect } from "react";
+import { FaPen } from "react-icons/fa";
+
+const GENDER_OPTIONS = [
+  { id: 1, label: "Male" },
+  { id: 2, label: "Female" },
+];
+
+export function EditProfile({ onProfileUpdated }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [fetching, setFetching] = useState(true);
+  const [user, setUser] = useState(null);
+
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    email: "",
+    gender: "",
+    photo_profile: null,
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getUser();
+        const u = data?.user || data?.serve || null;
+        setUser(u);
+        if (u) {
+          setFormData({
+            firstName: u.firstName || "",
+            lastName: u.lastName || "",
+            phoneNumber: u.phoneNumber || "",
+            email: u.email || "",
+            gender: u.gender ?? "",
+            photoProfile: null,
+          });
+        }
+      } catch (e) {
+        setMessage("Gagal mengambil data profil");
+      } finally {
+        setFetching(false);
+      }
+    })();
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    setFormData((p) => ({ ...p, photoProfile: e.target.files[0] }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const fd = new FormData();
+      Object.entries(formData).forEach(([k, v]) => {
+        if (v !== null && v !== "") fd.append(k, v);
+      });
+
+      // 1) update ke server
+      const res = await updateProfile(fd);
+      let updated = res?.serve || res?.user || null;
+
+      // 2) kalau server tidak balikin user terbaru → refetch
+      if (!updated) {
+        const { user: fresh } = await getUser();
+        updated = fresh || null;
+      }
+
+      // 3) sinkronkan form & local user ke data terbaru
+      if (updated) {
+        setUser(updated);
+        setFormData({
+          firstName: updated.firstName || "",
+          lastName: updated.lastName || "",
+          phoneNumber: updated.phoneNumber || "",
+          email: updated.email || "",
+          gender: updated.gender ?? "",
+          photoProfile: null,
+        });
+        onProfileUpdated?.(updated); // kabari parent
+      }
+
+      // 4) tutup dialog (tanpa router.refresh utk client-only page)
+      setOpen(false);
+      setMessage("Profile updated successfully!");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || err.message || "Gagal update profil";
+      setMessage(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (fetching) {
+    return (
+      <Button variant="tertiary" size="sm" iconName="Edit" disabled>
+        Loading...
+      </Button>
+    );
+  }
+
+  const photoUrl = user.photoProfile
+    ? `${process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "")}/${
+        user.photoProfile
+      }`
+    : "/default-avatar.png";
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={async (v) => {
+        setOpen(v);
+        if (v) {
+          try {
+            const { user: fresh } = await getUser();
+            const u = fresh || user;
+            if (u) {
+              setUser(u);
+              setFormData({
+                firstName: u.firstName || "",
+                lastName: u.lastName || "",
+                phoneNumber: u.phoneNumber || "",
+                email: u.email || "",
+                gender: u.gender ?? "",
+                photoProfile: null,
+              });
+            }
+          } catch {}
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          onClick={() => setOpen(true)}
+          variant="tertiary"
+          size="sm"
+          iconName="Edit"
+        >
+          Edit Profile
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start p-4 sm:p-6">
+        <DialogHeader className="w-full">
+          <DialogTitle className="flex gap-2"><FaPen/>Edit profile</DialogTitle>
+        </DialogHeader>
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col w-[100%] space-y-2"
+        >
+          <div className="w-full py-6 items-center flex flex-col sm:flex-row gap-4">
+            <div className="avatar rounded-full h-[100px] w-[100px] border-2">
+              <img
+                src={photoUrl}
+                alt="Profile photo"
+                className="h-[100px] w-[100px] rounded-full object-cover"
+              />
+            </div>
+            <input
+              id="photoUpload"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              iconName="Camera"
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                document.getElementById("photoUpload").click();
+              }}
+            >
+              Change profile picture
+            </Button>
+          </div>
+          <div className="w-full flex flex-col sm:flex-row gap-4">
+            <TxtField
+              className="flex-1"
+              label="First Name"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder={user?.firstName || "Enter your first name"}
+              variant="outline"
+              size="sm"
+            />
+            <TxtField
+              className="flex-1"
+              label="Last Name"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder={user?.lastName || "Enter your last name"}
+              variant="outline"
+              size="sm"
+            />
+          </div>
+
+          <TxtField
+            className="flex-1"
+            label="Phone number"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            placeholder={user?.phoneNumber || "Enter your phone number"}
+            variant="outline"
+            size="md"
+            type="tel"
+          />
+          <TxtField
+            className="flex-1"
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder={user?.email || "Enter your phone number"}
+            variant="outline"
+            size="md"
+            type="email"
+          />
+
+          <Select
+            value={formData.gender ? String(formData.gender) : ""}
+            onValueChange={(val) =>
+              setFormData((p) => ({ ...p, gender: Number(val) }))
+            }
+          >
+            <p className="text-sm font-medium space-y-2">Gender</p>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Gender</SelectLabel>
+                {GENDER_OPTIONS.map((g) => (
+                  <SelectItem key={g.id} value={String(g.id)}>
+                    {g.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          {message && <p className="text-sm text-center">{message}</p>}
+
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="w-full"
+            size="sm"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
