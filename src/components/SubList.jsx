@@ -23,7 +23,7 @@ export function SubList({
           item?.bodyconcern ??
           item?.hairconcern ??
           item?.label ??
-          "–";
+          "";
 
         return (
           <div
@@ -32,7 +32,7 @@ export function SubList({
             className={clsx(
               "w-full text-left px-2 py-2 flex items-center space-x-2 rounded-md transition-all text-xs cursor-pointer",
               isActive
-                ? "bg-neutral-100 text-neutral-950"
+                ? "bg-neutral-100"
                 : "hover:bg-neutral-100"
             )}
           >

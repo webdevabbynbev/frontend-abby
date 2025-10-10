@@ -81,42 +81,40 @@ export function EditProfile({ onProfileUpdated }) {
     setMessage("");
 
     try {
-      const fd = new FormData();
-      Object.entries(formData).forEach(([k, v]) => {
-        if (v !== null && v !== "") fd.append(k, v);
-      });
+      // >>> FE ONLY: mapping camelCase -> snake_case (yang diminta backend)
+      const payload = {
+        first_name: formData.firstName || undefined,
+        last_name: formData.lastName || undefined,
+        phone_number: formData.phoneNumber || undefined,
+        gender: formData.gender ?? undefined,
+        email: formData.email || undefined, // pastikan angka (1/2)
+      };
 
-      // 1) update ke server
-      const res = await updateProfile(fd);
-      let updated = res?.serve || res?.user || null;
+      // bersihkan key undefined supaya body rapih
+      Object.keys(payload).forEach(
+        (k) => payload[k] === undefined && delete payload[k]
+      );
+      await updateProfile(payload);
 
-      // 2) kalau server tidak balikin user terbaru → refetch
-      if (!updated) {
-        const { user: fresh } = await getUser();
-        updated = fresh || null;
-      }
-
-      // 3) sinkronkan form & local user ke data terbaru
-      if (updated) {
-        setUser(updated);
+      // refetch profil agar UI langsung sinkron
+      const { user: fresh } = await getUser();
+      if (fresh) {
+        setUser(fresh);
         setFormData({
-          firstName: updated.firstName || "",
-          lastName: updated.lastName || "",
-          phoneNumber: updated.phoneNumber || "",
-          email: updated.email || "",
-          gender: updated.gender ?? "",
+          firstName: fresh.firstName || "",
+          lastName: fresh.lastName || "",
+          phoneNumber: fresh.phoneNumber || "",
+          email: fresh.email || "",
+          gender: fresh.gender ?? "",
           photoProfile: null,
         });
-        onProfileUpdated?.(updated); // kabari parent
+        onProfileUpdated?.(fresh);
       }
 
-      // 4) tutup dialog (tanpa router.refresh utk client-only page)
       setOpen(false);
       setMessage("Profile updated successfully!");
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || err.message || "Gagal update profil";
-      setMessage(msg);
+      setMessage(err.message || "Gagal update profil");
     } finally {
       setLoading(false);
     }
@@ -173,14 +171,16 @@ export function EditProfile({ onProfileUpdated }) {
 
       <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start p-4 sm:p-6">
         <DialogHeader className="w-full">
-          <DialogTitle className="flex gap-2"><FaPen/>Edit profile</DialogTitle>
-        </DialogHeader>
+          <DialogTitle className="flex gap-2">
+            Edit profile
+          </DialogTitle>
+        
 
         <form
           onSubmit={handleSubmit}
           className="flex flex-col w-[100%] space-y-2"
         >
-          <div className="w-full py-6 items-center flex flex-col sm:flex-row gap-4">
+          {/* <div className="w-full py-6 items-center flex flex-col sm:flex-row gap-4">
             <div className="avatar rounded-full h-[100px] w-[100px] border-2">
               <img
                 src={photoUrl}
@@ -207,7 +207,7 @@ export function EditProfile({ onProfileUpdated }) {
             >
               Change profile picture
             </Button>
-          </div>
+          </div> */}
           <div className="w-full flex flex-col sm:flex-row gap-4">
             <TxtField
               className="flex-1"
@@ -288,6 +288,7 @@ export function EditProfile({ onProfileUpdated }) {
             {loading ? "Saving..." : "Save Changes"}
           </Button>
         </form>
+        </DialogHeader>
       </DialogContent>
     </Dialog>
   );

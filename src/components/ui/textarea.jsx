@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const Textarea = React.forwardRef(
   ({ fullWidth = true,variant, label, className, ...props }, ref) => {
     const baseStyles =
-      "block w-full rounded-full transition-all duration-50 placeholder:text-neutral-400 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed";
+      "block w-full rounded-full transition-all min-h-[100px] max-h-[150px]  duration-50 placeholder:text-neutral-400 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed";
 
     const variants = {
       filled:
@@ -26,7 +26,7 @@ const Textarea = React.forwardRef(
           className={cn(
             baseStyles,
             variants[variant],
-            "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             className
           )}
           ref={ref}

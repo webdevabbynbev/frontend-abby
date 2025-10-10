@@ -84,14 +84,13 @@ export function Filter() {
         title: "Skincare concern",
         items: [
           {
-            render: () => (
-              <SubList
-                data={DataSkinConcern}
-                prefix="skinconcern"
-                selectedFilters={selectedFilters}
-                onSelect={handleSelect}
-              />
-            ),
+            value: "skinconcern",
+            label: "Skincare concern",
+            leftBar: false,
+            list: DataSkinConcern,
+            prefix: "skinconcern",
+            // field label di data: item.skinconcern
+            getLabel: (row) => row.skinconcern,
           },
         ],
       },
@@ -100,14 +99,12 @@ export function Filter() {
         title: "Body concern",
         items: [
           {
-            render: () => (
-              <SubList
-                data={DataBodyConcern}
-                prefix="skinconcern"
-                selectedFilters={selectedFilters}
-                onSelect={handleSelect}
-              />
-            ),
+            value: "bodyconcern",
+            label: "Body concern",
+            leftBar: false,
+            list: DataBodyConcern,
+            prefix: "bodyconcern",
+            getLabel: (row) => row.bodyconcern,
           },
         ],
       },
@@ -116,20 +113,19 @@ export function Filter() {
         title: "Hair concern",
         items: [
           {
-            render: () => (
-              <SubList
-                data={DataHairConcern}
-                prefix="skinconcern"
-                selectedFilters={selectedFilters}
-                onSelect={handleSelect}
-              />
-            ),
+            value: "hairconcern",
+            label: "Hair concern",
+            leftBar: false,
+            list: DataHairConcern,
+            prefix: "hairconcern",
+            getLabel: (row) => row.hairconcern,
           },
         ],
       },
     ],
     [selectedFilters]
   );
+
   const sections = useMemo(
     () => [
       {
@@ -366,149 +362,144 @@ export function Filter() {
   );
 
   return (
-    <div className="flex-row space-y-4 h-full max-w-[300px]">
+    <div className="flex-row space-y-10 h-full max-w-[300px]">
       {/* Title */}
-      <div className="TitleCat-1 flex w-full space-x-4">
+      <div className="TitleCat-1 flex-row w-full space-y-2">
         <h3 className="font-medium text-sm">Category</h3>
-        <hr className="w-full border-t border-primary-700 my-4" />
+        <hr className="w-full border-t border-primary-700 py-2" />
+        {/* Kategori utama */}
+        {sections.map((s) => (
+          <NestedSection
+            key={s.key}
+            title={s.title}
+            items={s.items}
+            outerClassName={`Accordion${s.title}`}
+          />
+        ))}
       </div>
-
-      {/* Kategori utama */}
-      {sections.map((s) => (
-        <NestedSection
-          key={s.key}
-          title={s.title}
-          items={s.items}
-          outerClassName={`Accordion${s.title}`}
-        />
-      ))}
 
       {/* Price Range */}
-      <div className="TitleCat-2 flex w-full space-x-4">
+      <div className="TitleCat-2 flex-row w-full space-x-4">
         <h3 className="w-[146px] font-medium text-base">Price range</h3>
         <hr className="w-full border-t border-primary-700 my-4" />
-      </div>
+        <div className="Price flex-row w-full space-y-2 items-center">
+          <div className="textfieldmin w-full">
+            <TooltipProvider>
+              <Tooltip open={showTooltipMin}>
+                <TooltipTrigger asChild>
+                  <TxtField
+                    label="minimum price"
+                    value={formatToRupiah(minPrice)}
+                    onChange={(e) => handleChangePrice(e, "min")}
+                    placeholder="Rp.0"
+                    variant="outline"
+                    className="w-full"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>You can only enter a number</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
 
-      <div className="Price flex-row w-full space-y-2 items-center">
-        <div className="textfieldmin w-full">
-          <span className="text-xs">Minimum price</span>
-          <TooltipProvider>
-            <Tooltip open={showTooltipMin}>
-              <TooltipTrigger asChild>
-                <TxtField
-                  value={formatToRupiah(minPrice)}
-                  onChange={(e) => handleChangePrice(e, "min")}
-                  placeholder="Rp.0"
-                  variant="outline"
-                  className="w-full"
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>You can only enter a number</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <div className="textfieldmax space-y-1 w-full">
-          <span className="text-xs">Maximum price</span>
-          <TooltipProvider>
-            <Tooltip open={showTooltipMax}>
-              <TooltipTrigger asChild>
-                <TxtField
-                  value={formatToRupiah(maxPrice)}
-                  onChange={(e) => handleChangePrice(e, "max")}
-                  placeholder="Rp.0"
-                  variant="outline"
-                  className="w-full"
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>You can only enter a number</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="textfieldmax w-full">
+            <TooltipProvider>
+              <Tooltip open={showTooltipMax}>
+                <TooltipTrigger asChild>
+                  <TxtField
+                    label="maximum price"
+                    value={formatToRupiah(maxPrice)}
+                    onChange={(e) => handleChangePrice(e, "max")}
+                    placeholder="Rp.0"
+                    variant="outline"
+                    className="w-full"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>You can only enter a number</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
 
       {/* Skin/Body/Hair concern */}
-      <div className="TitleCat-3 flex-row w-full space-x-4">
+      <div className="TitleCat-3 flex-row w-full space-y-2">
         <h3 className="w-[146px] font-medium text-base">By concern</h3>
         <hr className="w-full border-t border-primary-700 my-4" />
         {concern_sections.map((s) => (
-        <NestedSection
-          key={s.key}
-          title={s.title}
-          items={s.items}
-          outerClassName={`Accordion${s.title}`}
-        />
-      ))}
+          <NestedSection
+            key={s.key}
+            title={s.title}
+            items={s.items}
+            outerClassName={`Accordion${s.title}`}
+          />
+        ))}
       </div>
 
       {/* Brand (opsional) */}
       {showBrandFilter && (
         <>
-          <div className="TitleCat-4 flex w-full space-x-4 justify-between">
+          <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">
             <h3 className="w-auto font-medium text-base">Brand</h3>
             <hr className="w-full border-t border-primary-700 my-4" />
-          </div>
-
-          <TxtField
-            placeholder="Search brand here..."
-            iconLeftName="MagnifyingGlass"
-            variant="outline"
-            className="w-full"
-            value={brandSearch ?? ""}
-            onChange={(e) => setBrandSearch(e.target.value)}
-          />
-
-          <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
-            {filteredBrands.length === 0 ? (
-              <div>brand tidak ditemukan</div>
-            ) : (
-              filteredBrands.map((item) => {
-                const uniqueId = `brand-${item.id}`;
-                const isActive = selectedFilters.includes(uniqueId);
-                return (
-                  <Chip
-                    key={item.id}
-                    label={item.brandname}
-                    onClick={() => handleSelect("brand", item.id)}
-                    isActive={isActive}
-                  >
-                    {item.brandname}
-                  </Chip>
-                );
-              })
-            )}
+            <TxtField
+              placeholder="Search brand here..."
+              iconLeftName="MagnifyingGlass"
+              variant="outline"
+              className="w-full"
+              value={brandSearch ?? ""}
+              onChange={(e) => setBrandSearch(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
+              {filteredBrands.length === 0 ? (
+                <div>brand tidak ditemukan</div>
+              ) : (
+                filteredBrands.map((item) => {
+                  const uniqueId = `brand-${item.id}`;
+                  const isActive = selectedFilters.includes(uniqueId);
+                  return (
+                    <Chip
+                      key={item.id}
+                      label={item.brandname}
+                      onClick={() => handleSelect("brand", item.id)}
+                      isActive={isActive}
+                    >
+                      {item.brandname}
+                    </Chip>
+                  );
+                })
+              )}
+            </div>
           </div>
         </>
       )}
 
       {/* Rating */}
-      <div className="TitleCat-5 flex w-full space-x-4 justify-between items-center">
+      <div className="TitleCat-5 flex-row w-full space-x-4 justify-between items-center">
         <div className="items-center flex space-x-2">
           <h3 className="w-auto font-medium text-base">Rating</h3>
           <FaStar className="text-warning-300 h-[20px] w-[20px]" />
         </div>
         <hr className="w-full border-t border-primary-700 my-4" />
-      </div>
-
-      <div className="flex flex-wrap gap-4 w-full py-2 px-1">
-        {DataRating.map((item) => {
-          const uniqueId = `rating-${item.id}`;
-          const isActive = selectedFilters.includes(uniqueId);
-          return (
-            <Chip
-              key={item.id}
-              label={item.star}
-              onClick={() => handleSelect("rating", item.id)}
-              isActive={isActive}
-            >
-              {item.star}
-            </Chip>
-          );
-        })}
+        <div className="flex flex-wrap gap-4 w-full py-2 px-1">
+          {DataRating.map((item) => {
+            const uniqueId = `rating-${item.id}`;
+            const isActive = selectedFilters.includes(uniqueId);
+            return (
+              <Chip
+                key={item.id}
+                label={item.star}
+                onClick={() => handleSelect("rating", item.id)}
+                isActive={isActive}
+              >
+                {item.star}
+              </Chip>
+            );
+          })}
+        </div>
       </div>
 
       {/* Reset */}

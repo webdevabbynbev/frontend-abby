@@ -1,18 +1,16 @@
 import api from "@/lib/axios";
 
-export async function updateProfile(formData) {
+export async function updateProfile(payload) {
   const token = localStorage.getItem("token");
-
   try {
-    const res = await api.put("/profile", formData, {
+    const res = await api.put("/profile", payload, {
       headers: {
-        Authorization: `Bearer ${token}`, // ← pakai backtick
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json", // kirim JSON
       },
     });
-
-    return res.data; // Axios otomatis parse JSON
+    return res.data; // kemungkinan { message, serve: true }
   } catch (err) {
-    // Axios error handling
     const msg = err?.response?.data?.message || "Failed to update profile";
     throw new Error(msg);
   }
@@ -26,7 +24,11 @@ export async function getUser() {
   });
   const payload = res.data;
   const user =
-    payload?.user ?? payload?.serve ?? payload?.data?.user ?? payload?.data?.serve ?? null;
+    payload?.user ??
+    payload?.serve ??
+    payload?.data?.user ??
+    payload?.data?.serve ??
+    null;
   return { user };
 }
 

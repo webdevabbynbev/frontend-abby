@@ -34,7 +34,7 @@ export function NewAddress() {
             <DialogTitle>abcde</DialogTitle>
             <form className="flex flex-wrap gap-4 py-6">
               <span className="flex rounded-full px-4 py-2 bg-muted items-center justify-center gap-2 border-1 border-neutral-100">
-                <FaUser className="h-3 w-3 text-neutral-300"/>
+                <FaUser className="h-3 w-3 text-neutral-300" />
                 <h6 className="title text-sm font-normal text-neutral-500">
                   Receiver
                 </h6>
@@ -63,6 +63,120 @@ export function NewAddress() {
                 size="sm"
                 placeholder="Enter your address"
               />
+
+              <div className="space-y-2 w-full">
+                <p className="text-sm font-medium text-neutral-800">Province</p>
+                <Select className="dropdown-province">
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Province</SelectLabel>
+
+                      <SelectItem value="abcd">
+                        <div>abcd</div>
+                      </SelectItem>
+                      <SelectItem value="1234">
+                        <div>1234</div>
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid md:grid-cols-3 sm:grid-cols-2 gap-4 w-full">
+                <div className="space-y-2 w-full">
+                  <h6 className="text-sm font-medium text-neutral-800">
+                    City
+                  </h6>
+                  <Select className="flex-row dropdown-city">
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="City" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>City</SelectLabel>
+
+                        <SelectItem value="abcd">
+                          <div>abcd</div>
+                        </SelectItem>
+                        <SelectItem value="1234">
+                          <div>1234</div>
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <h6 className="text-sm font-medium text-neutral-800">
+                    District
+                  </h6>
+                  <Select className="dropdown-district">
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="District" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>District</SelectLabel>
+
+                        <SelectItem value="abcd">
+                          <div>abcd</div>
+                        </SelectItem>
+                        <SelectItem value="1234">
+                          <div>1234</div>
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <h6 className="text-sm font-medium text-neutral-800">
+                    Sub district
+                  </h6>
+                  <Select className="dropdown-subdistrict">
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sub-district" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Sub district</SelectLabel>
+
+                        <SelectItem value="abcd">
+                          <div>abcd</div>
+                        </SelectItem>
+                        <SelectItem value="1234">
+                          <div>1234</div>
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <Select className="dropdown-postal-code w-full">
+                    <span className="text-sm font-medium text-neutral-800">
+                      Postal code
+                    </span>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Postal code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Postal code</SelectLabel>
+
+                        <SelectItem value="abcd">
+                          <div>40212</div>
+                        </SelectItem>
+                        <SelectItem value="1234">
+                          <div>40213</div>
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </form>
           </DialogHeader>
         </DialogContent>

@@ -1,6 +1,6 @@
 export {AddressList} from "./AddressList.jsx"
 export { PickCarousel } from "./PickCarousel.jsx";
-export { Filter } from "./Filter.jsx";
+export {Filter} from "./Filter.jsx"
 export { HeroCarousel } from "./HeroCarousel.jsx";
 export { CategoryCard } from "./CategoryCard.jsx";
 export { Button } from "./ui/Button.jsx";
