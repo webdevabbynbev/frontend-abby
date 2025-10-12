@@ -26,6 +26,7 @@ export function BtnIcon({
   };
 
   const sizes = {
+    xs: "h-7 px-2 text-sm",
     sm: "h-9 px-3 text-sm", // ~36px tinggi
     md: "h-10 px-4 text-base", // ~340px tinggi
     lg: "h-12 px-4 text-lg", // ~52px tinggi

@@ -1,5 +1,6 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import { useDebounce } from "@/app/hook/useDebounce";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Button,
   TxtField,
@@ -38,6 +39,8 @@ import {
   DataBodyConcern,
   DataHairConcern,
   DataRating,
+  DataBrand,
+  
 } from "@/data";
 
 export function Filter() {
@@ -51,7 +54,22 @@ export function Filter() {
   // brand (opsional)
   const [showBrandFilter, setShowBrandFilter] = useState(true);
   const [brandSearch, setBrandSearch] = useState("");
-  const filteredBrands = []; // isi sesuai data brand-mu
+  const debouncedSearch = useDebounce(brandSearch, 250);
+
+  const norm = (s = "") =>
+    s
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const filteredBrands = useMemo(() => {
+    const q = norm(debouncedSearch);
+    if (!q) return DataBrand;
+    return DataBrand.filter((b) => norm(b.brandname).includes(q));
+  }, [debouncedSearch]);
 
   const handleSelect = (prefix, id) => {
     const key = `${prefix}-${id}`;
@@ -364,7 +382,7 @@ export function Filter() {
   return (
     <div className="flex-row space-y-10 h-full max-w-[300px]">
       {/* Title */}
-      <div className="TitleCat-1 flex-row w-full space-y-2">
+      <div className="TitleCat-1 flex-row w-full space-y-4">
         <h3 className="font-medium text-sm">Category</h3>
         <hr className="w-full border-t border-primary-700 py-2" />
         {/* Kategori utama */}
@@ -379,7 +397,7 @@ export function Filter() {
       </div>
 
       {/* Price Range */}
-      <div className="TitleCat-2 flex-row w-full space-x-4">
+      <div className="TitleCat-2 flex-row w-full space-y-4">
         <h3 className="w-[146px] font-medium text-base">Price range</h3>
         <hr className="w-full border-t border-primary-700 my-4" />
         <div className="Price flex-row w-full space-y-2 items-center">
@@ -453,9 +471,21 @@ export function Filter() {
               value={brandSearch ?? ""}
               onChange={(e) => setBrandSearch(e.target.value)}
             />
+            <div>
+              {brandSearch && (
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  onClick={() => setBrandSearch("")}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
               {filteredBrands.length === 0 ? (
-                <div>brand tidak ditemukan</div>
+                <div>brand tidak ditemukan </div>
               ) : (
                 filteredBrands.map((item) => {
                   const uniqueId = `brand-${item.id}`;

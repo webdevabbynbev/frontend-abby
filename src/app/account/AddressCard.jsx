@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FaBriefcase } from "react-icons/fa6";
-import { Button, Chip } from ".";
+import { Button, Chip } from "../../components";
 
 
 export function AddressCard({
@@ -12,6 +12,7 @@ export function AddressCard({
   province,
   postalCode,
   phone,
+  name,
   district,
   subdistrict,
   isActive,
@@ -89,7 +90,9 @@ export function AddressCard({
             <p>{postalCode || "—"}</p>
           </span>
         </div>
-        <div className="text-sm">{phone || "—"}</div>
+        <hr className="w-full border-t border-neutral-200 my-4" />
+        <div className="text-xs">{name || "—"}</div>
+        <div className="text-xs">{phone || "—"}</div>
       </div>
 
       <div className="flex gap-4">

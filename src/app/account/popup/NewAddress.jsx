@@ -29,16 +29,10 @@ export function NewAddress() {
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start p-4 sm:p-6">
+        <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start">
           <DialogHeader>
-            <DialogTitle>abcde</DialogTitle>
-            <form className="flex flex-wrap gap-4 py-6">
-              <span className="flex rounded-full px-4 py-2 bg-muted items-center justify-center gap-2 border-1 border-neutral-100">
-                <FaUser className="h-3 w-3 text-neutral-300" />
-                <h6 className="title text-sm font-normal text-neutral-500">
-                  Receiver
-                </h6>
-              </span>
+            <DialogTitle>Add new address</DialogTitle>
+            <form className="flex flex-wrap gap-4 py-2">
               <div className="flex md:flex-row sm:flex-col gap-4">
                 <TxtField
                   label="Full name"

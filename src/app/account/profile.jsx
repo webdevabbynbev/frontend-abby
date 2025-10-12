@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import ProfileSkeleton from "@/components/skeleton/ProfileSkeleton";
+import {AddressList} from "."
 import { EditProfile, NewAddress } from "./popup";
 import { getUser } from "@/utils/auth";
-import { AddressList, Button, DialogCard } from "@/components";
+import { Button, DialogCard } from "@/components";
 import {
   FaVenus,
   FaMars,

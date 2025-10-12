@@ -61,7 +61,7 @@ export function AddressList() {
   if (!list.length) return <div className="text-neutral-500">Belum ada alamat.</div>;
 
   return (
-    <div className="space-y-3">
+    <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
       {list.map((a) => (
         <AddressCard
           key={a.id}
@@ -72,6 +72,7 @@ export function AddressList() {
           city={a.city || ""}
           province={a.province}
           postalCode={a.postalCode || a.postal_code}
+          name={a.picName || "receiver"}
           phone={a.phone || a.picPhone || a.pic_phone || (a.pic && a.pic.phone) || ""}
           // indikator & disabled terkontrol
           selected={a.id === selectedId}

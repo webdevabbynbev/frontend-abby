@@ -1,31 +1,32 @@
 "use client";
 import * as React from "react";
 import Autoplay from "embla-carousel-autoplay";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components";
 import api from "@/lib/axios";
+import { cn } from "@/lib/utils";
 import {
-  RegularCard,
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  CarouselIndicators,
 } from "@/components";
-import Image from "next/image";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export function HeroCarousel() {
   const autoplay = React.useRef(
-    Autoplay({ delay: 3000, stopOnInteraction: true })
+    Autoplay({ delay: 4000, stopOnInteraction: true })
   );
-  const [loading, setLoading] = useState(true);
+  const [isloading, setLoading] = useState(true);
   const [banners, setBanners] = useState([]);
 
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const res = await api.get("/banners");
-        const serve = res.data.serve;
+        const { data } = await api.get("/banners");
+        const serve = data?.serve;
         const normalized = Array.isArray(serve) ? serve : serve?.data || [];
         setBanners(normalized);
       } catch (error) {
@@ -37,51 +38,57 @@ export function HeroCarousel() {
     fetchBanners();
   }, []);
 
-  if (loading) {
+
+  if (isloading|| !banners.length) {
+    // 🔹 SKELETON VIEW
     return (
-      <div className="space-y-4">
-        <Skeleton className="w-full h-48 rounded-lg" />
-        <Skeleton className="w-1/2 h-6 rounded" />
+      <div className="w-full h-[220px] sm:h-[200px] md:h-[200px] lg:h-[200px] xl:h-[600px]">
+        <div className="flex">
+            <div className="w-full h-full">
+              <Skeleton className="w-full h-[220px] sm:h-[200px] md:h-[200px] lg:h-[200px] xl:h-[600px] rounded-lg" />
+            </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <Carousel
-      className="mx-auto w-full max-w-[1536px] "
-      opts={{
-        loop: true,
-      }}
-      plugins={[autoplay.current]}
-      // Optional: bisa pakai event mouseEnter/mouseLeave untuk pause/resume
-      onMouseEnter={() => autoplay.current.stop()}
-      onMouseLeave={() => autoplay.current.reset()}
-    >
-      <CarouselContent>
-        {Array.isArray(banners) &&
-          banners.map((b) => (
-            
-            <CarouselItem key={b.id}>
-              <div className="p-1">
-                <img
-                  src={
-                    b.image.startsWith("http")
-                      ? b.image_url
-                      : `${process.env.NEXT_PUBLIC_API_URL.replace(
-                          "/api/v1",
-                          ""
-                        )}/${b.image_url}`
-                  }
-                  alt={b.title || "banner"}
-                  className="rounded-lg max-h-[400px] object-cover"
-                />
-                <span>{b.description}</span>
-              </div>
-            </CarouselItem>
-          ))}
-      </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
-    </Carousel>
+    <div className="w-full h-full">
+      <Carousel
+        className="w-full h-full"
+        opts={{ loop: true }}
+        plugins={[autoplay.current]}
+        onMouseEnter={() => autoplay.current.stop()}
+        onMouseLeave={() => autoplay.current.reset()}
+      >
+        <CarouselContent>
+          {banners.map((b, idx) => {
+            const src = getImageUrl(b.image_url || b.image);
+            return (
+              <CarouselItem key={b.id || idx}>
+                <div className="relative h-full">
+                  <img
+                    src={src}
+                    alt={b.title || "Banner"}
+                    className="rounded-lg w-full h-auto object-cover"
+                    onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+                  />
+                  {/* {b.description && (
+                    <span className="absolute bottom-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded-md">
+                      {b.description}
+                    </span>
+                  )} */}
+                </div>
+              </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+
+        {/* Default Controls */}
+        <CarouselPrevious />
+        <CarouselNext />
+        <CarouselIndicators />
+      </Carousel>
+    </div>
   );
 }

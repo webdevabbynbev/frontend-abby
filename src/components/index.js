@@ -1,4 +1,4 @@
-export {AddressList} from "./AddressList.jsx"
+export {AddressList} from "../app/account/AddressList.jsx"
 export { PickCarousel } from "./PickCarousel.jsx";
 export {Filter} from "./Filter.jsx"
 export { HeroCarousel } from "./HeroCarousel.jsx";
@@ -16,9 +16,9 @@ export { TxtField } from "./ui/TextField.jsx";
 export { Skeleton } from "./ui/Skeleton.jsx";
 export { Chip } from "./Chip.jsx";
 export { QuantityInput } from "./ui/QuantitySelector.jsx";
-export {LoginRegisModalForm} from "./FormCollection.jsx"
+export {LoginRegisModalForm} from "./LoginRegis.jsx"
 export { RegularCardSkeleton } from "./SkeletonCollection.jsx"
-export { AddressCard } from "./AddressCard.jsx"
+export { AddressCard } from "../app/account/AddressCard.jsx"
 export { DialogCard } from "./DialogCard.jsx"
 export { Checkbox } from "./Checkbox.jsx";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/Tabs.jsx";
@@ -59,6 +59,7 @@ export {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  CarouselIndicators,
 } from "./ui/Carousel.jsx";
 
 export {

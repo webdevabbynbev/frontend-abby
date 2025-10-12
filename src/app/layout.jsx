@@ -24,11 +24,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${damion.variable}`}>
-      <body className="font-sans bg-[#f7f7f7]">
+      <body className="flex flex-col min-h-screen font-sans bg-[#f7f7f7]">
         <GoogleProvider>
           <AuthProvider>
             <Navbar />
-            {children}
+            <main className="flex-1">{children}</main>
             <Footer />
           </AuthProvider>
         </GoogleProvider>

@@ -169,7 +169,7 @@ export function EditProfile({ onProfileUpdated }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start p-4 sm:p-6">
+      <DialogContent className="flex flex-col sm:max-w-[300px] md:max-w-[425px] h-[80%] overflow-y-auto overflow-x-hidden custom-scrollbar justify-start items-start">
         <DialogHeader className="w-full">
           <DialogTitle className="flex gap-2">
             Edit profile
@@ -178,36 +178,9 @@ export function EditProfile({ onProfileUpdated }) {
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col w-[100%] space-y-2"
+          className="flex flex-col w-[100%] space-y-2  h-full p-2"
         >
-          {/* <div className="w-full py-6 items-center flex flex-col sm:flex-row gap-4">
-            <div className="avatar rounded-full h-[100px] w-[100px] border-2">
-              <img
-                src={photoUrl}
-                alt="Profile photo"
-                className="h-[100px] w-[100px] rounded-full object-cover"
-              />
-            </div>
-            <input
-              id="photoUpload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button
-              iconName="Camera"
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                document.getElementById("photoUpload").click();
-              }}
-            >
-              Change profile picture
-            </Button>
-          </div> */}
+          <div className="space-y-2">
           <div className="w-full flex flex-col sm:flex-row gap-4">
             <TxtField
               className="flex-1"
@@ -275,7 +248,7 @@ export function EditProfile({ onProfileUpdated }) {
               </SelectGroup>
             </SelectContent>
           </Select>
-
+          </div>
           {message && <p className="text-sm text-center">{message}</p>}
 
           <Button

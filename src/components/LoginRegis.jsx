@@ -178,6 +178,7 @@ export function LoginRegisModalForm() {
 
         {/* ✅ All complex layout/content lives OUTSIDE DialogDescription to avoid <div> inside <p>. */}
         <Tabs
+        className="py-6"
           value={tab}
           onValueChange={(v) => {
             setTab(v);
@@ -185,7 +186,7 @@ export function LoginRegisModalForm() {
             setMessage("");
           }}
         >
-          <TabsList className="w-full">
+          <TabsList className="absolute left-6 top-4 w-fit">
             <TabsTrigger value="signin" className="w-1/2">Sign in</TabsTrigger>
             <TabsTrigger value="signup" className="w-1/2">Sign up</TabsTrigger>
           </TabsList>
@@ -348,6 +349,7 @@ export function LoginRegisModalForm() {
                   <TxtField
                     autoComplete="email"
                     inputMode="email"
+                    pattern="[^@\s]+@[^@\s]+\.[^@\s]+|[0-9]*"
                     placeholder="Enter your email"
                     variant="outline"
                     size="sm"

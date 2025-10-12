@@ -84,9 +84,15 @@ export default function BrandDetailClient({ brandData }) {
             </div>
 
             <div className="w-full h-auto grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-6 items-start justify-between">
-              {currentItems.map((item) => (
-                <RegularCard key={item.id} item={item} />
-              ))}
+              {currentItems.length === 0 ? (
+                <div className="col-span-full text-sm text-neutral-500">
+                  Belum ada produk untuk brand ini.
+                </div>
+              ) : (
+                currentItems.map((product) => (
+                  <RegularCard key={product.id} item={product} />
+                ))
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (

@@ -36,6 +36,7 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  SelectTitle,
 } from "./Select.jsx";
 
 export {

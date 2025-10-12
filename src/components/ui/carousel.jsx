@@ -32,31 +32,37 @@ const Carousel = React.forwardRef(
     ref
   ) => {
     const [carouselRef, api] = useEmblaCarousel(
-      {
-        ...opts,
-        axis: orientation === "horizontal" ? "x" : "y",
-      },
+      { ...opts, axis: orientation === "horizontal" ? "x" : "y" },
       plugins
     );
+
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-    const onSelect = React.useCallback((api) => {
-      if (!api) {
-        return;
-      }
+    // ✅ NEW: state buat indikator
+    const [scrollSnaps, setScrollSnaps] = React.useState([]); // [] supaya .length aman
+    const [selectedIndex, setSelectedIndex] = React.useState(0);
 
-      setCanScrollPrev(api.canScrollPrev());
-      setCanScrollNext(api.canScrollNext());
+    const onSelect = React.useCallback((embla) => {
+      if (!embla) return;
+      setCanScrollPrev(embla.canScrollPrev());
+      setCanScrollNext(embla.canScrollNext());
+      setSelectedIndex(embla.selectedScrollSnap()); // ✅ track slide aktif
     }, []);
 
-    const scrollPrev = React.useCallback(() => {
-      api?.scrollPrev();
-    }, [api]);
+    const onReInit = React.useCallback((embla) => {
+      if (!embla) return;
+      setScrollSnaps(embla.scrollSnapList()); // ✅ refresh daftar snaps
+      setSelectedIndex(embla.selectedScrollSnap());
+      setCanScrollPrev(embla.canScrollPrev());
+      setCanScrollNext(embla.canScrollNext());
+    }, []);
 
-    const scrollNext = React.useCallback(() => {
-      api?.scrollNext();
-    }, [api]);
+    const scrollPrev = React.useCallback(() => api?.scrollPrev(), [api]);
+    const scrollNext = React.useCallback(() => api?.scrollNext(), [api]);
+
+    // ✅ NEW: expose helper untuk pindah ke index tertentu (dipakai indikator)
+    const scrollTo = React.useCallback((idx) => api?.scrollTo(idx), [api]);
 
     const handleKeyDown = React.useCallback(
       (event) => {
@@ -72,39 +78,41 @@ const Carousel = React.forwardRef(
     );
 
     React.useEffect(() => {
-      if (!api || !setApi) {
-        return;
-      }
-
-      setApi(api);
+      if (api && setApi) setApi(api);
     }, [api, setApi]);
 
     React.useEffect(() => {
-      if (!api) {
-        return;
-      }
+      if (!api) return;
 
+      // inisialisasi awal
+      setScrollSnaps(api.scrollSnapList());
+      onReInit(api);
       onSelect(api);
-      api.on("reInit", onSelect);
+
+      api.on("reInit", onReInit);
       api.on("select", onSelect);
 
       return () => {
-        api?.off("select", onSelect);
+        api.off("reInit", onReInit);
+        api.off("select", onSelect);
       };
-    }, [api, onSelect]);
+    }, [api, onSelect, onReInit]);
 
     return (
       <CarouselContext.Provider
         value={{
           carouselRef,
-          api: api,
+          api,
           opts,
           orientation:
             orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
           scrollPrev,
           scrollNext,
+          scrollTo, // ✅
           canScrollPrev,
           canScrollNext,
+          scrollSnaps, // ✅
+          selectedIndex, // ✅
         }}
       >
         <div
@@ -168,14 +176,14 @@ const CarouselPrevious = React.forwardRef(
     return (
       <BtnIcon
         iconName="ArrowLeft"
-        variant="secondary"
-        size="sm"
+        variant="primary"
+        size="xs"
         disabled={!canScrollPrev}
         onClick={scrollPrev}
         className={cn(
           "absolute h-8 w-8 rounded-full",
           orientation === "horizontal"
-            ? "-left-0 top-1/2 -translate-y-1/2"
+            ? "-left-3 top-1/2 -translate-y-1/2"
             : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
           className
         )}
@@ -192,14 +200,14 @@ const CarouselNext = React.forwardRef(
     return (
       <BtnIcon
         iconName="ArrowRight"
-        variant="secondary"
-        size="sm"
+        variant="primary"
+        size="xs"
         disabled={!canScrollNext}
         onClick={scrollNext}
         className={cn(
           "absolute h-8 w-8 rounded-full",
           orientation === "horizontal"
-            ? "-right-0 top-1/2 -translate-y-1/2"
+            ? "-right-3 top-1/2 -translate-y-1/2"
             : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
           className
         )}
@@ -209,10 +217,42 @@ const CarouselNext = React.forwardRef(
 );
 CarouselNext.displayName = "CarouselNext";
 
+const CarouselIndicators = React.forwardRef(({ className }, ref) => {
+  const { scrollSnaps, selectedIndex, scrollTo } = useCarousel();
+
+  if (!scrollSnaps.length) return null;
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "absolute bottom-8 left-0 right-0 flex justify-center gap-2",
+        className
+      )}
+    >
+      {scrollSnaps.map((_, idx) => (
+        <button
+          key={idx}
+          onClick={() => scrollTo(idx)}
+          className={cn(
+            "h-2 w-2 rounded-full transition-all duration-200",
+            selectedIndex === idx
+              ? "bg-primary-700 scale-115"
+              : "bg-white border-1 border-primary-700 hover:bg-primary-400"
+          )}
+          aria-label={`Go to slide ${idx + 1}`}
+        />
+      ))}
+    </div>
+  );
+});
+CarouselIndicators.displayName = "CarouselIndicators";
+
 export {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
+  CarouselIndicators,
 };

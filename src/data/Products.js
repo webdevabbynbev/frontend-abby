@@ -1,5 +1,12 @@
 import { slugify } from "@/utils/slugify";
 
+export const FlashSale = [
+
+  {
+
+  }
+]
+
 export const BevPick = [
   {
     id: 1,
