@@ -5,7 +5,7 @@ const nextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "3333", // wajib kalau pakai port
+        port: "3000", 
         pathname: "/**",
       },
     ],
@@ -15,7 +15,7 @@ const nextConfig = {
     return [
       {
         source: "/auth/:path*",
-        destination: process.env.NEXT_PUBLIC_API_URL + "/auth/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/auth/:path*`,
       },
     ];
   },

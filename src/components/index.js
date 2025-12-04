@@ -1,11 +1,11 @@
 export {AddressList} from "../app/account/AddressList.jsx"
-export { PickCarousel } from "./PickCarousel.jsx";
+export {PickCarousel} from "./PickCarousel.jsx";
 export {Filter} from "./Filter.jsx"
 export { HeroCarousel } from "./HeroCarousel.jsx";
 export { CategoryCard } from "./CategoryCard.jsx";
-export { Button } from "./ui/Button.jsx";
-export { Navbar } from "./Navbar.jsx";
-export { Footer } from "./Footer.jsx";
+export { Button } from "./ui/button.jsx";
+export { Navbar } from "./navbar.jsx";
+export { Footer } from "./footer.jsx";
 export { FlashSaleCard } from "./FlashSaleCard.jsx";
 export { RegularCard } from "./RegularCard.jsx";
 export { BrandCard } from "./BrandCard.jsx";
@@ -28,7 +28,7 @@ export {
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from "./ui/Tooltip.jsx"
+} from "./ui/tooltip.jsx"
 
 export {
   Breadcrumb,
@@ -38,7 +38,7 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
-} from "./ui/Breadcrumb.jsx";
+} from "./ui/breadcrumb.jsx";
 
 export {
   Select,
@@ -60,7 +60,7 @@ export {
   CarouselNext,
   CarouselPrevious,
   CarouselIndicators,
-} from "./ui/Carousel.jsx";
+} from "./ui/carousel.jsx";
 
 export {
   Dialog,
@@ -85,7 +85,7 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./ui/Accordion.jsx";
+} from "./ui/accordion.jsx";
 
 export {SubList} from "./SubList.jsx"
 export {NestedSection} from "./NestedSection.jsx"
