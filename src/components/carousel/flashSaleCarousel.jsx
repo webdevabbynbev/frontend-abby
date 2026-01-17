@@ -22,16 +22,16 @@ export function FlashSaleCarousel() {
     const fetchFlashSale = async () => {
       try {
         setLoading(true);
-        const res = await getApi('/flashsale');
+        const res = await getApi("/flashsale");
         const flashSaleData = res?.serve ?? res;
-        
+
         const items =
           flashSaleData?.products ??
           flashSaleData?.items ??
           flashSaleData?.list ??
           flashSaleData?.data ??
           [];
-          
+
         setRawItems(Array.isArray(items) ? items : []);
       } catch (error) {
         console.error("Gagal memuat Flash Sale:", error);
@@ -79,7 +79,14 @@ export function FlashSaleCarousel() {
               <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[24px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
                 Flash Sale
               </span>
-              <FlashSaleCard item={product} />
+              <FlashSaleCard
+                item={product}
+                hrefQuery={{
+                  salePrice: product.flashPrice,
+                  realPrice: product.realprice,
+                  flashSaleId: product.flashSaleId,
+                }}
+              />
             </div>
           </CarouselItem>
         ))}

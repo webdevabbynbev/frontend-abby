@@ -5,7 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { FaStar } from "react-icons/fa";
-import { formatToRupiah, getDiscountPercent } from "@/utils";
+import {
+  formatToRupiah,
+  getDiscountPercent,
+  applyExtraDiscount,
+} from "@/utils";
 import { toast } from "sonner";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
@@ -58,7 +62,7 @@ export default function ProductDetailClient({ product }) {
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
   const [selectedVariant, setSelectedVariant] = useState(
-    variants.length ? variants[0].label : null
+    variants.length ? variants[0].label : null,
   );
 
   const selectedVariantObj = useMemo(() => {
@@ -78,10 +82,10 @@ export default function ProductDetailClient({ product }) {
     const imgs = selectedVariantObj?.images?.length
       ? selectedVariantObj.images
       : Array.isArray(product?.images) && product.images.length
-      ? product.images
-      : product?.image
-      ? [product.image]
-      : [];
+        ? product.images
+        : product?.image
+          ? [product.image]
+          : [];
 
     return imgs.filter(Boolean);
   }, [selectedVariantObj, product?.images, product?.image]);
@@ -89,7 +93,7 @@ export default function ProductDetailClient({ product }) {
   // activeImage untuk gambar utama + sidebar
   const [activeImage, setActiveImage] = useState("");
 
-  // etiap variant berubah, set gambar pertama jadi active
+  // setiap variant berubah, set gambar pertama jadi active
   useEffect(() => {
     setActiveImage(variantImages[0] || "");
   }, [variantImages]);
@@ -104,13 +108,18 @@ export default function ProductDetailClient({ product }) {
       ? salePriceParam
       : undefined;
 
+  // ====== BASE PRICE (sebelum extraDiscount storewide ditempel) ======
   const baseProductPrice =
     product?.price ?? product?.base_price ?? product?.basePrice ?? 0;
 
   const baseRealPrice =
-    product?.realprice ?? product?.price ?? product?.base_price ?? product?.basePrice ?? 0;
+    product?.realprice ??
+    product?.price ??
+    product?.base_price ??
+    product?.basePrice ??
+    0;
 
-  const finalPrice =
+  const baseFinalPrice =
     priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
 
   const realPriceOverride =
@@ -118,23 +127,49 @@ export default function ProductDetailClient({ product }) {
       ? realPriceParam
       : undefined;
 
-  const realPrice =
-    realPriceOverride ?? baseRealPrice ?? finalPrice;
+  const baseCompareAt = realPriceOverride ?? baseRealPrice ?? baseFinalPrice;
 
   const saleOverrideActive =
     priceOverride !== undefined &&
-    Number.isFinite(realPrice) &&
-    priceOverride < realPrice;
+    Number.isFinite(baseCompareAt) &&
+    priceOverride < baseCompareAt;
 
   const isSale = product?.sale || saleOverrideActive;
 
-  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
-  const subtotal = finalPrice * qty;
+  // ====== EXTRA DISCOUNT (storewide) ======
+  const extra = product?.extraDiscount ?? null;
+  const extraLabel = extra?.label ? String(extra.label).trim() : "";
 
-  const discount =
-    isSale && realPrice
-      ? getDiscountPercent(realPrice, finalPrice)
+  // ====== DISPLAY PRICE (setelah extraDiscount storewide) ======
+  let displayFinalPrice = Number(baseFinalPrice || 0);
+  let displayCompareAt =
+    isSale &&
+    Number.isFinite(baseCompareAt) &&
+    baseCompareAt > displayFinalPrice
+      ? Number(baseCompareAt)
       : null;
+
+  // appliesTo=0 => diskon nempel ke harga yang sedang tampil
+  if (extra && Number(extra.appliesTo) === 0) {
+    const after = applyExtraDiscount(extra, displayFinalPrice);
+    if (Number.isFinite(after) && after > 0 && after < displayFinalPrice) {
+      // kalau sebelumnya belum ada compareAt, coret harga sebelum diskon storewide
+      if (!displayCompareAt || displayCompareAt <= displayFinalPrice) {
+        displayCompareAt = displayFinalPrice;
+      }
+      displayFinalPrice = after;
+    }
+  }
+
+  const showDiscount =
+    Number.isFinite(displayCompareAt) && displayCompareAt > displayFinalPrice;
+
+  const discount = showDiscount
+    ? getDiscountPercent(displayCompareAt, displayFinalPrice)
+    : null;
+
+  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const subtotal = displayFinalPrice * qty;
 
   const handleSelect = (label) => {
     setSelectedVariant((prev) => (prev === label ? null : label));
@@ -210,15 +245,6 @@ export default function ProductDetailClient({ product }) {
     }
   };
 
-  // debug
-  // useEffect(() => {
-  //   console.log("[ProductDetail] product:", product);
-  //   console.log("[ProductDetail] variantItems:", product?.variantItems);
-  //   console.log("[ProductDetail] selectedVariant:", selectedVariant);
-  //   console.log("[ProductDetail] selectedVariantObj:", selectedVariantObj);
-  //   console.log("[ProductDetail] variantImages:", variantImages);
-  // }, [product, selectedVariant, selectedVariantObj, variantImages]);
-
   // SEO JsonData
   const productJsonLd = useMemo(() => {
     if (!product) return null;
@@ -236,7 +262,8 @@ export default function ProductDetailClient({ product }) {
       offers: {
         "@type": "Offer",
         priceCurrency: "IDR",
-        price: finalPrice,
+        // ✅ gunakan harga yang ditampilkan (setelah extraDiscount storewide)
+        price: displayFinalPrice,
         availability:
           stock > 0
             ? "https://schema.org/InStock"
@@ -246,7 +273,7 @@ export default function ProductDetailClient({ product }) {
         reviews.length > 0
           ? {
               "@type": "AggregateRating",
-              ratingValue: averageRating.toFixed(1),
+              ratingValue: Number(averageRating || 0).toFixed(1),
               reviewCount: reviews.length,
             }
           : undefined,
@@ -254,7 +281,7 @@ export default function ProductDetailClient({ product }) {
   }, [
     product,
     variantImages,
-    finalPrice,
+    displayFinalPrice,
     stock,
     reviews,
     averageRating,
@@ -308,10 +335,11 @@ export default function ProductDetailClient({ product }) {
               {/* Product Image */}
               <div className="Image-container">
                 <div className="h-auto w-full relative overflow-hidden rounded-lg">
-                  {isSale && (
+                  {/* ✅ tampilkan tag sale kalau ada discount apa pun (sale/storewide) */}
+                  {showDiscount && (
                     <img
                       src="/sale-tag.svg"
-                      alt="Sale"
+                      alt="Discount"
                       className="absolute top-0 left-0 z-10 w-10 h-auto"
                     />
                   )}
@@ -322,7 +350,7 @@ export default function ProductDetailClient({ product }) {
                       alt={`${product?.name} ${
                         selectedVariant ? `- ${selectedVariant}` : ""
                       }`}
-                      className="w-full h-auto  object-cover border border-neutral-400 lg:max-w-75 lg:max-h-75"
+                      className="w-full h-auto object-cover border border-neutral-400 lg:max-w-75 lg:max-h-75"
                     />
                   </div>
                 </div>
@@ -353,17 +381,26 @@ export default function ProductDetailClient({ product }) {
 
                 {/* Price */}
                 <div className="price space-y-2">
-                  {isSale ? (
+                  {/* ✅ badge dari backend */}
+                  {extraLabel ? (
+                    <div>
+                      <span className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+                        {extraLabel}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {showDiscount ? (
                     <>
                       <div className="finalPrice">
                         <span className="text-primary-700 text-2xl font-bold">
-                          {formatToRupiah(finalPrice)}
+                          {formatToRupiah(displayFinalPrice)}
                         </span>
                       </div>
 
                       <div className="reapPrice-container flex space-x-2 items-center">
                         <span className="text-base font-medium text-neutral-400 line-through">
-                          {formatToRupiah(realPrice)}
+                          {formatToRupiah(displayCompareAt)}
                         </span>
 
                         {discount > 0 && (
@@ -376,7 +413,7 @@ export default function ProductDetailClient({ product }) {
                   ) : (
                     <div className="finalPrice">
                       <span className="text-primary-700 text-2xl font-bold">
-                        {formatToRupiah(finalPrice)}
+                        {formatToRupiah(displayFinalPrice)}
                       </span>
                     </div>
                   )}
@@ -504,9 +541,7 @@ export default function ProductDetailClient({ product }) {
                           r.updatedAt;
 
                         const who = r.user?.firstName
-                          ? `${r.user.firstName} ${
-                              r.user.lastName ?? ""
-                            }`.trim()
+                          ? `${r.user.firstName} ${r.user.lastName ?? ""}`.trim()
                           : "Guest";
 
                         return (
@@ -556,9 +591,11 @@ export default function ProductDetailClient({ product }) {
             </div>
           </div>
         </div>
+
         {/* Sticky Sidebar */}
         <div className="hidden sticky top-25.75 p-6 space-y-4 outline-1 outline-neutral-100 rounded-3xl bottom-32 items-start w-full max-w-75 h-fit bg-white lg:block">
           <div className="text-xl font-medium">Quantity</div>
+
           <div className="flex flex-row gap-4">
             <div className="ContainerImage flex h-auto w-full items-start">
               <div className="imageOnly">
@@ -570,15 +607,16 @@ export default function ProductDetailClient({ product }) {
               </div>
 
               <div className="flex-row space-y-1">
-                {isSale && (
+                {showDiscount && (
                   <img
                     src="/sale-tag-square.svg"
-                    alt="Sale"
+                    alt="Discount"
                     className="w-8 h-8"
                   />
                 )}
               </div>
             </div>
+
             <div className="flex flex-col space-y-2">
               <div className="text-sm font-normal line-clamp-2">
                 {product?.name}
@@ -590,19 +628,27 @@ export default function ProductDetailClient({ product }) {
                   {selectedVariant ? selectedVariant : "-"}
                 </div>
               </div>
+
+              {extraLabel ? (
+                <div>
+                  <span className="text-[10px] py-1 px-2 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+                    {extraLabel}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
 
           <div className="flex w-full items-center gap-6">
             <QuantityInput min={1} max={stock} value={qty} onChange={setQty} />
             <div className="text-sm font-normal text-neutral-600">
-              Stock :
+              Stock :{" "}
               <span className="font-medium text-neutral-950">{stock}</span>
             </div>
           </div>
 
           <div className="price space-y-2 w-full flex-row justify-end">
-            {isSale ? (
+            {showDiscount ? (
               <>
                 <div className="reapPrice-container w-full flex space-x-2 items-center justify-end">
                   {discount > 0 && (
@@ -611,7 +657,7 @@ export default function ProductDetailClient({ product }) {
                     </span>
                   )}
                   <span className="text-sm font-medium text-neutral-400 line-through">
-                    {formatToRupiah(realPrice)}
+                    {formatToRupiah(displayCompareAt)}
                   </span>
                 </div>
 
@@ -661,6 +707,7 @@ export default function ProductDetailClient({ product }) {
             <BtnIconToggle iconName="Heart" variant="tertiary" size="sm" />
           </div>
         </div>
+
         <MobileProductActionBar
           stock={stock}
           onQtyChange={setQty}
