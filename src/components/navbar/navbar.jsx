@@ -40,7 +40,8 @@ export function Navbar() {
     // { href: "/best-seller", label: "Best seller" },
     // { href: "/sale", label: "Sale" },
     // { href: "/new-arrival", label: "New arrival" },
-    { href: "/blog", label: "Beauty & tips" },
+    // { href: "/blog", label: "Beauty & tips" },
+    { href: "https://blog.abbynbev.com/blog/", label: "Beauty & tips" },
   ];
 
   const linksidebar = [

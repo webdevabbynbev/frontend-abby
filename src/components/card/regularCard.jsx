@@ -1,14 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { FaStar } from "react-icons/fa6";
 import { BtnIconToggle } from "..";
 import { formatToRupiah, slugify, getAverageRating } from "@/utils";
 import { DataReview } from "@/data";
+import axios from "@/lib/axios";
+
+const WISHLIST_KEY = "abv_wishlist_ids_v1";
+
+function readWishlistIds() {
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeWishlistIds(setIds) {
+  try {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(Array.from(setIds)));
+  } catch {}
+}
 
 export function RegularCard({ product, hrefQuery }) {
-  const [wishlist, setWishlist] = useState([]);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wlPending, setWlPending] = useState(false);
 
   if (!product) return null;
 
@@ -30,18 +50,18 @@ export function RegularCard({ product, hrefQuery }) {
 
     const price = Number(
       raw.price ??
-      raw.base_price ??
-      raw.basePrice ??
-      raw.salePrice ??
-      (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
-      0
+        raw.base_price ??
+        raw.basePrice ??
+        raw.salePrice ??
+        (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
+        0,
     );
 
     const compareAt = Number(
       raw.realprice ??
-      raw.oldPrice ??
-      (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
-      NaN
+        raw.oldPrice ??
+        (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
+        NaN,
     );
 
     const image =
@@ -83,36 +103,75 @@ export function RegularCard({ product, hrefQuery }) {
   const hasSale =
     Number.isFinite(item.compareAt) && item.compareAt > item.price;
 
+  // ✅ init: baca cache id dari localStorage supaya icon langsung sync
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("wishlist");
-      if (stored) setWishlist(JSON.parse(stored));
-    } catch (e) {
-      console.log("Wishlist parse error:", e);
-    }
-  }, []);
+    const ids = readWishlistIds();
+    setIsWishlisted(ids.has(item.id));
+  }, [item.id]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("wishlist", JSON.stringify(wishlist));
-    } catch (e) {
-      console.log("Wishlist save error:", e);
-    }
-  }, [wishlist]);
+  const updateLocal = useCallback(
+    (next) => {
+      const ids = readWishlistIds();
+      if (next) ids.add(item.id);
+      else ids.delete(item.id);
+      writeWishlistIds(ids);
+    },
+    [item.id],
+  );
 
-  const handleWishlist = () => {
-    setWishlist((prev) => {
-      const exists = prev.some((p) => p.id === item.id);
-      return exists ? prev.filter((p) => p.id !== item.id) : [...prev, item];
-    });
-  };
+  const toggleWishlist = useCallback(
+    async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (wlPending) return;
 
-  const isWishlisted = wishlist.some((p) => p.id === item.id);
+      const next = !isWishlisted;
+
+      // pakai ID yang benar untuk backend
+      const productId = item.productId ?? item.id; // kalau kamu belum punya item.productId
+
+      if (!productId) {
+        console.error("Missing product_id");
+        return;
+      }
+
+      // ✅ optimistic
+      setIsWishlisted(next);
+      updateLocal(next);
+      setWlPending(true);
+
+      try {
+        if (next) {
+          // ✅ ADD
+          await axios.post("/wishlists", { product_id: String(productId) });
+        } else {
+          // ✅ DELETE (paling umum untuk axios)
+          await axios.delete("/wishlists", {
+            data: { product_id: String(productId) },
+          });
+        }
+
+        // axios otomatis throw kalau status bukan 2xx, jadi gak perlu res.ok/res.json
+      } catch (err) {
+        // ❌ revert kalau gagal
+        setIsWishlisted(!next);
+        updateLocal(!next);
+
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Wishlist request failed";
+        console.error("Wishlist error:", msg);
+      } finally {
+        setWlPending(false);
+      }
+    },
+    [isWishlisted, item.id, item.productId, updateLocal, wlPending],
+  );
 
   const reviewsForProduct = Array.isArray(DataReview)
     ? DataReview.filter((r) => r.productID === item.id)
     : [];
-
   const averageRating = getAverageRating(reviewsForProduct);
 
   const queryString = useMemo(() => {
@@ -144,21 +203,18 @@ export function RegularCard({ product, hrefQuery }) {
 
           <div
             className={`absolute top-4 right-4 z-10 transition-all duration-200
-            ${isWishlisted
+            ${
+              isWishlisted
                 ? "opacity-100 scale-100 pointer-events-auto"
                 : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
-              }
-            `}
+            }`}
           >
             <BtnIconToggle
               active={isWishlisted}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleWishlist();
-              }}
+              onClick={toggleWishlist}
               variant="tertiary"
               size="md"
+              disabled={wlPending} // kalau BtnIconToggle support
             />
           </div>
 
