@@ -43,11 +43,11 @@ export default function HomeClient() {
         const arr = Array.isArray(res?.serve)
           ? res.serve
           : Array.isArray(res?.serve?.data)
-          ? res.serve.data
-          : [];
+            ? res.serve.data
+            : [];
 
         const level1 = arr.filter(
-          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null)
+          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null),
         );
         setCategories(level1);
       } catch (err) {
@@ -197,7 +197,7 @@ export default function HomeClient() {
                     "items-center",
                     "justify-center",
                     "text-gray-500",
-                    "font-bold"
+                    "font-bold",
                   );
                   e.target.parentNode.innerText = "BANNER KIRI (Top Left)";
                 }}
@@ -256,7 +256,7 @@ export default function HomeClient() {
                     "items-center",
                     "justify-center",
                     "text-gray-500",
-                    "font-bold"
+                    "font-bold",
                   );
                   e.target.parentNode.innerText = "BANNER KANAN (Top Right)";
                 }}
