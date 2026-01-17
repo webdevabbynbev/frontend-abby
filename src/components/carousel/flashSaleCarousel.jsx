@@ -10,74 +10,8 @@ import {
   FlashSaleCard,
   RegularCardSkeleton,
 } from "@/components";
+import { normalizeFlashSaleItem } from "@/services/api/normalizers/product";
 import { getApi } from "@/services/api/client";
-
-function normalizeFlashSaleItem(raw) {
-  if (!raw) return raw;
-
-  const source = raw.product ?? raw;
-
-  // Try to find original price
-  const comparePrice = Number(
-    source.realprice ??
-      source.oldPrice ??
-      source.original_price ??
-      source.originalPrice ??
-      0,
-  );
-
-  // Try to find base price
-  const currentPrice = Number(
-    source.price ?? source.basePrice ?? source.base_price ?? 0,
-  );
-
-  // Determine normal (original) price
-  let normalPrice = currentPrice;
-  if (comparePrice > 0 && comparePrice > currentPrice) {
-    normalPrice = comparePrice;
-  }
-
-  // Determine sale price
-  let salePrice = Number(
-    source.flashPrice ??
-      source.flash_price ??
-      source.salePrice ??
-      source.sale_price ??
-      source.flashSalePrice ??
-      source.flash_sale_price ??
-      source.discountPrice ??
-      source.discount_price ??
-      0,
-  );
-
-  // Fallback: if salePrice is 0 but we have a comparePrice > currentPrice, assume currentPrice is the sale price
-  if (salePrice === 0 && comparePrice > 0 && comparePrice > currentPrice) {
-    salePrice = currentPrice;
-  }
-
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
-
-  if (!isSale) return raw;
-
-  const normalizedProduct = {
-    ...source,
-    price: normalPrice, // FlashSaleCard expects 'price' to be original price
-    flashPrice: salePrice, // FlashSaleCard expects 'flashPrice'
-    realprice: normalPrice,
-    sale: true,
-    flashSaleId: raw.flashSaleId ?? source.flashSaleId,
-  };
-
-  if (raw.product) {
-    return {
-      ...raw,
-      product: normalizedProduct,
-    };
-  }
-
-  return normalizedProduct;
-}
 
 export function FlashSaleCarousel() {
   const SKELETON_COUNT = 10;
