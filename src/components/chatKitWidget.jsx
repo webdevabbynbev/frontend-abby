@@ -239,7 +239,7 @@ export function ChatkitWidget() {
     <div className="fixed bottom-6 right-6 z-50 h-auto">
       {isOpen ? (
         <div className="w-100 rounded-2xl bg-primary-50 shadow-xl border border-slate-200 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-500 via-primary-200 to-secondary-200 text-white">
+          <div className="flex items-center justify-between px-4 py-3 bg-linear-to-r from-primary-500 via-primary-200 to-secondary-200 text-white">
             <div>
               <p className="text-sm font-semibold">Abby n Bev AI</p>
               <p className="text-xs text-white/70">Beauty Assistant</p>
@@ -289,7 +289,7 @@ export function ChatkitWidget() {
                             )}
                           </div>
                           {item.product ? (
-                            <div className="max-w-[220px]">
+                            <div className="max-w-55">
                               <RegularCard product={item.product} />
                             </div>
                           ) : (

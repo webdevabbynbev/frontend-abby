@@ -184,7 +184,7 @@ export default function HomeClient() {
           {/* === BAGIAN KIRI (Left Section) === */}
           <div className="flex flex-col space-y-4">
             {/* Bagian Kiri Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
               {/* Placeholder IMG untuk Banner Kiri */}
               <img
                 src={bannerUrl}
@@ -243,7 +243,7 @@ export default function HomeClient() {
           {/* === BAGIAN KANAN (Right Section) === */}
           <div className="flex flex-col space-y-4">
             {/* Bagian Kanan Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
               {/* Placeholder IMG untuk Banner Kanan */}
               <img
                 src={bannerUrl}
