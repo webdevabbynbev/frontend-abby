@@ -371,7 +371,7 @@ export default function SaleClient() {
 
   return (
     <div className="w-full">
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-50 via-white to-secondary-100">
+      <section className="relative overflow-hidden bg-linear-to-br from-secondary-50 via-white to-secondary-100">
         <div className="absolute -top-24 right-0 h-56 w-56 rounded-full bg-primary-100/60 blur-3xl" />
         <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-secondary-200/70 blur-2xl" />
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-12 lg:flex-row lg:items-center lg:justify-between lg:py-16">
@@ -542,7 +542,7 @@ export default function SaleClient() {
                     key={buildKey(item?.product ?? item) ?? `flash-${idx}`}
                     className="relative overflow-hidden rounded-2xl"
                   >
-                    <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[26px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
+                    <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-6.5 items-center rounded-br-lg bg-primary-700 px-2 text-[10px] font-bold uppercase tracking-wide text-neutral-50">
                       Flash Sale
                     </span>
                     <FlashSaleCard

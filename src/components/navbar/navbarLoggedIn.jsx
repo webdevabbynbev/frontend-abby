@@ -6,7 +6,7 @@ import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios from "@/lib/axios";
 
 import {
   BtnIcon,
@@ -79,19 +79,10 @@ export function NavbarLoggedIn({
       try {
         setCatLoading(true);
 
-        // ✅ pakai Next API route biar gak 404 di /category-types
-        const res = await axios.get("http://localhost:3000/category-types");
+        // pastikan baseURL axios kamu sudah benar (atau ganti ke instance axios internal)
+        const res = await axios.get("/category-types");
 
-        // ✅ fleksibel: support beberapa bentuk response
-        const raw = res?.data;
-        const arr = Array.isArray(raw?.serve)
-          ? raw.serve
-          : Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw)
-          ? raw
-          : [];
-
+        const arr = Array.isArray(res?.data?.serve) ? res.data.serve : [];
         if (alive) setCategoryTypes(arr);
       } catch (err) {
         console.error("Failed to load category-types:", err);
