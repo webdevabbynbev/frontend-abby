@@ -8,7 +8,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "deviceId is required" }, { status: 400 });
     }
 
-    const r = await fetch("https://api.openai.com/v1/chatkit/sessions", {
+    const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
