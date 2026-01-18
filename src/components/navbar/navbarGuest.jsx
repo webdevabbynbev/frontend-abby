@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import axios from "@/lib/axios";
+import { getCategories } from "@/services/api/category.services";
 import { LoginRegisModalForm, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
 import { useEffect, useState } from "react";
@@ -57,13 +57,14 @@ export function NavbarGuest({
       try {
         setCatLoading(true);
 
-        // pastikan baseURL axios kamu sudah benar (atau ganti ke instance axios internal)
-        const res = await axios.get("/category-types");
-
-        const arr = Array.isArray(res?.data?.serve) ? res.data.serve : [];
-        if (alive) setCategoryTypes(arr);
-      } catch (err) {
-        console.error("Failed to load category-types:", err);
+        const res = await getCategories();
+        const arr = Array.isArray(res?.serve)
+          ? res.serve
+          : Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res)
+              ? res
+              : [];
         if (alive) setCategoryTypes([]);
       } finally {
         if (alive) setCatLoading(false);
@@ -110,12 +111,15 @@ export function NavbarGuest({
 
           {/* STATIC LINKS */}
           {links.map((link) => {
-            const isExternal = typeof link.href === "string" && link.href.startsWith("http");
+            const isExternal =
+              typeof link.href === "string" && link.href.startsWith("http");
             const active = isNavActive(link.href);
 
             const className = clsx(
               "whitespace-nowrap text-sm font-medium transition-colors",
-              active ? "text-primary-700" : "text-gray-700 hover:text-primary-500"
+              active
+                ? "text-primary-700"
+                : "text-gray-700 hover:text-primary-500",
             );
 
             if (isExternal) {

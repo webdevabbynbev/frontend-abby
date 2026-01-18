@@ -3,7 +3,6 @@ import Script from "next/script";
 import "./globals.css";
 
 import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
-import GoogleProvider from "@/components/googleProvider/googleProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { NavbarClientGate } from "@/components/navbar";
@@ -80,7 +79,6 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <GAListener />
-        <GoogleProvider>
           <AuthProvider>
             <WishlistProvider>
               <NavbarClientGate />
@@ -96,7 +94,6 @@ export default function RootLayout({ children }) {
               <Footer />
             </WishlistProvider>
           </AuthProvider>
-        </GoogleProvider>
       </body>
     </html>
   );

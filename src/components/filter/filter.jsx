@@ -1,7 +1,7 @@
 "use client";
 import { useDebounce } from "@/app/hooks/useDebounce";
 import React, { useMemo, useState, useEffect } from "react";
-import axios from "@/lib/axios"; // ambil dari backend (NEXT_PUBLIC_API_URL)
+import { getCategories } from "@/services/api/category.services";
 
 import {
   Button,
@@ -89,8 +89,14 @@ export function Filter() {
     (async () => {
       try {
         setCatLoading(true);
-        const res = await axios.get("/category-types");
-        const arr = Array.isArray(res?.data?.serve) ? res.data.serve : [];
+        const res = await getCategories();
+        const arr = Array.isArray(res?.serve)
+          ? res.serve
+          : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : [];
         if (alive) setCategoryTypes(arr);
       } catch (err) {
         console.error("Failed to load category-types:", err);
