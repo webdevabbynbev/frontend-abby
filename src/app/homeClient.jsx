@@ -43,11 +43,11 @@ export default function HomeClient() {
         const arr = Array.isArray(res?.serve)
           ? res.serve
           : Array.isArray(res?.serve?.data)
-          ? res.serve.data
-          : [];
+            ? res.serve.data
+            : [];
 
         const level1 = arr.filter(
-          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null)
+          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null),
         );
         setCategories(level1);
       } catch (err) {
@@ -184,7 +184,7 @@ export default function HomeClient() {
           {/* === BAGIAN KIRI (Left Section) === */}
           <div className="flex flex-col space-y-4">
             {/* Bagian Kiri Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
               {/* Placeholder IMG untuk Banner Kiri */}
               <img
                 src={bannerUrl}
@@ -197,7 +197,7 @@ export default function HomeClient() {
                     "items-center",
                     "justify-center",
                     "text-gray-500",
-                    "font-bold"
+                    "font-bold",
                   );
                   e.target.parentNode.innerText = "BANNER KIRI (Top Left)";
                 }}
@@ -243,7 +243,7 @@ export default function HomeClient() {
           {/* === BAGIAN KANAN (Right Section) === */}
           <div className="flex flex-col space-y-4">
             {/* Bagian Kanan Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
               {/* Placeholder IMG untuk Banner Kanan */}
               <img
                 src={bannerUrl}
@@ -256,7 +256,7 @@ export default function HomeClient() {
                     "items-center",
                     "justify-center",
                     "text-gray-500",
-                    "font-bold"
+                    "font-bold",
                   );
                   e.target.parentNode.innerText = "BANNER KANAN (Top Right)";
                 }}
