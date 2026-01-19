@@ -7,7 +7,6 @@ import { BtnIconToggle } from "..";
 import {
   formatToRupiah,
   slugify,
-  getAverageRating,
   getDiscountPercent,
   applyExtraDiscount,
 } from "@/utils";
@@ -15,6 +14,91 @@ import { DataReview } from "@/data";
 import axios from "@/lib/axios";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
+
+const canUseStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+let wishlistCache = null;
+let wishlistLoaded = false;
+const wishlistListeners = new Set();
+let storageListenerBound = false;
+
+const loadWishlistCache = () => {
+  if (wishlistLoaded) return;
+  wishlistLoaded = true;
+  wishlistCache = new Set();
+  if (!canUseStorage()) return;
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(arr)) {
+      wishlistCache = new Set(arr.map(String));
+    }
+  } catch {}
+};
+
+const notifyWishlistListeners = () => {
+  wishlistListeners.forEach((listener) => listener());
+};
+
+const syncWishlistFromStorage = () => {
+  if (!canUseStorage()) return;
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    wishlistCache = new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    wishlistCache = new Set();
+  }
+};
+
+const ensureStorageListener = () => {
+  if (storageListenerBound || !canUseStorage()) return;
+  storageListenerBound = true;
+  window.addEventListener("storage", (event) => {
+    if (event.key !== WISHLIST_KEY) return;
+    syncWishlistFromStorage();
+    notifyWishlistListeners();
+  });
+};
+
+const getWishlistCache = () => {
+  loadWishlistCache();
+  ensureStorageListener();
+  return wishlistCache ?? new Set();
+};
+
+const setWishlistCache = (nextSet) => {
+  wishlistCache = new Set(nextSet);
+  if (canUseStorage()) {
+    try {
+      localStorage.setItem(
+        WISHLIST_KEY,
+        JSON.stringify(Array.from(wishlistCache)),
+      );
+    } catch {}
+  }
+  notifyWishlistListeners();
+};
+
+const subscribeWishlist = (listener) => {
+  wishlistListeners.add(listener);
+  return () => wishlistListeners.delete(listener);
+};
+
+const isWishlistedCached = (id) => {
+  if (!id) return false;
+  return getWishlistCache().has(String(id));
+};
+
+const updateWishlistCache = (id, next) => {
+  if (!id) return;
+  const cache = getWishlistCache();
+  const nextSet = new Set(cache);
+  if (next) nextSet.add(String(id));
+  else nextSet.delete(String(id));
+  setWishlistCache(nextSet);
+};
 
 const toNumberOrNaN = (value) => {
   const n = Number(value);
@@ -84,21 +168,30 @@ const buildDiscountBadge = (extra, compareAtPrice, finalPrice) => {
   return percent > 0 ? `Diskon ${percent}%` : null;
 };
 
-function readWishlistIds() {
-  try {
-    const raw = localStorage.getItem(WISHLIST_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr.map(String) : []);
-  } catch {
-    return new Set();
-  }
-}
+const EMPTY_REVIEW_STATS = { count: 0, sum: 0 };
 
-function writeWishlistIds(setIds) {
-  try {
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(Array.from(setIds)));
-  } catch {}
-}
+const REVIEW_STATS = (() => {
+  if (!Array.isArray(DataReview)) return new Map();
+  const map = new Map();
+  DataReview.forEach((review) => {
+    const key =
+      review?.productID ?? review?.productId ?? review?.product_id ?? null;
+    if (key === null || key === undefined) return;
+    const rating = Number(review?.rating ?? 0);
+    const normalizedKey = String(key);
+    const entry = map.get(normalizedKey);
+    if (entry) {
+      entry.count += 1;
+      entry.sum += Number.isFinite(rating) ? rating : 0;
+    } else {
+      map.set(normalizedKey, {
+        count: 1,
+        sum: Number.isFinite(rating) ? rating : 0,
+      });
+    }
+  });
+  return map;
+})();
 
 export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -109,16 +202,22 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const item = useMemo(() => {
     const raw = product;
 
-    const id =
+    const productId =
       raw.id ??
       raw._id ??
+      raw.productId ??
+      raw.product_id ??
+      null;
+
+    const id =
+      productId ??
       raw.slug ??
       raw.sku ??
       raw.code ??
       raw.name ??
       raw.productName ??
       raw.title ??
-      'unknown';
+      "unknown";
 
     const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
     const extra = normalizeExtraDiscount(
@@ -199,6 +298,10 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
     return {
       id: String(id),
+      productId:
+        productId === null || productId === undefined
+          ? null
+          : String(productId),
       name,
       price: finalPrice,
       compareAt: hasAppliedDiscount ? compareAtPrice : NaN,
@@ -227,21 +330,30 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
   const hasSale =
     Number.isFinite(item.compareAt) && item.compareAt > item.price;
+  const wishlistId = item.productId;
+  const wishlistDisabled = !wishlistId || wlPending;
 
   // ✅ init: baca cache id dari localStorage supaya icon langsung sync
   useEffect(() => {
-    const ids = readWishlistIds();
-    setIsWishlisted(ids.has(item.id));
-  }, [item.id]);
+    if (!wishlistId) {
+      setIsWishlisted(false);
+      return undefined;
+    }
+
+    const sync = () => {
+      setIsWishlisted(isWishlistedCached(wishlistId));
+    };
+
+    sync();
+    return subscribeWishlist(sync);
+  }, [wishlistId]);
 
   const updateLocal = useCallback(
     (next) => {
-      const ids = readWishlistIds();
-      if (next) ids.add(item.id);
-      else ids.delete(item.id);
-      writeWishlistIds(ids);
+      if (!wishlistId) return;
+      updateWishlistCache(wishlistId, next);
     },
-    [item.id],
+    [wishlistId],
   );
 
   const toggleWishlist = useCallback(
@@ -252,8 +364,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
       const next = !isWishlisted;
 
-      // pakai ID yang benar untuk backend
-      const productId = item.productId ?? item.id; // kalau kamu belum punya item.productId
+      const productId = wishlistId;
 
       if (!productId) {
         console.error("Missing product_id");
@@ -291,13 +402,16 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         setWlPending(false);
       }
     },
-    [isWishlisted, item.id, item.productId, updateLocal, wlPending],
+    [isWishlisted, updateLocal, wishlistId, wlPending],
   );
 
-  const reviewsForProduct = Array.isArray(DataReview)
-    ? DataReview.filter((r) => r.productID === item.id)
-    : [];
-  const averageRating = getAverageRating(reviewsForProduct);
+  const reviewKey = item.productId ?? item.id;
+  const reviewStats =
+    REVIEW_STATS.get(String(reviewKey)) || EMPTY_REVIEW_STATS;
+  const averageRating = reviewStats.count
+    ? (reviewStats.sum / reviewStats.count).toFixed(1)
+    : 0;
+  const reviewCount = reviewStats.count;
 
   const queryString = useMemo(() => {
     if (!hrefQuery || typeof hrefQuery !== "object") return "";
@@ -344,7 +458,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               onClick={toggleWishlist}
               variant="tertiary"
               size="md"
-              disabled={wlPending} // kalau BtnIconToggle support
+              disabled={wishlistDisabled} // kalau BtnIconToggle support
             />
           </div>
 
@@ -406,7 +520,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             </div>
             <div className="w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
-              ({reviewsForProduct.length} reviews)
+              ({reviewCount} reviews)
             </div>
           </div>
 
