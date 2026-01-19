@@ -5,6 +5,13 @@ export function normalizeProduct(raw) {
 
   const item = raw.product || raw;
 
+  // ✅ penting: pastikan extraDiscount kebawa (list biasanya raw.product.extraDiscount)
+  const extraDiscount =
+    item?.extraDiscount ??
+    raw?.extraDiscount ??
+    raw?.product?.extraDiscount ??
+    null;
+
   const medias = Array.isArray(item.medias) ? item.medias : [];
   const variants = Array.isArray(item.variants) ? item.variants : [];
 
@@ -151,6 +158,9 @@ export function normalizeProduct(raw) {
 
     slug: item.slug || item.path || "",
     variantItems,
+
+    // ✅ ini yang bikin badge & harga diskon bisa muncul di UI
+    extraDiscount,
   };
 }
 

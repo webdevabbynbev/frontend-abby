@@ -7,31 +7,193 @@ import { BtnIconToggle } from "..";
 import {
   formatToRupiah,
   slugify,
-  getAverageRating,
+  getDiscountPercent,
+  applyExtraDiscount,
 } from "@/utils";
-import { getImageUrl } from "@/utils/getImageUrl";
 import { DataReview } from "@/data";
 import axios from "@/lib/axios";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
-function readWishlistIds() {
+const canUseStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+let wishlistCache = null;
+let wishlistLoaded = false;
+const wishlistListeners = new Set();
+let storageListenerBound = false;
+
+const loadWishlistCache = () => {
+  if (wishlistLoaded) return;
+  wishlistLoaded = true;
+  wishlistCache = new Set();
+  if (!canUseStorage()) return;
   try {
     const raw = localStorage.getItem(WISHLIST_KEY);
     const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr.map(String) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function writeWishlistIds(setIds) {
-  try {
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(Array.from(setIds)));
+    if (Array.isArray(arr)) {
+      wishlistCache = new Set(arr.map(String));
+    }
   } catch {}
-}
+};
 
-export function RegularCard({ product, hrefQuery }) {
+const notifyWishlistListeners = () => {
+  wishlistListeners.forEach((listener) => listener());
+};
+
+const syncWishlistFromStorage = () => {
+  if (!canUseStorage()) return;
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    wishlistCache = new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    wishlistCache = new Set();
+  }
+};
+
+const ensureStorageListener = () => {
+  if (storageListenerBound || !canUseStorage()) return;
+  storageListenerBound = true;
+  window.addEventListener("storage", (event) => {
+    if (event.key !== WISHLIST_KEY) return;
+    syncWishlistFromStorage();
+    notifyWishlistListeners();
+  });
+};
+
+const getWishlistCache = () => {
+  loadWishlistCache();
+  ensureStorageListener();
+  return wishlistCache ?? new Set();
+};
+
+const setWishlistCache = (nextSet) => {
+  wishlistCache = new Set(nextSet);
+  if (canUseStorage()) {
+    try {
+      localStorage.setItem(
+        WISHLIST_KEY,
+        JSON.stringify(Array.from(wishlistCache)),
+      );
+    } catch {}
+  }
+  notifyWishlistListeners();
+};
+
+const subscribeWishlist = (listener) => {
+  wishlistListeners.add(listener);
+  return () => wishlistListeners.delete(listener);
+};
+
+const isWishlistedCached = (id) => {
+  if (!id) return false;
+  return getWishlistCache().has(String(id));
+};
+
+const updateWishlistCache = (id, next) => {
+  if (!id) return;
+  const cache = getWishlistCache();
+  const nextSet = new Set(cache);
+  if (next) nextSet.add(String(id));
+  else nextSet.delete(String(id));
+  setWishlistCache(nextSet);
+};
+
+const toNumberOrNaN = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
+};
+
+const normalizeExtraDiscount = (raw) => {
+  if (!raw || typeof raw !== "object") return null;
+
+  const valueType = Number(raw.valueType ?? raw.value_type ?? 1);
+  const value = Number(raw.value ?? 0);
+  const maxRaw = raw.maxDiscount ?? raw.max_discount;
+  const maxDiscount =
+    maxRaw === null || maxRaw === undefined || maxRaw === ""
+      ? null
+      : Number(maxRaw);
+  const appliesTo = Number(raw.appliesTo ?? raw.applies_to ?? 0);
+
+  const baseMinPrice = toNumberOrNaN(raw.baseMinPrice ?? raw.base_min_price);
+  const finalMinPrice = toNumberOrNaN(raw.finalMinPrice ?? raw.final_min_price);
+
+  const label =
+    typeof raw.label === "string"
+      ? raw.label.trim()
+      : typeof raw.name === "string"
+        ? raw.name.trim()
+        : "";
+
+  return {
+    ...raw,
+    valueType,
+    value,
+    maxDiscount,
+    appliesTo,
+    baseMinPrice,
+    finalMinPrice,
+    label,
+  };
+};
+
+const buildDiscountBadge = (extra, compareAtPrice, finalPrice) => {
+  if (
+    !Number.isFinite(compareAtPrice) ||
+    !Number.isFinite(finalPrice) ||
+    compareAtPrice <= finalPrice
+  ) {
+    return null;
+  }
+
+  const label = extra?.label ? String(extra.label).trim() : "";
+  if (label) return label;
+
+  const valueType = Number(extra?.valueType);
+  const value = Number(extra?.value ?? 0);
+
+  if (Number.isFinite(value) && value > 0) {
+    if (valueType === 2) {
+      const formatted = formatToRupiah(value);
+      return formatted ? `Diskon ${formatted}` : null;
+    }
+    if (valueType === 1) {
+      return `Diskon ${value}%`;
+    }
+  }
+
+  const percent = getDiscountPercent(compareAtPrice, finalPrice);
+  return percent > 0 ? `Diskon ${percent}%` : null;
+};
+
+const EMPTY_REVIEW_STATS = { count: 0, sum: 0 };
+
+const REVIEW_STATS = (() => {
+  if (!Array.isArray(DataReview)) return new Map();
+  const map = new Map();
+  DataReview.forEach((review) => {
+    const key =
+      review?.productID ?? review?.productId ?? review?.product_id ?? null;
+    if (key === null || key === undefined) return;
+    const rating = Number(review?.rating ?? 0);
+    const normalizedKey = String(key);
+    const entry = map.get(normalizedKey);
+    if (entry) {
+      entry.count += 1;
+      entry.sum += Number.isFinite(rating) ? rating : 0;
+    } else {
+      map.set(normalizedKey, {
+        count: 1,
+        sum: Number.isFinite(rating) ? rating : 0,
+      });
+    }
+  });
+  return map;
+})();
+
+export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
 
@@ -40,9 +202,15 @@ export function RegularCard({ product, hrefQuery }) {
   const item = useMemo(() => {
     const raw = product;
 
-    const id =
+    const productId =
       raw.id ??
       raw._id ??
+      raw.productId ??
+      raw.product_id ??
+      null;
+
+    const id =
+      productId ??
       raw.slug ??
       raw.sku ??
       raw.code ??
@@ -52,45 +220,99 @@ export function RegularCard({ product, hrefQuery }) {
       "unknown";
 
     const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
-
-    const price = Number(
-      raw.price ??
-        raw.base_price ??
-        raw.basePrice ??
-        raw.salePrice ??
-        (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
-        0
+    const extra = normalizeExtraDiscount(
+      raw?.extraDiscount ?? raw?.extra_discount ?? null,
     );
 
-    const compareAt = Number(
-      raw.realprice ??
-        raw.oldPrice ??
-        (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
-        NaN
-    );
+    // --- Price Calculation ---
+    // 1. Get base prices from product data
+    let basePrice = Number(raw.price ?? raw.base_price ?? raw.basePrice ?? 0);
+    const baseCompareAt = Number(raw.realprice ?? raw.oldPrice ?? NaN);
 
-    const rawImage =
+    if (
+      (!Number.isFinite(basePrice) || basePrice <= 0) &&
+      Number.isFinite(extra?.baseMinPrice)
+    ) {
+      basePrice = extra.baseMinPrice;
+    }
+
+    let finalPrice = basePrice;
+    let compareAtPrice =
+      Number.isFinite(baseCompareAt) && baseCompareAt > finalPrice
+        ? baseCompareAt
+        : NaN;
+    let discountBadge = null;
+
+    // 2. Apply extraDiscount if it exists (store-wide discount)
+    if (extra) {
+      // appliesTo=0 means it's a store-wide discount that can be displayed everywhere
+      if (Number(extra.appliesTo) === 0) {
+        const priceAfterDiscount = applyExtraDiscount(extra, finalPrice);
+        if (
+          Number.isFinite(priceAfterDiscount) &&
+          priceAfterDiscount < finalPrice
+        ) {
+          // If there wasn't an original sale price, the current price becomes the "compare at" price.
+          if (!Number.isFinite(compareAtPrice)) {
+            compareAtPrice = finalPrice;
+          }
+          finalPrice = priceAfterDiscount;
+        }
+      }
+      // This handles discounts that are specific to variants, which might be pre-calculated
+      else if (
+        Number.isFinite(extra.finalMinPrice) &&
+        extra.finalMinPrice < finalPrice
+      ) {
+        if (!Number.isFinite(compareAtPrice)) {
+          const baseMin =
+            Number.isFinite(extra.baseMinPrice) && extra.baseMinPrice > 0
+              ? extra.baseMinPrice
+              : finalPrice;
+          compareAtPrice = baseMin;
+        }
+        finalPrice = extra.finalMinPrice;
+      }
+    }
+    
+    const hasAppliedDiscount = Number.isFinite(compareAtPrice) && compareAtPrice > finalPrice;
+
+    // 3. Create the discount badge text if any discount has been applied
+    if (hasAppliedDiscount && showDiscountBadge) {
+      discountBadge = buildDiscountBadge(
+        extra,
+        compareAtPrice,
+        finalPrice,
+      );
+    }
+    
+    const image =
       raw.image ??
-      (Array.isArray(raw.images) ? raw.images[0] : null);
+      (Array.isArray(raw.images) ? raw.images[0] : null) ??
+      'https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png';
 
-    const slugSource = raw.slug || raw.path || "";
+    const slugSource = raw.slug || raw.path || '';
     const safeSlug = slugSource
       ? String(slugSource)
-      : slugify(String(name || ""));
+      : slugify(String(name || ''));
 
     return {
       id: String(id),
+      productId:
+        productId === null || productId === undefined
+          ? null
+          : String(productId),
       name,
-      price,
-      compareAt,
-      image: getImageUrl(rawImage),
+      price: finalPrice,
+      compareAt: hasAppliedDiscount ? compareAtPrice : NaN,
+      image,
       rating: Number(raw.rating ?? raw.stars ?? 0),
       brand:
         raw.brand?.name ??
         raw.brand?.brandname ??
         raw.brand ??
         raw.brandName ??
-        "",
+        '',
       category:
         raw.categoryType?.name ??
         raw.category_type?.name ??
@@ -98,29 +320,39 @@ export function RegularCard({ product, hrefQuery }) {
         raw.category?.categoryname ??
         raw.category ??
         raw.categoryName ??
-        "",
+        '',
       slug: safeSlug,
-      sale: Boolean(raw.sale),
-      productId: raw.id ?? raw.product_id,
+      // Keep original sale flag for the generic SVG tag, but also rely on hasAppliedDiscount
+      sale: Boolean(raw.sale) || hasAppliedDiscount,
+      discountBadge,
     };
-  }, [product]);
+  }, [product, showDiscountBadge]);
 
   const hasSale =
     Number.isFinite(item.compareAt) && item.compareAt > item.price;
+  const wishlistId = item.productId;
+  const wishlistDisabled = !wishlistId || wlPending;
 
   useEffect(() => {
-    const ids = readWishlistIds();
-    setIsWishlisted(ids.has(item.id));
-  }, [item.id]);
+    if (!wishlistId) {
+      setIsWishlisted(false);
+      return undefined;
+    }
+
+    const sync = () => {
+      setIsWishlisted(isWishlistedCached(wishlistId));
+    };
+
+    sync();
+    return subscribeWishlist(sync);
+  }, [wishlistId]);
 
   const updateLocal = useCallback(
     (next) => {
-      const ids = readWishlistIds();
-      if (next) ids.add(item.id);
-      else ids.delete(item.id);
-      writeWishlistIds(ids);
+      if (!wishlistId) return;
+      updateWishlistCache(wishlistId, next);
     },
-    [item.id]
+    [wishlistId],
   );
 
   const toggleWishlist = useCallback(
@@ -133,6 +365,14 @@ export function RegularCard({ product, hrefQuery }) {
       const productId = item.productId ?? item.id;
       if (!productId) return;
 
+      const productId = wishlistId;
+
+      if (!productId) {
+        console.error("Missing product_id");
+        return;
+      }
+
+      // ✅ optimistic
       setIsWishlisted(next);
       updateLocal(next);
       setWlPending(true);
@@ -158,13 +398,16 @@ export function RegularCard({ product, hrefQuery }) {
         setWlPending(false);
       }
     },
-    [isWishlisted, item.id, item.productId, updateLocal, wlPending]
+    [isWishlisted, updateLocal, wishlistId, wlPending],
   );
 
-  const reviewsForProduct = Array.isArray(DataReview)
-    ? DataReview.filter((r) => r.productID === item.id)
-    : [];
-  const averageRating = getAverageRating(reviewsForProduct);
+  const reviewKey = item.productId ?? item.id;
+  const reviewStats =
+    REVIEW_STATS.get(String(reviewKey)) || EMPTY_REVIEW_STATS;
+  const averageRating = reviewStats.count
+    ? (reviewStats.sum / reviewStats.count).toFixed(1)
+    : 0;
+  const reviewCount = reviewStats.count;
 
   const queryString = useMemo(() => {
     if (!hrefQuery || typeof hrefQuery !== "object") return "";
@@ -183,7 +426,12 @@ export function RegularCard({ product, hrefQuery }) {
     <div className="group relative flex h-full w-full flex-col rounded-lg bg-white space-y-4 transition-all overflow-hidden">
       <Link href={href}>
         <div className="image flex w-full items-center justify-center relative">
-          {(item.sale || hasSale) && (
+          {/* Show a text badge if extraDiscount provides one */}
+          {item.discountBadge ? (
+            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] font-bold py-1 px-2 rounded">
+              {item.discountBadge}
+            </div>
+          ) : (item.sale || hasSale) && (
             <img
               src="/sale-tag.svg"
               alt="Sale"
@@ -204,7 +452,7 @@ export function RegularCard({ product, hrefQuery }) {
               onClick={toggleWishlist}
               variant="tertiary"
               size="md"
-              disabled={wlPending}
+              disabled={wishlistDisabled} // kalau BtnIconToggle support
             />
           </div>
 
@@ -224,6 +472,12 @@ export function RegularCard({ product, hrefQuery }) {
           <div className="text-sm font-bold text-neutral-950 line-clamp-2">
             {item.name}
           </div>
+
+          {showDiscountBadge && item.discountBadge ? (
+            <div className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+              {item.discountBadge}
+            </div>
+          ) : null}
 
           <div className="price flex items-center space-x-2">
             {hasSale ? (
@@ -255,7 +509,7 @@ export function RegularCard({ product, hrefQuery }) {
             )}
             <div className="w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
-              ({reviewsForProduct.length} reviews)
+              ({reviewCount} reviews)
             </div>
           </div>
 

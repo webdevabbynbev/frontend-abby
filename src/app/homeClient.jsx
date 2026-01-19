@@ -36,6 +36,33 @@ export default function HomeClient() {
 
   const router = useRouter();
 
+  const attachApiExtraDiscounts = (normalizedItems, rawRows) => {
+    if (!Array.isArray(normalizedItems)) return [];
+
+    const extraById = new Map();
+    if (Array.isArray(rawRows)) {
+      rawRows.forEach((row) => {
+        const source = row?.product ?? row;
+        const key = Number(source?.id ?? source?.productId ?? source?._id ?? 0);
+        if (!key) return;
+        const extra =
+          row?.product?.extraDiscount ??
+          row?.extraDiscount ??
+          source?.extraDiscount ??
+          null;
+        if (extra) {
+          extraById.set(key, extra);
+        }
+      });
+    }
+
+    return normalizedItems.map((item) => {
+      const key = Number(item?.id ?? item?.productId ?? item?._id ?? 0);
+      const extra = extraById.get(key) ?? item?.extraDiscount ?? null;
+      return extra ? { ...item, extraDiscount: extra } : item;
+    });
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -62,13 +89,13 @@ export default function HomeClient() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await getProducts({
+        const { data, dataRaw } = await getProducts({
           page: 1,
           per_page: 30,
           sort_by: "created_at",
           order: "desc",
         });
-        setProducts(data);
+        setProducts(attachApiExtraDiscounts(data, dataRaw));
       } catch (err) {
         console.error("getProducts error:", err);
       } finally {
@@ -81,13 +108,13 @@ export default function HomeClient() {
     (async () => {
       try {
         // ✅ Mengambil data Best Seller: urutkan berdasarkan 'sold' (terjual) secara descending (terbanyak)
-        const { data } = await getProducts({
+        const { data, dataRaw } = await getProducts({
           page: 1,
           per_page: 15,
           sort_by: "sold",
           order: "desc",
         });
-        setBestSellers(data);
+        setBestSellers(attachApiExtraDiscounts(data, dataRaw));
       } catch (err) {
         console.error("getBestSellers error:", err);
       } finally {
