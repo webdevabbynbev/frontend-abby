@@ -4,36 +4,39 @@ const BASE = normalizedBase
   ? normalizedBase.endsWith("/")
     ? normalizedBase
     : `${normalizedBase}/`
-    : "";
+  : "";
 
 export async function getApi(path, options = {}) {
   if (!BASE) throw new Error("NEXT_PUBLIC_API_URL belum di-set. Cek .env");
 
-  const cleanPath = String(path).replace(/^\/+/, ""); // penting
+  const cleanPath = String(path).replace(/^\/+/, "");
   const url = path.startsWith("http")
     ? path
     : new URL(cleanPath, BASE).toString();
 
+  const isGet = !options.method || options.method === "GET";
+
   const res = await fetch(url, {
-    cache: "no-store",
     ...options,
+
+    // ✅ CACHE UNTUK APP ROUTER (HANYA GET)
+    ...(isGet && { next: { revalidate: 60 } }),
+
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
-    // Add credentials for cross-origin requests if running server-side
+
     ...(typeof window === "undefined" && { credentials: "include" }),
   });
 
-  // Check if response is JSON before parsing
   const contentType = res.headers.get("content-type");
   let data = {};
 
   if (contentType?.includes("application/json")) {
     data = await res.json().catch(() => ({}));
   } else {
-    // If not JSON, try to parse text as fallback
     const text = await res.text().catch(() => "");
     try {
       data = text ? JSON.parse(text) : {};
@@ -42,8 +45,9 @@ export async function getApi(path, options = {}) {
     }
   }
 
-  if (!res.ok)
+  if (!res.ok) {
     throw new Error(data?.message || `Request failed: ${res.status}`);
+  }
 
   return data;
 }

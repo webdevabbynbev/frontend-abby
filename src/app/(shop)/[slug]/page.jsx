@@ -1,67 +1,41 @@
-import { getProductByPath, getProducts } from "@/services/api/product.services";
+import { getProductByPath } from "@/services/api/product.services";
 import ProductDetailClient from "./ProductDetailClient";
 import { slugify } from "@/utils";
 import { notFound } from "next/navigation";
 
+const norm = (s) => slugify(decodeURIComponent(String(s || "")).trim());
+
 export async function generateMetadata(props) {
   const params = await props.params;
   const slugParam = norm(params.slug);
-  const resByPath = await getProductByPath(slugParam);
-  const product = resByPath?.data;
+  
+  try {
+    const resByPath = await getProductByPath(slugParam);
+    const product = resByPath?.data;
 
-  if (!product) return {};
+    if (!product) return { title: "Produk Tidak Ditemukan | Abby n Bev" };
 
-  const title = `${product.name} | Abby n Bev`;
-  const description =
-    product.shortDescription ??
-    product.description?.slice(0, 160) ??
-    `Beli ${product.name} original di Abby n Bev.`;
-
-  const image =
-    product.image || (Array.isArray(product.images) ? product.images[0] : null);
-
-  return {
-    title,
-    description,
-
-    alternates: {
-      canonical: `/product/${product.slug}`,
-    },
-
-    openGraph: {
-      title,
-      description,
-      type: "website",
-      images: image
-        ? [
-            {
-              url: image,
-              width: 1200,
-              height: 630,
-              alt: product.name,
-            },
-          ]
-        : [],
-    },
-  };
+    return {
+      title: `${product.name} | Abby n Bev`,
+      description: product.shortDescription || `Beli ${product.name} di Abby n Bev`,
+    };
+  } catch {
+    return { title: "Abby n Bev" };
+  }
 }
-
-const norm = (s) => slugify(decodeURIComponent(String(s || "")).trim());
 
 export default async function Page({ params }) {
   const awaitedParams = await params;
   const slugParam = norm(awaitedParams.slug);
 
+  // 1. Ambil data secara spesifik (Server Side)
   const resByPath = await getProductByPath(slugParam);
-  let product = resByPath?.data || null;
+  const product = resByPath?.data || null;
 
+  // 2. Jika tidak ada, langsung 404 (Jangan lakukan fetch 500 produk di sini)
   if (!product) {
-    const res = await getProducts({ per_page: 500, limit: 500, page: 1 });
-    const list = Array.isArray(res?.data) ? res.data : [];
-    product = list.find((p) => norm(p?.slug) === slugParam) || null;
+    notFound();
   }
-
-  if (!product) notFound();
 
   return (
     <>
