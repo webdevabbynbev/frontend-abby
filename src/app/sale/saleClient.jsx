@@ -509,6 +509,7 @@ export default function SaleClient() {
                   }`}
                   product={product}
                   hrefQuery={buildSaleHrefQuery(product)}
+                  showDiscountBadge={false}
                 />
               ))
             ) : (
