@@ -50,98 +50,66 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       raw.name ??
       raw.productName ??
       raw.title ??
-      "unknown";
+      'unknown';
 
-    const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
-
+    const name = raw.name ?? raw.productName ?? raw.title ?? 'Unnamed Product';
     const extra = raw?.extraDiscount ?? null;
 
-    let basePrice = Number(
-      raw.price ??
-        raw.base_price ??
-        raw.basePrice ??
-        raw.salePrice ??
-        (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
-        0,
-    );
+    // --- Price Calculation ---
+    // 1. Get base prices from product data
+    const basePrice = Number(raw.price ?? raw.base_price ?? raw.basePrice ?? 0);
+    const baseCompareAt = Number(raw.realprice ?? raw.oldPrice ?? NaN);
 
-    let baseCompareAt = Number(
-      raw.realprice ??
-        raw.oldPrice ??
-        (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
-        NaN,
-    );
-
-    if (
-      (!Number.isFinite(basePrice) || basePrice <= 0) &&
-      extra?.baseMinPrice
-    ) {
-      basePrice = Number(extra.baseMinPrice) || 0;
-    }
-
-    const basePriceBeforeDiscount = basePrice;
-    let price = basePriceBeforeDiscount;
-    let compareAtValue = Number.isFinite(baseCompareAt) ? baseCompareAt : NaN;
-    let extraDiscountLabel = "";
+    let finalPrice = basePrice;
+    let compareAtPrice = Number.isFinite(baseCompareAt) && baseCompareAt > finalPrice ? baseCompareAt : NaN;
     let discountBadge = null;
-    let discountPercent = null;
 
+    // 2. Apply extraDiscount if it exists (store-wide discount)
     if (extra && showDiscountBadge) {
-      extraDiscountLabel = String(extra.label || "").trim();
-
-      const appliesTo = Number(extra.appliesTo);
-      const baseMinPrice = Number(extra.baseMinPrice ?? basePrice);
-      const finalMinPrice = Number(extra.finalMinPrice ?? price);
-
-      const hasVariantDiscount =
-        appliesTo !== 0 &&
-        Number.isFinite(finalMinPrice) &&
-        finalMinPrice > 0 &&
-        Number.isFinite(baseMinPrice) &&
-        finalMinPrice < baseMinPrice;
-
-      if (hasVariantDiscount) {
-        price = finalMinPrice;
-        compareAtValue = baseMinPrice;
-      } else if (appliesTo === 0) {
-        const after = applyExtraDiscount(extra, price);
-        if (Number.isFinite(after) && after > 0 && after < price) {
-          compareAtValue = price;
-          price = after;
+      // appliesTo=0 means it's a store-wide discount that can be displayed everywhere
+      if (Number(extra.appliesTo) === 0) {
+        const priceAfterDiscount = applyExtraDiscount(extra, finalPrice);
+        if (Number.isFinite(priceAfterDiscount) && priceAfterDiscount < finalPrice) {
+          // If there wasn't an original sale price, the current price becomes the "compare at" price.
+          if (!Number.isFinite(compareAtPrice)) {
+            compareAtPrice = finalPrice;
+          }
+          finalPrice = priceAfterDiscount;
         }
       }
+      // This handles discounts that are specific to variants, which might be pre-calculated
+      else if (Number.isFinite(extra.finalMinPrice) && extra.finalMinPrice < finalPrice) {
+        if (!Number.isFinite(compareAtPrice)) {
+            compareAtPrice = finalPrice;
+        }
+        finalPrice = extra.finalMinPrice;
+      }
     }
+    
+    const hasAppliedDiscount = Number.isFinite(compareAtPrice) && compareAtPrice > finalPrice;
 
-    const compareAtSource =
-      Number.isFinite(compareAtValue) && compareAtValue > price
-        ? compareAtValue
-        : basePriceBeforeDiscount;
-    const hasAppliedDiscount =
-      Number.isFinite(compareAtSource) && compareAtSource > price;
-    if (extra && showDiscountBadge && hasAppliedDiscount) {
-      discountPercent = getDiscountPercent(compareAtSource, price);
-      discountBadge =
-        extraDiscountLabel ||
-        (discountPercent && discountPercent > 0
-          ? `${discountPercent}% off`
-          : null);
+    // 3. Create the discount badge text if any discount has been applied
+    if (hasAppliedDiscount && showDiscountBadge) {
+        const percent = getDiscountPercent(compareAtPrice, finalPrice);
+        // Prioritize the label from the CMS, otherwise calculate percentage.
+        discountBadge = extra?.label || (percent > 0 ? `${percent}% off` : null);
     }
-
+    
     const image =
       raw.image ??
       (Array.isArray(raw.images) ? raw.images[0] : null) ??
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+      'https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png';
 
-    const slugSource = raw.slug || raw.path || "";
+    const slugSource = raw.slug || raw.path || '';
     const safeSlug = slugSource
       ? String(slugSource)
-      : slugify(String(name || ""));
+      : slugify(String(name || ''));
 
     return {
       id: String(id),
       name,
-      price,
-      compareAt: hasAppliedDiscount ? compareAtSource : NaN,
+      price: finalPrice,
+      compareAt: hasAppliedDiscount ? compareAtPrice : NaN,
       image,
       rating: Number(raw.rating ?? raw.stars ?? 0),
       brand:
@@ -149,7 +117,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         raw.brand?.brandname ??
         raw.brand ??
         raw.brandName ??
-        "",
+        '',
       category:
         raw.categoryType?.name ??
         raw.category_type?.name ??
@@ -157,13 +125,13 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         raw.category?.categoryname ??
         raw.category ??
         raw.categoryName ??
-        "",
+        '',
       slug: safeSlug,
-      sale: Boolean(raw.sale),
+      // Keep original sale flag for the generic SVG tag, but also rely on hasAppliedDiscount
+      sale: Boolean(raw.sale) || hasAppliedDiscount,
       discountBadge,
-      discountPercent,
     };
-  }, [product]);
+  }, [product, showDiscountBadge]);
 
   const hasSale =
     Number.isFinite(item.compareAt) && item.compareAt > item.price;
@@ -258,7 +226,12 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
     <div className="group relative flex h-full w-full flex-col rounded-lg bg-white space-y-4 transition-all overflow-hidden">
       <Link href={href}>
         <div className="image flex w-full items-center justify-center relative">
-          {(item.sale || hasSale) && (
+          {/* Show a text badge if extraDiscount provides one */}
+          {item.discountBadge ? (
+            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] font-bold py-1 px-2 rounded">
+              {item.discountBadge}
+            </div>
+          ) : (item.sale || hasSale) && (
             <img
               src="/sale-tag.svg"
               alt="Sale"
