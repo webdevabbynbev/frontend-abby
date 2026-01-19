@@ -16,6 +16,74 @@ import axios from "@/lib/axios";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
+const toNumberOrNaN = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
+};
+
+const normalizeExtraDiscount = (raw) => {
+  if (!raw || typeof raw !== "object") return null;
+
+  const valueType = Number(raw.valueType ?? raw.value_type ?? 1);
+  const value = Number(raw.value ?? 0);
+  const maxRaw = raw.maxDiscount ?? raw.max_discount;
+  const maxDiscount =
+    maxRaw === null || maxRaw === undefined || maxRaw === ""
+      ? null
+      : Number(maxRaw);
+  const appliesTo = Number(raw.appliesTo ?? raw.applies_to ?? 0);
+
+  const baseMinPrice = toNumberOrNaN(raw.baseMinPrice ?? raw.base_min_price);
+  const finalMinPrice = toNumberOrNaN(raw.finalMinPrice ?? raw.final_min_price);
+
+  const label =
+    typeof raw.label === "string"
+      ? raw.label.trim()
+      : typeof raw.name === "string"
+        ? raw.name.trim()
+        : "";
+
+  return {
+    ...raw,
+    valueType,
+    value,
+    maxDiscount,
+    appliesTo,
+    baseMinPrice,
+    finalMinPrice,
+    label,
+  };
+};
+
+const buildDiscountBadge = (extra, compareAtPrice, finalPrice) => {
+  if (
+    !Number.isFinite(compareAtPrice) ||
+    !Number.isFinite(finalPrice) ||
+    compareAtPrice <= finalPrice
+  ) {
+    return null;
+  }
+
+  const label = extra?.label ? String(extra.label).trim() : "";
+  if (label) return label;
+
+  const valueType = Number(extra?.valueType);
+  const value = Number(extra?.value ?? 0);
+
+  if (Number.isFinite(value) && value > 0) {
+    if (valueType === 2) {
+      const formatted = formatToRupiah(value);
+      return formatted ? `Diskon ${formatted}` : null;
+    }
+    if (valueType === 1) {
+      return `Diskon ${value}%`;
+    }
+  }
+
+  const percent = getDiscountPercent(compareAtPrice, finalPrice);
+  return percent > 0 ? `Diskon ${percent}%` : null;
+};
+
 function readWishlistIds() {
   try {
     const raw = localStorage.getItem(WISHLIST_KEY);
@@ -52,24 +120,39 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       raw.title ??
       'unknown';
 
-    const name = raw.name ?? raw.productName ?? raw.title ?? 'Unnamed Product';
-    const extra = raw?.extraDiscount ?? null;
+    const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
+    const extra = normalizeExtraDiscount(
+      raw?.extraDiscount ?? raw?.extra_discount ?? null,
+    );
 
     // --- Price Calculation ---
     // 1. Get base prices from product data
-    const basePrice = Number(raw.price ?? raw.base_price ?? raw.basePrice ?? 0);
+    let basePrice = Number(raw.price ?? raw.base_price ?? raw.basePrice ?? 0);
     const baseCompareAt = Number(raw.realprice ?? raw.oldPrice ?? NaN);
 
+    if (
+      (!Number.isFinite(basePrice) || basePrice <= 0) &&
+      Number.isFinite(extra?.baseMinPrice)
+    ) {
+      basePrice = extra.baseMinPrice;
+    }
+
     let finalPrice = basePrice;
-    let compareAtPrice = Number.isFinite(baseCompareAt) && baseCompareAt > finalPrice ? baseCompareAt : NaN;
+    let compareAtPrice =
+      Number.isFinite(baseCompareAt) && baseCompareAt > finalPrice
+        ? baseCompareAt
+        : NaN;
     let discountBadge = null;
 
     // 2. Apply extraDiscount if it exists (store-wide discount)
-    if (extra && showDiscountBadge) {
+    if (extra) {
       // appliesTo=0 means it's a store-wide discount that can be displayed everywhere
       if (Number(extra.appliesTo) === 0) {
         const priceAfterDiscount = applyExtraDiscount(extra, finalPrice);
-        if (Number.isFinite(priceAfterDiscount) && priceAfterDiscount < finalPrice) {
+        if (
+          Number.isFinite(priceAfterDiscount) &&
+          priceAfterDiscount < finalPrice
+        ) {
           // If there wasn't an original sale price, the current price becomes the "compare at" price.
           if (!Number.isFinite(compareAtPrice)) {
             compareAtPrice = finalPrice;
@@ -78,9 +161,16 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         }
       }
       // This handles discounts that are specific to variants, which might be pre-calculated
-      else if (Number.isFinite(extra.finalMinPrice) && extra.finalMinPrice < finalPrice) {
+      else if (
+        Number.isFinite(extra.finalMinPrice) &&
+        extra.finalMinPrice < finalPrice
+      ) {
         if (!Number.isFinite(compareAtPrice)) {
-            compareAtPrice = finalPrice;
+          const baseMin =
+            Number.isFinite(extra.baseMinPrice) && extra.baseMinPrice > 0
+              ? extra.baseMinPrice
+              : finalPrice;
+          compareAtPrice = baseMin;
         }
         finalPrice = extra.finalMinPrice;
       }
@@ -90,9 +180,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
     // 3. Create the discount badge text if any discount has been applied
     if (hasAppliedDiscount && showDiscountBadge) {
-        const percent = getDiscountPercent(compareAtPrice, finalPrice);
-        // Prioritize the label from the CMS, otherwise calculate percentage.
-        discountBadge = extra?.label || (percent > 0 ? `${percent}% off` : null);
+      discountBadge = buildDiscountBadge(
+        extra,
+        compareAtPrice,
+        finalPrice,
+      );
     }
     
     const image =

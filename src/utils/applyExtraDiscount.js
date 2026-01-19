@@ -2,13 +2,15 @@ export function applyExtraDiscount(extraDiscount, price) {
   const p = Number(price || 0);
   if (!extraDiscount || !Number.isFinite(p) || p <= 0) return p;
 
-  const valueType = Number(extraDiscount.valueType);
-  const value = Number(extraDiscount.value || 0);
+  const valueType = Number(
+    extraDiscount.valueType ?? extraDiscount.value_type ?? 1,
+  );
+  const value = Number(extraDiscount.value ?? 0);
+  const maxRaw = extraDiscount.maxDiscount ?? extraDiscount.max_discount;
   const maxDiscount =
-    extraDiscount.maxDiscount === null ||
-    extraDiscount.maxDiscount === undefined
+    maxRaw === null || maxRaw === undefined || maxRaw === ""
       ? null
-      : Number(extraDiscount.maxDiscount);
+      : Number(maxRaw);
 
   let disc = 0;
 
