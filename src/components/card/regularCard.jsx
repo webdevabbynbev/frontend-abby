@@ -10,6 +10,7 @@ import {
   getDiscountPercent,
   applyExtraDiscount,
 } from "@/utils";
+import { getImageUrl } from "@/utils/getImageUrl";
 import { DataReview } from "@/data";
 import axios from "@/lib/axios";
 
@@ -203,11 +204,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
     const raw = product;
 
     const productId =
-      raw.id ??
-      raw._id ??
-      raw.productId ??
-      raw.product_id ??
-      null;
+      raw.id ?? raw._id ?? raw.productId ?? raw.product_id ?? null;
 
     const id =
       productId ??
@@ -224,8 +221,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       raw?.extraDiscount ?? raw?.extra_discount ?? null,
     );
 
-    // --- Price Calculation ---
-    // 1. Get base prices from product data
     let basePrice = Number(raw.price ?? raw.base_price ?? raw.basePrice ?? 0);
     const baseCompareAt = Number(raw.realprice ?? raw.oldPrice ?? NaN);
 
@@ -243,24 +238,19 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         : NaN;
     let discountBadge = null;
 
-    // 2. Apply extraDiscount if it exists (store-wide discount)
     if (extra) {
-      // appliesTo=0 means it's a store-wide discount that can be displayed everywhere
       if (Number(extra.appliesTo) === 0) {
         const priceAfterDiscount = applyExtraDiscount(extra, finalPrice);
         if (
           Number.isFinite(priceAfterDiscount) &&
           priceAfterDiscount < finalPrice
         ) {
-          // If there wasn't an original sale price, the current price becomes the "compare at" price.
           if (!Number.isFinite(compareAtPrice)) {
             compareAtPrice = finalPrice;
           }
           finalPrice = priceAfterDiscount;
         }
-      }
-      // This handles discounts that are specific to variants, which might be pre-calculated
-      else if (
+      } else if (
         Number.isFinite(extra.finalMinPrice) &&
         extra.finalMinPrice < finalPrice
       ) {
@@ -274,27 +264,23 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         finalPrice = extra.finalMinPrice;
       }
     }
-    
-    const hasAppliedDiscount = Number.isFinite(compareAtPrice) && compareAtPrice > finalPrice;
 
-    // 3. Create the discount badge text if any discount has been applied
+    const hasAppliedDiscount =
+      Number.isFinite(compareAtPrice) && compareAtPrice > finalPrice;
+
     if (hasAppliedDiscount && showDiscountBadge) {
-      discountBadge = buildDiscountBadge(
-        extra,
-        compareAtPrice,
-        finalPrice,
-      );
+      discountBadge = buildDiscountBadge(extra, compareAtPrice, finalPrice);
     }
-    
+
     const image =
       raw.image ??
       (Array.isArray(raw.images) ? raw.images[0] : null) ??
-      'https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png';
+      getImageUrl();
 
-    const slugSource = raw.slug || raw.path || '';
+    const slugSource = raw.slug || raw.path || "";
     const safeSlug = slugSource
       ? String(slugSource)
-      : slugify(String(name || ''));
+      : slugify(String(name || ""));
 
     return {
       id: String(id),
@@ -312,7 +298,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         raw.brand?.brandname ??
         raw.brand ??
         raw.brandName ??
-        '',
+        "",
       category:
         raw.categoryType?.name ??
         raw.category_type?.name ??
@@ -320,9 +306,8 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         raw.category?.categoryname ??
         raw.category ??
         raw.categoryName ??
-        '',
+        "",
       slug: safeSlug,
-      // Keep original sale flag for the generic SVG tag, but also rely on hasAppliedDiscount
       sale: Boolean(raw.sale) || hasAppliedDiscount,
       discountBadge,
     };
@@ -362,15 +347,13 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       if (wlPending) return;
 
       const next = !isWishlisted;
-      const productId = item.productId ?? item.id;
-      if (!productId) return;
 
-      const productId = wishlistId;
-
-      if (!productId) {
+      if (!wishlistId) {
         console.error("Missing product_id");
         return;
       }
+
+      const productId = wishlistId;
 
       // ✅ optimistic
       setIsWishlisted(next);
@@ -392,7 +375,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         updateLocal(!next);
         console.error(
           "Wishlist error:",
-          err?.response?.data?.message || err?.message
+          err?.response?.data?.message || err?.message,
         );
       } finally {
         setWlPending(false);
@@ -402,8 +385,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   );
 
   const reviewKey = item.productId ?? item.id;
-  const reviewStats =
-    REVIEW_STATS.get(String(reviewKey)) || EMPTY_REVIEW_STATS;
+  const reviewStats = REVIEW_STATS.get(String(reviewKey)) || EMPTY_REVIEW_STATS;
   const averageRating = reviewStats.count
     ? (reviewStats.sum / reviewStats.count).toFixed(1)
     : 0;
@@ -431,12 +413,14 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] font-bold py-1 px-2 rounded">
               {item.discountBadge}
             </div>
-          ) : (item.sale || hasSale) && (
-            <img
-              src="/sale-tag.svg"
-              alt="Sale"
-              className="absolute top-0 left-0 z-10 w-10 h-auto"
-            />
+          ) : (
+            (item.sale || hasSale) && (
+              <img
+                src="/sale-tag.svg"
+                alt="Sale"
+                className="absolute top-0 left-0 z-10 w-10 h-auto"
+              />
+            )
           )}
 
           <div
