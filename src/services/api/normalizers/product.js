@@ -3,6 +3,13 @@ export function normalizeProduct(raw) {
 
   const item = raw.product || raw;
 
+  // ✅ penting: pastikan extraDiscount kebawa (list biasanya raw.product.extraDiscount)
+  const extraDiscount =
+    item?.extraDiscount ??
+    raw?.extraDiscount ??
+    raw?.product?.extraDiscount ??
+    null;
+
   const medias = Array.isArray(item.medias) ? item.medias : [];
   const variants = Array.isArray(item.variants) ? item.variants : [];
   const variantMediaList = variants
@@ -19,7 +26,7 @@ export function normalizeProduct(raw) {
     })
     .filter((media) => Boolean(media.url));
 
-      const sortedVariants = [...variants].sort((a, b) => {
+  const sortedVariants = [...variants].sort((a, b) => {
     const priceDiff = Number(a?.price || 0) - Number(b?.price || 0);
     if (priceDiff !== 0) return priceDiff;
     return Number(a?.id || 0) - Number(b?.id || 0);
@@ -34,6 +41,7 @@ export function normalizeProduct(raw) {
       updatedAt: media?.updatedAt ?? media?.updated_at,
     }))
     .filter((media) => Boolean(media.url));
+
   const sortMedia = (a, b) => {
     const slotA = Number(a.slot ?? 0);
     const slotB = Number(b.slot ?? 0);
@@ -44,10 +52,13 @@ export function normalizeProduct(raw) {
     const timeB = Date.parse(b.updatedAt ?? "") || 0;
     return timeB - timeA;
   };
+
   const uniqueUrls = (items) => Array.from(new Set(items.map((m) => m.url)));
+
   const productImages = uniqueUrls(
-    mediaList.filter((media) => !media.variantId).sort(sortMedia)
+    mediaList.filter((media) => !media.variantId).sort(sortMedia),
   );
+
   const brandName =
     item.brand?.name ??
     item.brand?.brandname ??
@@ -62,6 +73,7 @@ export function normalizeProduct(raw) {
   const variantPrices = sortedVariants
     .map((variant) => Number(variant?.price))
     .filter((value) => Number.isFinite(value) && value > 0);
+
   const lowestVariantPrice = variantPrices.length
     ? Math.min(...variantPrices)
     : null;
@@ -77,7 +89,7 @@ export function normalizeProduct(raw) {
             attr?.label ||
             attr?.value ||
             attr?.attribute?.name ||
-            ""
+            "",
         )
         .filter(Boolean)
         .join(" / ");
@@ -88,8 +100,9 @@ export function normalizeProduct(raw) {
       const variantImages = uniqueUrls(
         mediaList
           .filter((media) => String(media.variantId) === String(variant.id))
-          .sort(sortMedia)
+          .sort(sortMedia),
       );
+
       return {
         id: variant.id,
         label: attrLabel || fallbackLabel || `Varian ${variant.id}`,
@@ -111,7 +124,7 @@ export function normalizeProduct(raw) {
         item.price ??
         item.salePrice ??
         item.realprice ??
-        0
+        0,
     ),
     image:
       item.image ||
@@ -132,6 +145,9 @@ export function normalizeProduct(raw) {
       "",
     slug: item.slug || item.path || "",
     variantItems,
+
+    // ✅ ini yang bikin badge & harga diskon bisa muncul di UI
+    extraDiscount,
   };
 }
 
