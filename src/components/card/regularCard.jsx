@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { FaStar } from "react-icons/fa6";
 import { BtnIconToggle } from "..";
-import { formatToRupiah, slugify, getAverageRating } from "@/utils";
+import {
+  formatToRupiah,
+  slugify,
+  getAverageRating,
+  getDiscountPercent,
+  applyExtraDiscount,
+} from "@/utils";
 import { DataReview } from "@/data";
 import axios from "@/lib/axios";
 
@@ -26,7 +32,7 @@ function writeWishlistIds(setIds) {
   } catch {}
 }
 
-export function RegularCard({ product, hrefQuery }) {
+export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
 
@@ -48,7 +54,9 @@ export function RegularCard({ product, hrefQuery }) {
 
     const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
 
-    const price = Number(
+    const extra = raw?.extraDiscount ?? null;
+
+    let basePrice = Number(
       raw.price ??
         raw.base_price ??
         raw.basePrice ??
@@ -57,12 +65,67 @@ export function RegularCard({ product, hrefQuery }) {
         0,
     );
 
-    const compareAt = Number(
+    let baseCompareAt = Number(
       raw.realprice ??
         raw.oldPrice ??
         (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
         NaN,
     );
+
+    if (
+      (!Number.isFinite(basePrice) || basePrice <= 0) &&
+      extra?.baseMinPrice
+    ) {
+      basePrice = Number(extra.baseMinPrice) || 0;
+    }
+
+    const basePriceBeforeDiscount = basePrice;
+    let price = basePriceBeforeDiscount;
+    let compareAtValue = Number.isFinite(baseCompareAt) ? baseCompareAt : NaN;
+    let extraDiscountLabel = "";
+    let discountBadge = null;
+    let discountPercent = null;
+
+    if (extra && showDiscountBadge) {
+      extraDiscountLabel = String(extra.label || "").trim();
+
+      const appliesTo = Number(extra.appliesTo);
+      const baseMinPrice = Number(extra.baseMinPrice ?? basePrice);
+      const finalMinPrice = Number(extra.finalMinPrice ?? price);
+
+      const hasVariantDiscount =
+        appliesTo !== 0 &&
+        Number.isFinite(finalMinPrice) &&
+        finalMinPrice > 0 &&
+        Number.isFinite(baseMinPrice) &&
+        finalMinPrice < baseMinPrice;
+
+      if (hasVariantDiscount) {
+        price = finalMinPrice;
+        compareAtValue = baseMinPrice;
+      } else if (appliesTo === 0) {
+        const after = applyExtraDiscount(extra, price);
+        if (Number.isFinite(after) && after > 0 && after < price) {
+          compareAtValue = price;
+          price = after;
+        }
+      }
+    }
+
+    const compareAtSource =
+      Number.isFinite(compareAtValue) && compareAtValue > price
+        ? compareAtValue
+        : basePriceBeforeDiscount;
+    const hasAppliedDiscount =
+      Number.isFinite(compareAtSource) && compareAtSource > price;
+    if (extra && showDiscountBadge && hasAppliedDiscount) {
+      discountPercent = getDiscountPercent(compareAtSource, price);
+      discountBadge =
+        extraDiscountLabel ||
+        (discountPercent && discountPercent > 0
+          ? `${discountPercent}% off`
+          : null);
+    }
 
     const image =
       raw.image ??
@@ -78,7 +141,7 @@ export function RegularCard({ product, hrefQuery }) {
       id: String(id),
       name,
       price,
-      compareAt,
+      compareAt: hasAppliedDiscount ? compareAtSource : NaN,
       image,
       rating: Number(raw.rating ?? raw.stars ?? 0),
       brand:
@@ -97,6 +160,8 @@ export function RegularCard({ product, hrefQuery }) {
         "",
       slug: safeSlug,
       sale: Boolean(raw.sale),
+      discountBadge,
+      discountPercent,
     };
   }, [product]);
 
@@ -237,6 +302,12 @@ export function RegularCard({ product, hrefQuery }) {
               {item.name}
             </div>
           </div>
+
+          {showDiscountBadge && item.discountBadge ? (
+            <div className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+              {item.discountBadge}
+            </div>
+          ) : null}
 
           <div className="price flex items-center space-x-2">
             {hasSale ? (
