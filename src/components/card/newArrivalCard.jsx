@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BtnIconToggle } from "..";
-import { slugify, getDiscountPercent, applyExtraDiscount } from "@/utils";
+import {
+  slugify,
+  getDiscountPercent,
+  applyExtraDiscount,
+} from "@/utils";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export function NewArrivaleCard({ product }) {
   const [wishlist, setWishlist] = useState([]);
@@ -27,24 +32,22 @@ export function NewArrivaleCard({ product }) {
 
     const name = raw.name ?? raw.productName ?? raw.title ?? "Unnamed Product";
 
-    // base price (sebelum auto-discount)
     let basePrice = Number(
       raw.price ??
         raw.base_price ??
         raw.basePrice ??
         raw.salePrice ??
         (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
-        0,
+        0
     );
 
     let baseCompareAt = Number(
       raw.realprice ??
         raw.oldPrice ??
         (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
-        NaN,
+        NaN
     );
 
-    // fallback kalau list ga punya price tapi punya extraDiscount range
     if (
       (!Number.isFinite(basePrice) || basePrice <= 0) &&
       extra?.baseMinPrice
@@ -59,7 +62,6 @@ export function NewArrivaleCard({ product }) {
     if (extra) {
       extraDiscountLabel = String(extra.label || "").trim();
 
-      // storewide: diskon nempel ke harga yang sedang tampil
       if (Number(extra.appliesTo) === 0) {
         const after = applyExtraDiscount(extra, basePrice);
         if (Number.isFinite(after) && after > 0 && after < basePrice) {
@@ -67,7 +69,6 @@ export function NewArrivaleCard({ product }) {
           price = after;
         }
       } else {
-        // selain storewide: pakai range backend
         const after = Number(extra.finalMinPrice);
         const before = Number(extra.baseMinPrice) || basePrice;
         if (
@@ -82,10 +83,9 @@ export function NewArrivaleCard({ product }) {
       }
     }
 
-    const image =
+    const rawImage =
       raw.image ??
-      (Array.isArray(raw.images) ? raw.images[0] : null) ??
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+      (Array.isArray(raw.images) ? raw.images[0] : null);
 
     const slugSource = raw.slug || raw.path || "";
     const safeSlug = slugSource
@@ -97,7 +97,7 @@ export function NewArrivaleCard({ product }) {
       name,
       price,
       compareAt,
-      image,
+      image: getImageUrl(rawImage),
       slug: safeSlug,
       sale: Boolean(raw.sale),
       extraDiscountLabel,
@@ -137,7 +137,6 @@ export function NewArrivaleCard({ product }) {
       className="group relative flex h-full w-full flex-col rounded-lg bg-white transition-all overflow-hidden"
     >
       <div className="relative">
-        {/* Badge */}
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1">
           {(item.sale || hasSale) && (
             <div className="rounded-md bg-black/80 px-2 py-1 text-xs text-white">
@@ -156,7 +155,6 @@ export function NewArrivaleCard({ product }) {
           ) : null}
         </div>
 
-        {/* Wishlist button */}
         <div
           className={`absolute top-4 right-4 z-10 transition-all duration-200
             ${
@@ -164,7 +162,7 @@ export function NewArrivaleCard({ product }) {
                 ? "opacity-100 scale-100 pointer-events-auto"
                 : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
             }
-            `}
+          `}
         >
           <BtnIconToggle
             active={isWishlisted}
@@ -178,18 +176,15 @@ export function NewArrivaleCard({ product }) {
           />
         </div>
 
-        {/* Image */}
         <img
           src={item.image}
           alt={item.name}
           className="w-full h-auto object-cover"
           onError={(e) => {
-            e.currentTarget.src =
-              "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+            e.currentTarget.src = getImageUrl();
           }}
         />
 
-        {/* Tooltip */}
         <div className="pointer-events-none absolute bottom-2 left-1/2 z-20 w-max max-w-[90%] -translate-x-1/2 rounded-md bg-black/80 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           {item.name}
         </div>

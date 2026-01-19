@@ -1,16 +1,16 @@
 import { slugify } from "./slugify";
-
-const PLACEHOLDER_IMAGE =
-  "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+import { getImageUrl } from "./getImageUrl";
 
 export function normalizeCardProduct(raw) {
   if (!raw) return null;
 
   const source = raw.product ?? raw;
+
   const variants = Array.isArray(source.variants) ? source.variants : [];
   const variantPrices = variants
     .map((variant) => Number(variant?.price))
     .filter((value) => Number.isFinite(value) && value > 0);
+
   const lowestVariantPrice = variantPrices.length
     ? Math.min(...variantPrices)
     : null;
@@ -21,7 +21,6 @@ export function normalizeCardProduct(raw) {
   const rawPath = typeof source.path === "string" ? source.path : "";
   const pathParts = rawPath.split("/").filter(Boolean);
 
-  // brand slug: dari object brand, atau dari path segmen pertama
   const brandName =
     (source.brand && source.brand.name) ||
     (typeof source.brand === "string" ? source.brand : "") ||
@@ -35,21 +34,20 @@ export function normalizeCardProduct(raw) {
     (pathParts.length ? pathParts[0] : "") ||
     brandName;
 
-  // product slug: source.slug atau segmen terakhir dari path
   const productSlugCandidate =
     source.slug ||
     (pathParts.length ? pathParts[pathParts.length - 1] : "") ||
     name;
 
-  const image =
+  const rawImagePath =
     source.image ||
     (Array.isArray(source.images) ? source.images[0] : null) ||
-    (Array.isArray(source.medias) ? source.medias[0]?.url : null) ||
-    PLACEHOLDER_IMAGE;
+    (Array.isArray(source.medias) ? source.medias[0]?.url : null);
 
-  const normalized = {
+  return {
     id: source.id ?? source._id ?? crypto.randomUUID(),
     name,
+
     price: Number(
       lowestVariantPrice ??
         source.price ??
@@ -59,13 +57,15 @@ export function normalizeCardProduct(raw) {
         (Array.isArray(source.prices) ? source.prices[0] : undefined) ??
         0
     ),
+
     compareAt: Number(
       source.realprice ??
         source.oldPrice ??
         (Array.isArray(source.prices) ? source.prices[1] : undefined) ??
         NaN
     ),
-    image,
+
+    image: getImageUrl(rawImagePath), // STRING URL ONLY
     rating: Number(source.rating ?? source.stars ?? 0),
 
     brand: brandName,
@@ -74,9 +74,8 @@ export function normalizeCardProduct(raw) {
     category: source.category ?? source.categoryName ?? "",
     slug: slugify(productSlugCandidate),
 
-    // kamu sudah rename ke is_flash_sale, tapi tetap support yg lama
-    sale: Boolean(source.sale ?? source.is_flash_sale ?? source.is_flashsale),
+    sale: Boolean(
+      source.sale ?? source.is_flash_sale ?? source.is_flashsale
+    ),
   };
-
-  return normalized;
 }

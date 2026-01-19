@@ -333,7 +333,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const wishlistId = item.productId;
   const wishlistDisabled = !wishlistId || wlPending;
 
-  // ✅ init: baca cache id dari localStorage supaya icon langsung sync
   useEffect(() => {
     if (!wishlistId) {
       setIsWishlisted(false);
@@ -363,6 +362,8 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       if (wlPending) return;
 
       const next = !isWishlisted;
+      const productId = item.productId ?? item.id;
+      if (!productId) return;
 
       const productId = wishlistId;
 
@@ -378,26 +379,21 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
       try {
         if (next) {
-          // ✅ ADD
-          await axios.post("/wishlists", { product_id: String(productId) });
+          await axios.post("/wishlists", {
+            product_id: String(productId),
+          });
         } else {
-          // ✅ DELETE (paling umum untuk axios)
           await axios.delete("/wishlists", {
             data: { product_id: String(productId) },
           });
         }
-
-        // axios otomatis throw kalau status bukan 2xx, jadi gak perlu res.ok/res.json
       } catch (err) {
-        // ❌ revert kalau gagal
         setIsWishlisted(!next);
         updateLocal(!next);
-
-        const msg =
-          err?.response?.data?.message ||
-          err?.message ||
-          "Wishlist request failed";
-        console.error("Wishlist error:", msg);
+        console.error(
+          "Wishlist error:",
+          err?.response?.data?.message || err?.message
+        );
       } finally {
         setWlPending(false);
       }
@@ -416,12 +412,10 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const queryString = useMemo(() => {
     if (!hrefQuery || typeof hrefQuery !== "object") return "";
     const params = new URLSearchParams();
-
     Object.entries(hrefQuery).forEach(([key, value]) => {
       if (value === undefined || value === null || value === "") return;
       params.set(key, String(value));
     });
-
     return params.toString();
   }, [hrefQuery]);
 
@@ -447,11 +441,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
           <div
             className={`absolute top-4 right-4 z-10 transition-all duration-200
-            ${
-              isWishlisted
-                ? "opacity-100 scale-100 pointer-events-auto"
-                : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
-            }`}
+              ${
+                isWishlisted
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+              }`}
           >
             <BtnIconToggle
               active={isWishlisted}
@@ -468,18 +462,15 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               alt={item.name}
               className="w-full h-auto object-cover"
               onError={(e) => {
-                e.currentTarget.src =
-                  "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+                e.currentTarget.src = getImageUrl();
               }}
             />
           </div>
         </div>
 
         <div className="content-wrapper w-full space-y-2 p-4">
-          <div className="category-and-name space-y-1">
-            <div className="text-sm font-bold text-neutral-950 line-clamp-2">
-              {item.name}
-            </div>
+          <div className="text-sm font-bold text-neutral-950 line-clamp-2">
+            {item.name}
           </div>
 
           {showDiscountBadge && item.discountBadge ? (
@@ -506,18 +497,16 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           </div>
 
           <div className="rating flex space-x-2 items-center">
-            <div className="flex space-x-1 items-center">
-              {averageRating === 0 ? (
-                <span className="text-xs text-primary-700 font-light">
-                  No rating
-                </span>
-              ) : (
-                <div className="flex items-center space-x-1 font-bold text-primary-700 text-xs">
-                  <span>{averageRating}</span>
-                  <FaStar className="h-3 w-3 text-warning-300" />
-                </div>
-              )}
-            </div>
+            {averageRating === 0 ? (
+              <span className="text-xs text-primary-700 font-light">
+                No rating
+              </span>
+            ) : (
+              <div className="flex items-center space-x-1 font-bold text-primary-700 text-xs">
+                <span>{averageRating}</span>
+                <FaStar className="h-3 w-3 text-warning-300" />
+              </div>
+            )}
             <div className="w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
               ({reviewCount} reviews)
