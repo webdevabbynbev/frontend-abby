@@ -12,12 +12,12 @@ import {
   Button,
   RegularCard,
 } from "@/components";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export default function BrandDetailClient({ brandData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // dummy produk
   const allItems = brandData.products || [];
   const totalPages = Math.ceil(allItems.length / itemsPerPage);
   const currentItems = allItems.slice(
@@ -44,9 +44,12 @@ export default function BrandDetailClient({ brandData }) {
         {/* Header */}
         <div className="w-full h-auto">
           <img
-            src={`/${brandData.header}`}
+            src={getImageUrl(brandData.header)}
             alt={brandData.brandname}
             className="object-contain w-full rounded-2xl"
+            onError={(e) => {
+              e.currentTarget.src = getImageUrl(null);
+            }}
           />
         </div>
 
@@ -54,15 +57,15 @@ export default function BrandDetailClient({ brandData }) {
         <div className="w-full flex flex-col md:flex-row md:items-center gap-10">
           <div className="h-37.5 w-37.5 flex items-center justify-center rounded-xl bg-white shadow">
             <img
-              src={`/${brandData.logo}`}
+              src={getImageUrl(brandData.logo)}
               alt={brandData.brandname}
               className="p-2 max-h-37.5 max-w-37.5 object-contain"
               onError={(e) => {
-                e.currentTarget.src =
-                  "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+                e.currentTarget.src = getImageUrl(null);
               }}
             />
           </div>
+
           <div className="flex flex-col space-y-3 w-full">
             <h1 className="text-lg font-bold">{brandData.brandname}</h1>
             <h2 className="text-sm">{brandData.profile}</h2>
@@ -114,10 +117,11 @@ export default function BrandDetailClient({ brandData }) {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i + 1)}
-                      className={`px-4 py-2 rounded-full ${currentPage === i + 1
-                        ? "bg-primary-700 text-white"
-                        : "bg-secondary-50 text-primary-700 hover:outline-1 outline-primary-700 hover:text-primary-700 transition-all"
-                        }`}
+                      className={`px-4 py-2 rounded-full ${
+                        currentPage === i + 1
+                          ? "bg-primary-700 text-white"
+                          : "bg-secondary-50 text-primary-700 hover:outline-1 outline-primary-700 transition-all"
+                      }`}
                     >
                       {i + 1}
                     </button>

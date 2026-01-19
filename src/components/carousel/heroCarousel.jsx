@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { useState, useEffect } from "react";
@@ -18,7 +19,8 @@ export function HeroCarousel() {
   const autoplay = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true })
   );
-  const [isloading, setLoading] = useState(true);
+
+  const [isLoading, setLoading] = useState(true);
   const [banners, setBanners] = useState([]);
 
   useEffect(() => {
@@ -26,7 +28,9 @@ export function HeroCarousel() {
       try {
         const resData = await getBanners();
         const serve = resData?.serve;
-        const normalized = Array.isArray(serve) ? serve : serve?.data || [];
+        const normalized = Array.isArray(serve)
+          ? serve
+          : serve?.data || [];
         setBanners(normalized);
       } catch (e) {
         console.error("gagal fetch banner", e);
@@ -36,7 +40,6 @@ export function HeroCarousel() {
     })();
   }, []);
 
-  // wrapper responsif: tinggi mengikuti lebar
   const Wrapper = ({ children }) => (
     <div className="w-full">
       <div className="relative w-full overflow-hidden rounded-lg aspect-16/6">
@@ -45,7 +48,7 @@ export function HeroCarousel() {
     </div>
   );
 
-  if (isloading) {
+  if (isLoading) {
     return (
       <Wrapper>
         <Skeleton className="absolute inset-0 w-full h-full" />
@@ -67,17 +70,17 @@ export function HeroCarousel() {
         <CarouselContent className="h-full">
           {banners.map((b, idx) => {
             const src = getImageUrl(b.image_url || b.image);
+
             return (
               <CarouselItem key={b.id || idx} className="h-full">
                 <img
                   src={src}
                   alt={b.title || "Banner"}
                   className="w-full h-full object-cover"
-                  crossOrigin="anonymous"
-                  onError={(e) =>
-                    (e.currentTarget.src =
-                      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png")
-                  }
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = getImageUrl(null);
+                  }}
                 />
               </CarouselItem>
             );

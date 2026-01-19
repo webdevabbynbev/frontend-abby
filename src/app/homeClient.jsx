@@ -4,6 +4,7 @@ console.log("ENV CLOUD:", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import Image from "next/image";
 
 import {
   RegularCardSkeleton,
@@ -174,8 +175,12 @@ export default function HomeClient() {
     const editorPicks = products.length > 0 ? products.slice(0, 15) : [];
     const trendingPicks = bestSellers;
 
-    const bannerUrl =
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+    const bannerUrl = (
+      <Image
+        src={`${process.env.NEXT_PUBLIC_ASSET_BASE_URL}/Products/abby-product-placeholder-image.png`}
+        alt="Product placeholder"
+      />
+    );
 
     return (
       <div className="w-full xl:max-w-7xl lg:max-w-240 mx-auto px-6 py-6">

@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { FaStar } from "react-icons/fa6";
 import { BtnIconToggle } from "..";
-import { formatToRupiah, slugify, getAverageRating } from "@/utils";
+import {
+  formatToRupiah,
+  slugify,
+  getAverageRating,
+} from "@/utils";
+import { getImageUrl } from "@/utils/getImageUrl";
 import { DataReview } from "@/data";
 import axios from "@/lib/axios";
 
@@ -54,20 +59,19 @@ export function RegularCard({ product, hrefQuery }) {
         raw.basePrice ??
         raw.salePrice ??
         (Array.isArray(raw.prices) ? raw.prices[0] : undefined) ??
-        0,
+        0
     );
 
     const compareAt = Number(
       raw.realprice ??
         raw.oldPrice ??
         (Array.isArray(raw.prices) ? raw.prices[1] : undefined) ??
-        NaN,
+        NaN
     );
 
-    const image =
+    const rawImage =
       raw.image ??
-      (Array.isArray(raw.images) ? raw.images[0] : null) ??
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+      (Array.isArray(raw.images) ? raw.images[0] : null);
 
     const slugSource = raw.slug || raw.path || "";
     const safeSlug = slugSource
@@ -79,7 +83,7 @@ export function RegularCard({ product, hrefQuery }) {
       name,
       price,
       compareAt,
-      image,
+      image: getImageUrl(rawImage),
       rating: Number(raw.rating ?? raw.stars ?? 0),
       brand:
         raw.brand?.name ??
@@ -97,13 +101,13 @@ export function RegularCard({ product, hrefQuery }) {
         "",
       slug: safeSlug,
       sale: Boolean(raw.sale),
+      productId: raw.id ?? raw.product_id,
     };
   }, [product]);
 
   const hasSale =
     Number.isFinite(item.compareAt) && item.compareAt > item.price;
 
-  // ✅ init: baca cache id dari localStorage supaya icon langsung sync
   useEffect(() => {
     const ids = readWishlistIds();
     setIsWishlisted(ids.has(item.id));
@@ -116,7 +120,7 @@ export function RegularCard({ product, hrefQuery }) {
       else ids.delete(item.id);
       writeWishlistIds(ids);
     },
-    [item.id],
+    [item.id]
   );
 
   const toggleWishlist = useCallback(
@@ -126,47 +130,35 @@ export function RegularCard({ product, hrefQuery }) {
       if (wlPending) return;
 
       const next = !isWishlisted;
+      const productId = item.productId ?? item.id;
+      if (!productId) return;
 
-      // pakai ID yang benar untuk backend
-      const productId = item.productId ?? item.id; // kalau kamu belum punya item.productId
-
-      if (!productId) {
-        console.error("Missing product_id");
-        return;
-      }
-
-      // ✅ optimistic
       setIsWishlisted(next);
       updateLocal(next);
       setWlPending(true);
 
       try {
         if (next) {
-          // ✅ ADD
-          await axios.post("/wishlists", { product_id: String(productId) });
+          await axios.post("/wishlists", {
+            product_id: String(productId),
+          });
         } else {
-          // ✅ DELETE (paling umum untuk axios)
           await axios.delete("/wishlists", {
             data: { product_id: String(productId) },
           });
         }
-
-        // axios otomatis throw kalau status bukan 2xx, jadi gak perlu res.ok/res.json
       } catch (err) {
-        // ❌ revert kalau gagal
         setIsWishlisted(!next);
         updateLocal(!next);
-
-        const msg =
-          err?.response?.data?.message ||
-          err?.message ||
-          "Wishlist request failed";
-        console.error("Wishlist error:", msg);
+        console.error(
+          "Wishlist error:",
+          err?.response?.data?.message || err?.message
+        );
       } finally {
         setWlPending(false);
       }
     },
-    [isWishlisted, item.id, item.productId, updateLocal, wlPending],
+    [isWishlisted, item.id, item.productId, updateLocal, wlPending]
   );
 
   const reviewsForProduct = Array.isArray(DataReview)
@@ -177,12 +169,10 @@ export function RegularCard({ product, hrefQuery }) {
   const queryString = useMemo(() => {
     if (!hrefQuery || typeof hrefQuery !== "object") return "";
     const params = new URLSearchParams();
-
     Object.entries(hrefQuery).forEach(([key, value]) => {
       if (value === undefined || value === null || value === "") return;
       params.set(key, String(value));
     });
-
     return params.toString();
   }, [hrefQuery]);
 
@@ -203,18 +193,18 @@ export function RegularCard({ product, hrefQuery }) {
 
           <div
             className={`absolute top-4 right-4 z-10 transition-all duration-200
-            ${
-              isWishlisted
-                ? "opacity-100 scale-100 pointer-events-auto"
-                : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
-            }`}
+              ${
+                isWishlisted
+                  ? "opacity-100 scale-100 pointer-events-auto"
+                  : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+              }`}
           >
             <BtnIconToggle
               active={isWishlisted}
               onClick={toggleWishlist}
               variant="tertiary"
               size="md"
-              disabled={wlPending} // kalau BtnIconToggle support
+              disabled={wlPending}
             />
           </div>
 
@@ -224,18 +214,15 @@ export function RegularCard({ product, hrefQuery }) {
               alt={item.name}
               className="w-full h-auto object-cover"
               onError={(e) => {
-                e.currentTarget.src =
-                  "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+                e.currentTarget.src = getImageUrl();
               }}
             />
           </div>
         </div>
 
         <div className="content-wrapper w-full space-y-2 p-4">
-          <div className="category-and-name space-y-1">
-            <div className="text-sm font-bold text-neutral-950 line-clamp-2">
-              {item.name}
-            </div>
+          <div className="text-sm font-bold text-neutral-950 line-clamp-2">
+            {item.name}
           </div>
 
           <div className="price flex items-center space-x-2">
@@ -256,18 +243,16 @@ export function RegularCard({ product, hrefQuery }) {
           </div>
 
           <div className="rating flex space-x-2 items-center">
-            <div className="flex space-x-1 items-center">
-              {averageRating === 0 ? (
-                <span className="text-xs text-primary-700 font-light">
-                  No rating
-                </span>
-              ) : (
-                <div className="flex items-center space-x-1 font-bold text-primary-700 text-xs">
-                  <span>{averageRating}</span>
-                  <FaStar className="h-3 w-3 text-warning-300" />
-                </div>
-              )}
-            </div>
+            {averageRating === 0 ? (
+              <span className="text-xs text-primary-700 font-light">
+                No rating
+              </span>
+            ) : (
+              <div className="flex items-center space-x-1 font-bold text-primary-700 text-xs">
+                <span>{averageRating}</span>
+                <FaStar className="h-3 w-3 text-warning-300" />
+              </div>
+            )}
             <div className="w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
               ({reviewsForProduct.length} reviews)
