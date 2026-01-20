@@ -5,6 +5,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { getUser, logoutUser } from "@/services/auth";
 
@@ -35,21 +36,31 @@ export function AuthProvider({ children }) {
     }
   }, [clearSession]);
 
+  const didLoadRef = useRef(false);
   // hydrate from backend via HttpOnly cookie
   useEffect(() => {
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
+
     let isMounted = true;
+
     const loadUser = async () => {
       try {
-        const { user: fetchedUser } = await getUser();
-        if (isMounted) setUser(fetchedUser || null);
-      } catch (err) {
-        if (err?.status === 401 && isMounted) {
-          clearSession();
+        const { user } = await getUser();
+
+        if (!user) return; // belum login → DIAM
+
+        if (isMounted) {
+          setUser(user);
         }
+      } catch (err) {
+        // 🚨 hanya masuk sini kalau session EXPIRED
+        clearSession();
       }
     };
 
     loadUser();
+
     return () => {
       isMounted = false;
     };

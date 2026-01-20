@@ -5,6 +5,7 @@ import axios from "@/lib/axios";
 import Image from "next/image";
 import Link from "next/link";
 import { n } from "@/utils/number";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const FILTER_TABS = [
   { key: "all", label: "All" },
@@ -59,7 +60,6 @@ const STATUS_UI = {
   },
 };
 
-// backend enum: 1 waiting_payment, 5 paid_waiting_admin, 2 on_process, 3 on_delivery, 4 completed, 9 failed
 const mapTransactionStatus = (trxStatus) => {
   const s = Number(trxStatus);
   if (s === 1) return "pending";
@@ -78,10 +78,6 @@ function safeDateString(v) {
   return d.toLocaleDateString("en-GB");
 }
 
-/**
- * Normalize response GET /transaction
- * Backend return: TransactionEcommerce[] with preload(transaction.details.product.medias) + preload(shipments)
- */
 const normalizeOrders = (rows) => {
   const arr = Array.isArray(rows) ? rows : [];
 
@@ -93,26 +89,25 @@ const normalizeOrders = (rows) => {
       const p = d?.product || {};
       const medias = Array.isArray(p?.medias) ? p.medias : [];
 
-      const thumb =
-        medias?.[0]?.url ||
-        p?.thumbnail ||
-        p?.image ||
-        "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+      const thumbUrl = getImageUrl(
+        medias?.[0]?.url || p?.thumbnail || p?.image
+      );
 
       const variantName =
         d?.variant?.sku ||
         d?.variant?.name ||
-        d?.attributes || // kalau kamu simpan variant text di attributes
+        d?.attributes ||
         "-";
 
       return {
         id:
           d?.id ??
-          `${trx?.transactionNumber || trx?.id || "trx"}-${d?.productId || "item"
+          `${trx?.transactionNumber || trx?.id || "trx"}-${
+            d?.productId || "item"
           }`,
         product: {
           name: p?.name || p?.title || "-",
-          thumbnail: thumb,
+          thumbnail: thumbUrl,
           variant_name: variantName,
           price: n(d?.price, 0),
         },
@@ -124,7 +119,8 @@ const normalizeOrders = (rows) => {
       n(trx?.grandTotal, 0) ||
       n(trx?.amount, 0) ||
       items.reduce(
-        (sum, it) => sum + n(it?.product?.price, 0) * n(it?.quantity, 0),
+        (sum, it) =>
+          sum + n(it?.product?.price, 0) * n(it?.quantity, 0),
         0
       );
 
@@ -133,7 +129,10 @@ const normalizeOrders = (rows) => {
       transaction_number: trx?.transactionNumber || "-",
       status: mapTransactionStatus(trx?.transactionStatus),
       created_at:
-        trx?.createdAt || trx?.created_at || row?.createdAt || row?.created_at,
+        trx?.createdAt ||
+        trx?.created_at ||
+        row?.createdAt ||
+        row?.created_at,
       total_price: total,
       items,
     };
@@ -151,7 +150,6 @@ export default function OrderHistoryPage() {
       setLoading(true);
       setErrorMsg("");
 
-      // ambil lebih banyak biar list ga kepotong
       const res = await axios.get("/transaction", {
         params: { page: 1, per_page: 50, field: "created_at", value: "desc" },
       });
@@ -159,7 +157,6 @@ export default function OrderHistoryPage() {
       const rows = res?.data?.serve?.data ?? [];
       setOrders(normalizeOrders(rows));
     } catch (err) {
-      console.log("Error order:", err?.response?.data || err);
       setOrders([]);
       setErrorMsg(err?.response?.data?.message || "Failed to load orders");
     } finally {
@@ -178,14 +175,11 @@ export default function OrderHistoryPage() {
       const st = o?.status || "unknown";
       if (filter === "all") return true;
       if (filter === "ongoing")
-        return [
-          "pending",
-          "waiting_admin",
-          "processing",
-          "on_delivery",
-        ].includes(st);
-      if (filter === "success") return ["finished"].includes(st);
-      if (filter === "cancelled") return ["cancelled"].includes(st);
+        return ["pending", "waiting_admin", "processing", "on_delivery"].includes(
+          st
+        );
+      if (filter === "success") return st === "finished";
+      if (filter === "cancelled") return st === "cancelled";
       return true;
     });
   }, [orders, filter]);
@@ -194,165 +188,126 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 space-y-4 pb-28">
-      <div className="flex gap-8">
-        {/* Main Content */}
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">
-            Order history
-          </h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900">Order history</h2>
 
-          {/* Filter Tabs */}
-          <div className="mb-6 flex items-center gap-3 max-w-md lg:max-w-none">
-            {/* Scrollable on mobile/tablet, wrap on desktop */}
-            <div className="flex-1 overflow-x-auto lg:overflow-visible scrollbar-hide">
-              <div className="flex gap-3 min-w-max pb-2 lg:pb-0 lg:min-w-0 lg:flex-wrap">
-                {FILTER_TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setFilter(tab.key)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap ${filter === tab.key
-                      ? "bg-primary-700 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-pink-300"
-                      }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Refresh button - always visible on the right */}
-            <button
-              onClick={loadOrders}
-              disabled={loading}
-              className="
-                shrink-0
-                px-4 py-2
-                text-sm font-medium
-                rounded-full
-                border border-gray-200
-                hover:border-pink-300
-                bg-white
-                text-gray-600
-              "
-            >
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
-
-
-
-          {errorMsg && (
-            <div className="mb-4 border border-red-200 bg-red-50 text-red-700 rounded-lg p-3 text-sm">
-              {errorMsg}
-            </div>
-          )}
-
-          {loading ? (
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">Loading orders...</p>
-            </div>
-          ) : filterOrders.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">No orders found</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filterOrders.map((order) => {
-                const statusInfo = getStatusInfo(order.status);
-                const items = Array.isArray(order.items) ? order.items : [];
-                const totalQty = items.reduce(
-                  (sum, item) => sum + n(item?.quantity, 0),
-                  0
-                );
-
-                return (
-                  <div
-                    key={order.id}
-                    className="bg-white border border-gray-200 rounded-lg p-5"
-                  >
-                    {/* Status Message */}
-                    <div
-                      className={`${statusInfo.bgColor} ${statusInfo.textColor} px-4 py-2.5 rounded-md flex items-center justify-between mb-4`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{statusInfo.icon}</span>
-                        <span className="text-sm font-medium">
-                          {statusInfo.message}
-                        </span>
-                      </div>
-                      <div className="text-xs">
-                        Order created: {safeDateString(order.created_at)}
-                      </div>
-                    </div>
-
-                    {/* Items */}
-                    <div className="space-y-4 mb-4">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4">
-                          <Image
-                            src={item.product.thumbnail}
-                            alt={item.product.name}
-                            width={60}
-                            height={60}
-                            className="rounded-md border border-gray-200 object-cover"
-                          />
-
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 text-sm mb-1">
-                              {item.product.name}
-                            </p>
-                            <p className="text-xs text-gray-500 mb-0.5">
-                              Variant: {item.product.variant_name || "-"}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {item.quantity} item • Rp{" "}
-                              {n(item.product.price, 0).toLocaleString("id-ID")}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <p className="text-xs text-gray-500">
-                        {order.transaction_number}
-                      </p>
-
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500 mb-1">Total</p>
-                          <p className="text-base font-bold text-gray-900">
-                            {totalQty} item: Rp
-                            {n(order.total_price, 0).toLocaleString("id-ID")}
-                          </p>
-                        </div>
-
-                        <Link
-                          href={`/account/order-history/${encodeURIComponent(
-                            order.transaction_number
-                          )}`}
-                          className="px-5 py-2 text-xs font-medium text-white bg-pink-600 rounded-full hover:bg-pink-700 transition-colors"
-                        >
-                          See Transactions detail
-                        </Link>
-
-                        <button
-                          className="px-5 py-2 text-xs font-medium text-pink-600 bg-white border border-pink-600 rounded-full hover:bg-pink-50 transition-colors"
-                          onClick={() => alert("TODO: Buy again flow")}
-                        >
-                          Buy again
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+      <div className="mb-6 flex items-center gap-3">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            className={`px-4 py-2 text-sm font-medium rounded-full ${
+              filter === tab.key
+                ? "bg-primary-700 text-white"
+                : "bg-white text-gray-600 border"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+        <button
+          onClick={loadOrders}
+          disabled={loading}
+          className="px-4 py-2 text-sm border rounded-full"
+        >
+          {loading ? "Loading..." : "Refresh"}
+        </button>
       </div>
+
+      {errorMsg && (
+        <div className="border border-red-200 bg-red-50 text-red-700 rounded-lg p-3 text-sm">
+          {errorMsg}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-20 text-gray-400">
+          Loading orders...
+        </div>
+      ) : filterOrders.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">
+          No orders found
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filterOrders.map((order) => {
+            const statusInfo = getStatusInfo(order.status);
+            const items = order.items || [];
+            const totalQty = items.reduce(
+              (sum, item) => sum + n(item?.quantity, 0),
+              0
+            );
+
+            return (
+              <div
+                key={order.id}
+                className="bg-white border rounded-lg p-5"
+              >
+                <div
+                  className={`${statusInfo.bgColor} ${statusInfo.textColor} px-4 py-2.5 rounded-md flex justify-between mb-4`}
+                >
+                  <span className="text-sm font-medium">
+                    {statusInfo.message}
+                  </span>
+                  <span className="text-xs">
+                    Order created: {safeDateString(order.created_at)}
+                  </span>
+                </div>
+
+                <div className="space-y-4 mb-4">
+                  {items.map((item) => (
+                    <div key={item.id} className="flex gap-4">
+                      <Image
+                        src={item.product.thumbnail}
+                        alt={item.product.name}
+                        width={60}
+                        height={60}
+                        className="rounded-md border object-cover"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm">
+                          {item.product.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Variant: {item.product.variant_name || "-"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {item.quantity} item • Rp{" "}
+                          {n(item.product.price, 0).toLocaleString("id-ID")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between pt-4 border-t">
+                  <p className="text-xs text-gray-500">
+                    {order.transaction_number}
+                  </p>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Total</p>
+                      <p className="font-bold">
+                        {totalQty} item: Rp{" "}
+                        {n(order.total_price, 0).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/account/order-history/${encodeURIComponent(
+                        order.transaction_number
+                      )}`}
+                      className="px-5 py-2 text-xs text-white bg-pink-600 rounded-full"
+                    >
+                      See detail
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,8 @@
 "use client";
-
-console.log("ENV CLOUD:", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 import {
   RegularCardSkeleton,
@@ -35,6 +34,33 @@ export default function HomeClient() {
 
   const router = useRouter();
 
+  const attachApiExtraDiscounts = (normalizedItems, rawRows) => {
+    if (!Array.isArray(normalizedItems)) return [];
+
+    const extraById = new Map();
+    if (Array.isArray(rawRows)) {
+      rawRows.forEach((row) => {
+        const source = row?.product ?? row;
+        const key = Number(source?.id ?? source?.productId ?? source?._id ?? 0);
+        if (!key) return;
+        const extra =
+          row?.product?.extraDiscount ??
+          row?.extraDiscount ??
+          source?.extraDiscount ??
+          null;
+        if (extra) {
+          extraById.set(key, extra);
+        }
+      });
+    }
+
+    return normalizedItems.map((item) => {
+      const key = Number(item?.id ?? item?.productId ?? item?._id ?? 0);
+      const extra = extraById.get(key) ?? item?.extraDiscount ?? null;
+      return extra ? { ...item, extraDiscount: extra } : item;
+    });
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -61,13 +87,13 @@ export default function HomeClient() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await getProducts({
+        const { data, dataRaw } = await getProducts({
           page: 1,
           per_page: 30,
           sort_by: "created_at",
           order: "desc",
         });
-        setProducts(data);
+        setProducts(attachApiExtraDiscounts(data, dataRaw));
       } catch (err) {
         console.error("getProducts error:", err);
       } finally {
@@ -80,13 +106,13 @@ export default function HomeClient() {
     (async () => {
       try {
         // ✅ Mengambil data Best Seller: urutkan berdasarkan 'sold' (terjual) secara descending (terbanyak)
-        const { data } = await getProducts({
+        const { data, dataRaw } = await getProducts({
           page: 1,
           per_page: 15,
           sort_by: "sold",
           order: "desc",
         });
-        setBestSellers(data);
+        setBestSellers(attachApiExtraDiscounts(data, dataRaw));
       } catch (err) {
         console.error("getBestSellers error:", err);
       } finally {
@@ -169,57 +195,42 @@ export default function HomeClient() {
 
   // --- NEW COMPONENT: DUAL PROMO SECTION (Split Left/Right) ---
   const DualPromoSection = () => {
-    // Data untuk carousel (ambil dari products state)
-    // Gunakan slice yang berbeda agar variatif, fallback ke array kosong
     const editorPicks = products.length > 0 ? products.slice(0, 15) : [];
     const trendingPicks = bestSellers;
 
-    const bannerUrl =
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+    const bannerSrc = getImageUrl(
+      "Products/abby-product-placeholder-image.png",
+    );
 
     return (
       <div className="w-full xl:max-w-7xl lg:max-w-240 mx-auto px-6 py-6">
-        {/* Grid 2 Kolom: Kiri dan Kanan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
-          {/* === BAGIAN KIRI (Left Section) === */}
+          {/* ================= LEFT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Bagian Kiri Atas: Banner */}
-            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
-              {/* Placeholder IMG untuk Banner Kiri */}
+            {/* Banner kiri */}
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
               <img
-                src={bannerUrl}
+                src={bannerSrc}
                 alt="Left Banner"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentNode.classList.add(
-                    "flex",
-                    "items-center",
-                    "justify-center",
-                    "text-gray-500",
-                    "font-bold",
-                  );
-                  e.target.parentNode.innerText = "BANNER KIRI (Top Left)";
+                  e.currentTarget.src = getImageUrl();
                 }}
               />
             </div>
 
-            {/* Bagian Kiri Bawah: Carousel */}
+            {/* Carousel kiri */}
             <div className="space-y-2">
               <h4 className="font-damion text-2xl text-primary-700">
                 New Arrival
               </h4>
-              <Carousel
-                opts={{
-                  align: "start",
-                }}
-                className="w-full relative"
-              >
+
+              <Carousel opts={{ align: "start" }} className="w-full relative">
                 <CarouselContent className="-ml-2 md:-ml-4">
                   {productsLoading
                     ? Array.from({ length: 3 }).map((_, i) => (
                         <CarouselItem
-                          key={`skel-left-${i}`}
+                          key={`left-skel-${i}`}
                           className="pl-2 md:pl-4 basis-1/2"
                         >
                           <RegularCardSkeleton />
@@ -240,45 +251,32 @@ export default function HomeClient() {
             </div>
           </div>
 
-          {/* === BAGIAN KANAN (Right Section) === */}
+          {/* ================= RIGHT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Bagian Kanan Atas: Banner */}
-            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
-              {/* Placeholder IMG untuk Banner Kanan */}
+            {/* Banner kanan */}
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
               <img
-                src={bannerUrl}
+                src={bannerSrc}
                 alt="Right Banner"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentNode.classList.add(
-                    "flex",
-                    "items-center",
-                    "justify-center",
-                    "text-gray-500",
-                    "font-bold",
-                  );
-                  e.target.parentNode.innerText = "BANNER KANAN (Top Right)";
+                  e.currentTarget.src = getImageUrl();
                 }}
               />
             </div>
 
-            {/* Bagian Kanan Bawah: Carousel */}
+            {/* Carousel kanan */}
             <div className="space-y-2">
               <h4 className="font-damion text-2xl text-primary-700">
                 Best Seller
               </h4>
-              <Carousel
-                opts={{
-                  align: "start",
-                }}
-                className="w-full relative"
-              >
+
+              <Carousel opts={{ align: "start" }} className="w-full relative">
                 <CarouselContent className="-ml-2 md:-ml-4">
                   {bestSellersLoading
                     ? Array.from({ length: 3 }).map((_, i) => (
                         <CarouselItem
-                          key={`skel-right-${i}`}
+                          key={`right-skel-${i}`}
                           className="pl-2 md:pl-4 basis-1/2"
                         >
                           <RegularCardSkeleton />
@@ -302,6 +300,7 @@ export default function HomeClient() {
       </div>
     );
   };
+
   // ----------------------------------------------------
 
   const abbyPicks = products.slice(0, 12);
