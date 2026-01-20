@@ -70,9 +70,12 @@ export default function HomeClient() {
   };
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+
+    const run = async () => {
       try {
         const res = await getCategories();
+        if (cancelled) return;
 
         const arr = Array.isArray(res?.serve)
           ? res.serve
@@ -87,13 +90,11 @@ export default function HomeClient() {
       } catch (err) {
         console.error("getCategories error:", err);
       } finally {
-        setCategoriesLoading(false);
+        if (!cancelled) setCategoriesLoading(false);
       }
-    })();
-  }, []);
 
-  useEffect(() => {
-    (async () => {
+      if (cancelled) return;
+
       try {
         const { data, dataRaw } = await getProducts({
           page: 1,
@@ -101,33 +102,41 @@ export default function HomeClient() {
           sort_by: "created_at",
           order: "desc",
         });
-        setProducts(attachApiExtraDiscounts(data, dataRaw));
+        if (!cancelled) {
+          setProducts(attachApiExtraDiscounts(data, dataRaw));
+        }
       } catch (err) {
         console.error("getProducts error:", err);
       } finally {
-        setProductsLoading(false);
+        if (!cancelled) setProductsLoading(false);
       }
-    })();
-  }, []);
 
-  useEffect(() => {
-    (async () => {
+      if (cancelled) return;
+
       try {
-        // ✅ Mengambil data Best Seller: urutkan berdasarkan 'sold' (terjual) secara descending (terbanyak)
         const { data, dataRaw } = await getProducts({
           page: 1,
           per_page: 15,
           sort_by: "sold",
           order: "desc",
         });
-        setBestSellers(attachApiExtraDiscounts(data, dataRaw));
+        if (!cancelled) {
+          setBestSellers(attachApiExtraDiscounts(data, dataRaw));
+        }
       } catch (err) {
         console.error("getBestSellers error:", err);
       } finally {
-        setBestSellersLoading(false);
+        if (!cancelled) setBestSellersLoading(false);
       }
-    })();
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
 
   // --- COMPONENT: PICK SECTION (Existing) ---
   const PickSection = ({

@@ -136,9 +136,38 @@ export default function ProductDetailClient({ product }) {
 
   const isSale = product?.sale || saleOverrideActive;
 
-  // ====== EXTRA DISCOUNT (storewide) ======
+  // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
   const extraLabel = extra?.label ? String(extra.label).trim() : "";
+  const extraAppliesTo = Number(extra?.appliesTo ?? NaN);
+
+  const eligibleVariantIds = useMemo(() => {
+    const raw =
+      extra?.eligibleVariantIds ?? extra?.eligible_variant_ids ?? [];
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+  }, [extra]);
+
+  const eligibleVariantCount = Number(
+    extra?.eligibleVariantCount ?? extra?.eligible_variant_count ?? 0,
+  );
+
+  const selectedVariantId = selectedVariantObj?.id ?? null;
+  const isVariantEligible =
+    extraAppliesTo === 3 &&
+    selectedVariantId !== null &&
+    eligibleVariantIds.includes(Number(selectedVariantId));
+
+  const hasEligibleVariant =
+    extraAppliesTo === 3
+      ? eligibleVariantIds.length > 0 || eligibleVariantCount > 0
+      : true;
+
+  const showExtraLabel =
+    Boolean(extraLabel) &&
+    (extraAppliesTo !== 3 || hasEligibleVariant);
 
   // ====== DISPLAY PRICE (setelah extraDiscount storewide) ======
   let displayFinalPrice = Number(baseFinalPrice || 0);
@@ -149,8 +178,16 @@ export default function ProductDetailClient({ product }) {
       ? Number(baseCompareAt)
       : null;
 
-  // appliesTo=0 => diskon nempel ke harga yang sedang tampil
-  if (extra && Number(extra.appliesTo) === 0) {
+  const shouldApplyExtraDiscount =
+    !!extra &&
+    (extraAppliesTo === 0 ||
+      extraAppliesTo === 1 ||
+      extraAppliesTo === 2 ||
+      extraAppliesTo === 4 ||
+      extraAppliesTo === 5 ||
+      (extraAppliesTo === 3 && isVariantEligible));
+
+  if (shouldApplyExtraDiscount) {
     const after = applyExtraDiscount(extra, displayFinalPrice);
     if (Number.isFinite(after) && after > 0 && after < displayFinalPrice) {
       // kalau sebelumnya belum ada compareAt, coret harga sebelum diskon storewide
@@ -382,7 +419,7 @@ export default function ProductDetailClient({ product }) {
                 {/* Price */}
                 <div className="price space-y-2">
                   {/* ✅ badge dari backend */}
-                  {extraLabel ? (
+                  {showExtraLabel ? (
                     <div>
                       <span className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                         {extraLabel}
@@ -629,7 +666,7 @@ export default function ProductDetailClient({ product }) {
                 </div>
               </div>
 
-              {extraLabel ? (
+              {showExtraLabel ? (
                 <div>
                   <span className="text-[10px] py-1 px-2 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                     {extraLabel}
