@@ -41,7 +41,13 @@ export default function HomeClient() {
     if (Array.isArray(rawRows)) {
       rawRows.forEach((row) => {
         const source = row?.product ?? row;
-        const key = Number(source?.id ?? source?.productId ?? source?._id ?? 0);
+        const key = Number(
+          source?.id ??
+            source?.productId ??
+            source?.product_id ??
+            source?._id ??
+            0,
+        );
         if (!key) return;
         const extra =
           row?.product?.extraDiscount ??
@@ -55,7 +61,9 @@ export default function HomeClient() {
     }
 
     return normalizedItems.map((item) => {
-      const key = Number(item?.id ?? item?.productId ?? item?._id ?? 0);
+      const key = Number(
+        item?.productId ?? item?.product_id ?? item?.id ?? item?._id ?? 0,
+      );
       const extra = extraById.get(key) ?? item?.extraDiscount ?? null;
       return extra ? { ...item, extraDiscount: extra } : item;
     });

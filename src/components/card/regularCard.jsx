@@ -204,7 +204,12 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
     const raw = product;
 
     const productId =
-      raw.id ?? raw._id ?? raw.productId ?? raw.product_id ?? null;
+      raw.product?.id ??
+      raw.productId ??
+      raw.product_id ??
+      raw.id ??
+      raw._id ??
+      null;
 
     const id =
       productId ??
