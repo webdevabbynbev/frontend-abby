@@ -4,7 +4,7 @@ export const metadata = {
   title: "Abby n Bev | Situs Belanja Online Makeup dan Skincare Terbaik Di Indonesia",
 
   description:
-    "Abby n Bev itu gak cuma beauty store dan toko kosmetik *yang *jual makeup dan skincare. Di sini kamu bisa konsultasi dengan AI Beauty Advisor gratis, jadi belanja nggak asal viral—lebih tepat & aman buat kulit kamu.",
+    "Abby n Bev itu gak cuma beauty store dan toko kosmetik yang jual makeup dan skincare. Di sini kamu bisa konsultasi dengan AI Beauty Advisor gratis, jadi belanja nggak asal viral—lebih tepat & aman buat kulit kamu.",
 
   openGraph: {
     title: "Abby n Bev - Situs Belanja Online Makeup dan Skincare Terbaik Di Indonesia",
