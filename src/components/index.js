@@ -24,6 +24,7 @@ export { TxtField } from "./input/textField.jsx";
 export { Skeleton } from "./ui/Skeleton.jsx";
 export { QuantityInput } from "./quantitySelector/quantitySelector.jsx";
 export { LoginRegisModalForm } from "./auth/loginRegis.jsx";
+export { LoginButton } from "./auth/loginButton.jsx";
 export { RegularCardSkeleton } from "./skeleton/skeletonCollection.jsx";
 export { AddressCard } from "../app/account/AddressCard.jsx";
 export { Checkbox } from "./ui/Checkbox.jsx";

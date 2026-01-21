@@ -12,6 +12,8 @@ import {
 } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { DataReview } from "@/data";
+import { useAuth } from "@/context/AuthContext";
+import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
@@ -224,6 +226,8 @@ const REVIEW_STATS = (() => {
 export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
+  const { user } = useAuth();
+  const { openLoginModal } = useLoginModal();
 
   if (!product) return null;
 
@@ -425,6 +429,12 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       e.stopPropagation();
       if (wlPending) return;
 
+      // Check if user is logged in
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+
       const next = !isWishlisted;
 
       if (!wishlistId) {
@@ -452,15 +462,22 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       } catch (err) {
         setIsWishlisted(!next);
         updateLocal(!next);
-        console.error(
-          "Wishlist error:",
-          err?.response?.data?.message || err?.message,
-        );
+        
+        // Handle 401 Unauthorized error
+        const statusCode = err?.response?.status;
+        const errorMessage = err?.response?.data?.message || err?.message;
+        
+        if (statusCode === 401 || errorMessage?.includes("Unauthorized")) {
+          console.warn("User session expired, showing login modal");
+          openLoginModal();
+        } else {
+          console.error("Wishlist error:", errorMessage);
+        }
       } finally {
         setWlPending(false);
       }
     },
-    [isWishlisted, updateLocal, wishlistId, wlPending],
+    [isWishlisted, updateLocal, wishlistId, wlPending, user, openLoginModal],
   );
 
   const reviewKey = item.productId ?? item.id;
