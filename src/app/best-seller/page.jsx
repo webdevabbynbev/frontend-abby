@@ -3,6 +3,8 @@ import { getBrands } from "@/services/api/brands.services";
 import { getCategories } from "@/services/api/category.services";
 import { getProducts } from "@/services/api/product.services";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Best Seller",
 

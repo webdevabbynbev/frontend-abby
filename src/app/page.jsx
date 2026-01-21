@@ -4,6 +4,8 @@ import { getCategories } from "@/services/api/category.services";
 import { getProducts } from "@/services/api/product.services";
 import { getApi } from "@/services/api/client";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Abby n Bev | Situs Belanja Online Makeup dan Skincare Terbaik Di Indonesia",
 

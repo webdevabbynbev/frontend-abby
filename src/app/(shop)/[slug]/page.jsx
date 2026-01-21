@@ -3,6 +3,8 @@ import ProductDetailClient from "./ProductDetailClient";
 import { slugify } from "@/utils";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 const norm = (s) => slugify(decodeURIComponent(String(s || "")).trim());
 
 export async function generateMetadata(props) {

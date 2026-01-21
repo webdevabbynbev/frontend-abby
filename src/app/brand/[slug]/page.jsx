@@ -3,6 +3,9 @@ import { getCategories } from "@/services/api/category.services";
 import BrandDetailClient from "./BrandDetailClient";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
+
 export async function generateMetadata(props) {
   const params = await props.params;
   const brandData = await getBrandBySlug(params.slug);
