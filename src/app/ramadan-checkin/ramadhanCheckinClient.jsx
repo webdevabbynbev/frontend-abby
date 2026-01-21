@@ -11,7 +11,7 @@ import {
   startOfMonth,
   subMonths,
 } from "date-fns";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {

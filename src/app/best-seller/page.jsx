@@ -1,4 +1,7 @@
 import BestSellerClient from "./bestSellerClient";
+import { getBrands } from "@/services/api/brands.services";
+import { getCategories } from "@/services/api/category.services";
+import { getProducts } from "@/services/api/product.services";
 
 export const metadata = {
   title: "Best Seller",
@@ -15,6 +18,39 @@ export const metadata = {
   },
 };
 
-export default function BestSeller() {
-  return <BestSellerClient />;
+export default async function BestSeller({ searchParams }) {
+  const params = await searchParams;
+  const currentPage = Number(params?.page || 1);
+  const perPage = Number(params?.per_page || 20);
+  const search = String(params?.q || "").trim();
+
+  const [productsRes, brandsRes, categoriesRes] = await Promise.all([
+    getProducts({
+      page: currentPage,
+      per_page: perPage,
+      name: search,
+    }),
+    getBrands(),
+    getCategories(),
+  ]);
+
+  const categories = Array.isArray(categoriesRes?.serve)
+    ? categoriesRes.serve
+    : Array.isArray(categoriesRes?.data)
+      ? categoriesRes.data
+      : Array.isArray(categoriesRes)
+        ? categoriesRes
+        : [];
+
+  return (
+    <BestSellerClient
+      products={productsRes?.data || []}
+      meta={productsRes?.meta || {}}
+      brands={brandsRes?.data || []}
+      categories={categories}
+      currentPage={currentPage}
+      search={search}
+      itemsPerPage={perPage}
+    />
+  );
 }

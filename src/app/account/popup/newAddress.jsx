@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { Textarea } from "@/components";
 import {
   Button,

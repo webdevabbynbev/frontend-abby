@@ -1,4 +1,5 @@
 import NewArrivalClient from "./newArrivalClient";
+import { getProducts } from "@/services/api/product.services";
 
 export const metadata = {
   title: "New Arrival",
@@ -15,6 +16,8 @@ export const metadata = {
   },
 };
 
-export default function NewArrivalPage() {
-  return <NewArrivalClient />;
+export default async function NewArrivalPage() {
+  const { data } = await getProducts({ page: 1, per_page: 16 });
+
+  return <NewArrivalClient products={data || []} />;
 }

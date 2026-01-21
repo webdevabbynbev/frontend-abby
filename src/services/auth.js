@@ -1,5 +1,5 @@
-import api from "@/lib/axios";
-import { setToken, clearToken, hasSession } from "@/services/authToken";
+import api from "@/lib/axios.js";
+import { setToken, clearToken } from "@/services/authToken";
 
 function s(v) {
   return String(v ?? "").trim();

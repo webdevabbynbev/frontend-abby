@@ -3,10 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import { getCategories } from "@/services/api/category.services";
 import { LoginRegisModalForm, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
-import { useEffect, useState } from "react";
 import ShopByCategoryDropdown from "./categoryDropdown";
 
 /* ===================== DROPDOWN DATA ===================== */
@@ -44,37 +42,11 @@ export function NavbarGuest({
   search,
   setSearch,
   onSearch,
+  categories = [],
+  categoriesLoading = false,
 }) {
-  // category dari DB
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [catLoading, setCatLoading] = useState(false);
-
-  // fetch category dari DB
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setCatLoading(true);
-
-        const res = await getCategories();
-        const arr = Array.isArray(res?.serve)
-          ? res.serve
-          : Array.isArray(res?.data)
-            ? res.data
-            : Array.isArray(res)
-              ? res
-              : [];
-        if (alive) setCategoryTypes([]);
-      } finally {
-        if (alive) setCatLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const categoryTypes = Array.isArray(categories) ? categories : [];
+  const catLoading = Boolean(categoriesLoading);
 
   return (
     <>
@@ -148,7 +120,7 @@ export function NavbarGuest({
             <ShopByCategoryDropdown
               label="Shop By Category"
               categories={categoryTypes}
-              loading={catLoading} // opsional kalau component kamu handle state loading
+              loading={catLoading}
             />
 
             <MegaDropdown label="Shop by Concern" items={shopByConcern} />
@@ -157,13 +129,14 @@ export function NavbarGuest({
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <SearchBar
-            className="max-w-[320px]"
+            className="max-w-75"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onSearch={onSearch}
           />
+
           <LoginRegisModalForm />
         </div>
       </div>

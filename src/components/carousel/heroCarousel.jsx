@@ -2,8 +2,6 @@
 
 import * as React from "react";
 import Autoplay from "embla-carousel-autoplay";
-import { useState, useEffect } from "react";
-import { Skeleton } from "@/components";
 import {
   Carousel,
   CarouselContent,
@@ -13,32 +11,11 @@ import {
   CarouselIndicators,
 } from "@/components";
 import { getImageUrl } from "@/utils/getImageUrl";
-import { getBanners } from "@/services/api/banners";
 
-export function HeroCarousel() {
+export function HeroCarousel({ banners = [] }) {
   const autoplay = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true })
   );
-
-  const [isLoading, setLoading] = useState(true);
-  const [banners, setBanners] = useState([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const resData = await getBanners();
-        const serve = resData?.serve;
-        const normalized = Array.isArray(serve)
-          ? serve
-          : serve?.data || [];
-        setBanners(normalized);
-      } catch (e) {
-        console.error("gagal fetch banner", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const Wrapper = ({ children }) => (
     <div className="w-full">
@@ -47,14 +24,6 @@ export function HeroCarousel() {
       </div>
     </div>
   );
-
-  if (isLoading) {
-    return (
-      <Wrapper>
-        <Skeleton className="absolute inset-0 w-full h-full" />
-      </Wrapper>
-    );
-  }
 
   if (!banners.length) return null;
 

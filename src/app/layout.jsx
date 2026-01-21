@@ -6,6 +6,7 @@ import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
 import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { NavbarClientGate } from "@/components/navbar";
+import { getCategories } from "@/services/api/category.services";
 import { Toaster } from "sonner";
 import GAListener from "@/components/GAListener";
 
@@ -56,7 +57,22 @@ export const metadata = {
   ],
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  let categories = [];
+
+  try {
+    const res = await getCategories();
+    categories = Array.isArray(res?.serve)
+      ? res.serve
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+  } catch (error) {
+    console.error("Failed to load categories for navbar:", error);
+  }
+
   return (
     <html
       lang="id"
@@ -85,7 +101,7 @@ export default function RootLayout({ children }) {
         <GAListener />
           <AuthProvider>
             <WishlistProvider>
-              <NavbarClientGate />
+              <NavbarClientGate categories={categories} />
 
               <main className="flex-1">
                 {children}

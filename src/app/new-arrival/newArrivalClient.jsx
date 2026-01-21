@@ -1,41 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import { LoadingSpinner, NewArrivaleCard } from "@/components";
-import { getProducts } from "@/services/api/product.services";
-import { getBrands } from "@/services/api/brands.services";
 
-export default function NewArrivalClient() {
-  const sections = [];
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [Brands, setBrands] = useState([]);
-  const [Meta, setMeta] = useState({});
-  const page = 1;
-  const itemsPerPage = 16; // <- sesuaikan kebutuhan
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        const [resProducts, resBrands] = await Promise.all([
-          getProducts({ page, per_page: itemsPerPage }),
-          getBrands(),
-        ]);
-
-        setProducts(resProducts.data || []);
-        setMeta(resProducts.meta || {});
-        setBrands(resBrands.data || []);
-      } catch (error) {
-        console.error("Gagal mengambil data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [page, itemsPerPage]);
+export default function NewArrivalClient({ products = [] }) {
 
   for (let i = 0; i < products.length; i += 5) {
     sections.push(products.slice(i, i + 5));
@@ -55,7 +23,7 @@ export default function NewArrivalClient() {
         </p>
       </div>
 
-      {loading ? (
+      {products.length === 0 ? (
         <LoadingSpinner />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 auto-rows-fr grid-flow-dense">

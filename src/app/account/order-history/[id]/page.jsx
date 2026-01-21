@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { n } from "@/utils/number";
 import { getImageUrl } from "@/utils/getImageUrl";
 
