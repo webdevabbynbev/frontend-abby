@@ -35,6 +35,8 @@ export default function SaleClient({
   initialSaleProducts = [],
   initialBrands = [],
   categories = [],
+  filterCategory = null,
+  filterSubcategory = null,
 }) {
   const loading = false;
 
@@ -48,7 +50,6 @@ export default function SaleClient({
 
   // Brand filter
   const brands = initialBrands;
-
 
   // Search
   const [search, setSearch] = useState("");
@@ -77,10 +78,29 @@ export default function SaleClient({
       });
   }, [productRows]);
 
-  // ==== SALE: search filter
+  // ==== SALE: category filter + search filter
   const filtered = useMemo(() => {
     let rows = [...products];
 
+    // Apply category filter if provided
+    if (filterCategory) {
+      rows = rows.filter((p) => {
+        const productCategory = String(p.category || "").toLowerCase();
+        const filterCat = String(filterCategory).toLowerCase();
+        return productCategory.includes(filterCat);
+      });
+    }
+
+    // Apply subcategory filter if provided
+    if (filterSubcategory) {
+      rows = rows.filter((p) => {
+        const categoryType = String(p.categoryType || "").toLowerCase();
+        const filterSubcat = String(filterSubcategory).toLowerCase();
+        return categoryType.includes(filterSubcat);
+      });
+    }
+
+    // Apply search filter
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((p) => {
@@ -91,7 +111,7 @@ export default function SaleClient({
     }
 
     return rows;
-  }, [products, search]);
+  }, [products, search, filterCategory, filterSubcategory]);
 
   const visibleFiltered = useMemo(() => {
     return filtered.slice(0, visibleSaleCount);

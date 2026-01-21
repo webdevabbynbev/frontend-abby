@@ -19,7 +19,11 @@ export const metadata = {
   },
 };
 
-export default async function SalePage() {
+export default async function SalePage({ searchParams }) {
+  const awaitedParams = await searchParams;
+  const category = awaitedParams?.category || null;
+  const subcategory = awaitedParams?.subcategory || null;
+
   const [flashSaleRes, saleRes, brandRes, categoriesRes] = await Promise.all([
     getApi("/flashsale"),
     getSale(),
@@ -56,6 +60,8 @@ export default async function SalePage() {
       initialSaleProducts={saleProducts}
       initialBrands={Array.isArray(brandRes?.data) ? brandRes.data : []}
       categories={categories}
+      filterCategory={category}
+      filterSubcategory={subcategory}
     />
   )
 }

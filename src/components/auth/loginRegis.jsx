@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser, regis, OtpRegis } from "@/services/auth"; // ✅ getUser dihapus
 import { useAuth } from "@/context/AuthContext";
+import { useLoginModal } from "@/context/LoginModalContext";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
@@ -11,7 +12,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   Button,
   TxtField,
   Select,
@@ -31,6 +31,7 @@ const pickValue = (e) => e?.target?.value ?? e ?? "";
 
 export function LoginRegisModalForm() {
   const { login } = useAuth();
+  const { isOpen, setIsOpen, closeLoginModal } = useLoginModal();
   const router = useRouter();
 
   const [tab, setTab] = useState("signin");
@@ -193,14 +194,8 @@ export function LoginRegisModalForm() {
   };
 
   return (
-    <Dialog className="Form-Sign-in">
-      <DialogTrigger asChild>
-        <Button variant="primary" size="sm">
-          Masuk
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} className="Form-Sign-in">
+      <DialogContent onInteractOutside={closeLoginModal}>
         <DialogHeader>
           <DialogTitle></DialogTitle>
           <DialogDescription></DialogDescription>

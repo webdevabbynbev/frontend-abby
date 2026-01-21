@@ -23,6 +23,8 @@ export default async function BestSeller({ searchParams }) {
   const currentPage = Number(params?.page || 1);
   const perPage = Number(params?.per_page || 20);
   const search = String(params?.q || "").trim();
+  const category = String(params?.category || "").trim() || null;
+  const subcategory = String(params?.subcategory || "").trim() || null;
 
   const [productsRes, brandsRes, categoriesRes] = await Promise.all([
     getProducts({
@@ -51,6 +53,8 @@ export default async function BestSeller({ searchParams }) {
       currentPage={currentPage}
       search={search}
       itemsPerPage={perPage}
+      filterCategory={category}
+      filterSubcategory={subcategory}
     />
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import { LoginRegisModalForm, SearchBar } from "@/components";
+import { LoginButton, LoginRegisModalForm, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
 import ShopByCategoryDropdown from "./categoryDropdown";
 
@@ -62,7 +62,7 @@ export function NavbarGuest({
         </div>
 
         <div className="shrink-0">
-          <LoginRegisModalForm />
+          <LoginButton />
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function NavbarGuest({
             onSearch={onSearch}
           />
 
-          <LoginRegisModalForm />
+          <LoginButton />
         </div>
       </div>
     </>
