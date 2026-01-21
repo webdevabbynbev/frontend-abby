@@ -15,25 +15,32 @@ function n(v) {
  *  ========================= */
 export async function getUser() {
   try {
-    const res = await api.get("/profile", { withCredentials: true });
+    if (!hasSession()) {
+      return { user: null };
+    }
+    const res = await api.get("/profile", {
+      withCredentials: true,
+      validateStatus: (status) =>
+        (status >= 200 && status < 300) || status === 401 || status === 403,
+    });
 
-    return {
-      user: res.data?.serve ?? res.data?.user ?? null,
-    };
-  } catch (err) {
-    const status = err?.response?.status;
-
-    // 🔕 user BELUM PERNAH login → DIAM
-    if (status === 401 && !hasLoggedInBefore()) {
+    if (res.status === 401 || res.status === 403) {
       return { user: null };
     }
 
-    // 🚨 user PERNAH login → session expired
-    if (status === 401 && hasLoggedInBefore()) {
-      throw err; // ⬅️ ini yang kamu mau
-    }
+    const payload = res.data;
 
-    throw err;
+    const user =
+      payload?.serve ??
+      payload?.user ??
+      payload?.data?.user ??
+      payload?.data?.serve ??
+      null;
+
+    return { user };
+  } catch (err) {
+    const msg = err?.response?.data?.message || "Failed to fetch user profile";
+    throw new Error(msg);
   }
 }
 
