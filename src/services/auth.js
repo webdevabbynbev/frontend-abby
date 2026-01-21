@@ -1,4 +1,4 @@
-import api from "@/lib/axios";
+import api from "@/lib/axios.js";
 import { setToken, clearToken } from "@/services/authToken";
 
 function s(v) {

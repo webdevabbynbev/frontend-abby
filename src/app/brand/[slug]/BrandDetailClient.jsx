@@ -36,7 +36,7 @@ export default function BrandDetailClient({ brandData }) {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem className="capitalize">
-              {brandData.slug || brandData.brandname}
+              {brandData.name || brandData.slug}
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -45,8 +45,8 @@ export default function BrandDetailClient({ brandData }) {
         <div className="w-full h-auto">
           <img
             src={getImageUrl(brandData.header)}
-            alt={brandData.brandname}
-            className="object-contain w-full rounded-2xl"
+            alt={brandData.name}
+            className="object-cover w-full h-100 rounded-2xl"
             onError={(e) => {
               e.currentTarget.src = getImageUrl(null);
             }}
@@ -58,7 +58,7 @@ export default function BrandDetailClient({ brandData }) {
           <div className="h-37.5 w-37.5 flex items-center justify-center rounded-xl bg-white shadow">
             <img
               src={getImageUrl(brandData.logo)}
-              alt={brandData.brandname}
+              alt={brandData.name}
               className="p-2 max-h-37.5 max-w-37.5 object-contain"
               onError={(e) => {
                 e.currentTarget.src = getImageUrl(null);
@@ -67,8 +67,8 @@ export default function BrandDetailClient({ brandData }) {
           </div>
 
           <div className="flex flex-col space-y-3 w-full">
-            <h1 className="text-lg font-bold">{brandData.brandname}</h1>
-            <h2 className="text-sm">{brandData.profile}</h2>
+            <h1 className="text-lg font-bold">{brandData.name}</h1>
+            <h2 className="text-sm">{brandData.description || "Brand ini belum punya deskripsi"}</h2>
           </div>
         </div>
 

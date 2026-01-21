@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { n, isNumericLike } from "@/utils/number";
 import { calcWeightRounded } from "@/utils/checkoutWeight";
 import { useCheckoutCartServer } from "@/app/hooks/useCheckoutCartServer";

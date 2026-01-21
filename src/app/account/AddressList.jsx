@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import api from "@/lib/axios";
+import api from "@/lib/axios.js";
 import { getAddressByQuery, getUser } from "@/services/auth";
 import { AddressCard } from ".";
 import { useLocationNames } from "@/app/hooks/useLocationNames";
