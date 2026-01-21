@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import Image from "next/image";
 import Link from "next/link";
 import { n } from "@/utils/number";

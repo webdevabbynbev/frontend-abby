@@ -1,7 +1,6 @@
 "use client";
 import { useDebounce } from "@/app/hooks/useDebounce";
-import React, { useMemo, useState, useEffect } from "react";
-import { getCategories } from "@/services/api/category.services";
+import React, { useMemo, useState } from "react";
 
 import {
   Button,
@@ -27,7 +26,14 @@ import {
   DataBrand,
 } from "@/data";
 
-export function Filter() {
+export function Filter({
+  brands = [],
+  categories = [],
+  categoriesLoading = false,
+  showBrandFilter = true,
+  className = "",
+}) {
+
   // state pilihan filter
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [minPrice, setMinPrice] = useState("");
@@ -36,11 +42,10 @@ export function Filter() {
   const [showTooltipMax, setShowTooltipMax] = useState(false);
 
   // category dari DB
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [catLoading, setCatLoading] = useState(false);
+  const categoryTypes = Array.isArray(categories) ? categories : [];
+  const catLoading = Boolean(categoriesLoading);
 
   // brand (opsional)
-  const [showBrandFilter, setShowBrandFilter] = useState(true);
   const [brandSearch, setBrandSearch] = useState("");
   const debouncedSearch = useDebounce(brandSearch, 250);
 
@@ -53,11 +58,14 @@ export function Filter() {
       .replace(/\s+/g, " ")
       .trim();
 
+    const brandOptions =
+    Array.isArray(brands) && brands.length > 0 ? brands : DataBrand;
+
   const filteredBrands = useMemo(() => {
     const q = norm(debouncedSearch);
-    if (!q) return DataBrand;
-    return DataBrand.filter((b) => norm(b.brandname).includes(q));
-  }, [debouncedSearch]);
+    if (!q) return brandOptions;
+    return brandOptions.filter((b) => norm(b.brandname).includes(q));
+  }, [brandOptions, debouncedSearch]);
 
   const handleSelect = (prefix, id) => {
     const key = `${prefix}-${id}`;
@@ -81,35 +89,6 @@ export function Filter() {
     const isNum = /^\d*$/.test(e.target.value);
     type === "min" ? setShowTooltipMin(!isNum) : setShowTooltipMax(!isNum);
   };
-
-  // fetch category dari DB
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setCatLoading(true);
-        const res = await getCategories();
-        const arr = Array.isArray(res?.serve)
-          ? res.serve
-          : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res)
-          ? res
-          : [];
-        if (alive) setCategoryTypes(arr);
-      } catch (err) {
-        console.error("Failed to load category-types:", err);
-        if (alive) setCategoryTypes([]); // tanpa fallback dummy
-      } finally {
-        if (alive) setCatLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // concern sections (tetap sama)
   const concern_sections = useMemo(
@@ -199,7 +178,7 @@ export function Filter() {
   }, [categoryTypes, selectedFilters]);
 
   return (
-    <div className="flex-row space-y-10 h-full max-w-75">
+    <div className={`flex-row space-y-10 h-full max-w-75 ${className}`}>
       {/* Brand (opsional) */}
       {showBrandFilter && (
         <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">

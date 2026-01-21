@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Dialog,
@@ -22,24 +23,29 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@/components/ui/Pagination";
-import { useDebounce } from "../hooks/useDebounce";
-import { getProducts } from "@/services/api/product.services";
-import { getBrands } from "@/services/api/brands.services";
 import { buildPageItems } from "@/lib/pagination";
 
-const BestSellerClient = () => {
-  const [products, setProducts] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [search, setSearch] = useState("");
-  const [meta, setMeta] = useState({});
-  const debounceSearch = useDebounce(search, 500);
+const BestSellerClient = ({
+  products = [],
+  brands = [],
+  categories = [],
+  meta = {},
+  currentPage = 1,
+  search = "",
+  itemsPerPage = 20,
+}) => {
+  const router = useRouter();
+  const [searchInput, setSearchInput] = useState(search);
 
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const itemsPerPage = 20;
+    useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
   const totalPages = meta?.lastPage || 1;
   const skeletonCard = itemsPerPage;
   const currentItems = products;
@@ -49,37 +55,13 @@ const BestSellerClient = () => {
 
   const pageItems = buildPageItems(currentPage, totalPages);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debounceSearch]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        isInitialLoading ? setIsInitialLoading(true) : setIsFetching(true);
-
-        const [resProducts, resBrands] = await Promise.all([
-          getProducts({
-            page: currentPage,
-            per_page: itemsPerPage,
-            name: debounceSearch,
-          }),
-          getBrands(),
-        ]);
-
-        setProducts(resProducts.data || []);
-        setMeta(resProducts.meta || {});
-        setBrands(resBrands.data || []);
-      } catch (error) {
-        console.error("Gagal mengambil data:", error);
-      } finally {
-        setIsInitialLoading(false);
-        setIsFetching(false);
-      }
-    };
-
-    fetchData();
-  }, [currentPage, debounceSearch, itemsPerPage]);
+    const pushWithParams = (nextPage, nextSearch) => {
+    const params = new URLSearchParams();
+    if (nextSearch) params.set("q", nextSearch);
+    if (nextPage && nextPage > 1) params.set("page", String(nextPage));
+    if (itemsPerPage) params.set("per_page", String(itemsPerPage));
+    router.push(`/best-seller?${params.toString()}`);
+  };
 
   return (
     <div className="flex w-full mx-auto flex-col justify-between xl:max-w-7xl lg:max-w-284 lg:flex-row">
@@ -89,20 +71,33 @@ const BestSellerClient = () => {
 
       {/* FILTER DESKTOP */}
       <div className="hidden w-75 lg:w-75 pl-10 pr-2 py-6 lg:block">
-        <Filter brands={brands} showBrandFilter className="w-full py-24" />
+        <Filter
+          brands={brands}
+          categories={categories}
+          showBrandFilter
+          className="w-full py-24"
+        />
       </div>
 
       {/* MAIN CONTENT */}
       <div className="flex-1 p-6">
         {/* SEARCH + FILTER MOBILE */}
         <div className="mb-6 flex gap-3 sm:items-center">
-          <TxtField
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            iconLeftName="MagnifyingGlass"
+          <form
             className="w-full"
-          />
+            onSubmit={(e) => {
+              e.preventDefault();
+              pushWithParams(1, searchInput.trim());
+            }}
+          >
+            <TxtField
+              placeholder="Search products..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              iconLeftName="MagnifyingGlass"
+              className="w-full"
+            />
+          </form>
 
           <Dialog>
             <DialogTrigger asChild>
@@ -120,7 +115,7 @@ const BestSellerClient = () => {
               <Filter
                 brands={brands}
                 showBrandFilter
-                disabled={isInitialLoading || isFetching}
+                 categories={categories}
                 className="w-full py-24"
               />
             </DialogContent>
@@ -129,7 +124,7 @@ const BestSellerClient = () => {
 
         {/* GRID */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {isInitialLoading || isFetching ? (
+          {false ? (
             [...Array(skeletonCard)].map((_, i) => (
               <RegularCardSkeleton key={i} />
             ))
@@ -145,7 +140,7 @@ const BestSellerClient = () => {
         </div>
 
         {/* PAGINATION */}
-        {!isInitialLoading && totalPages > 1 && (
+        {totalPages > 1 && (
           <Pagination className="mt-12">
             <PaginationContent>
               <PaginationItem>
@@ -157,7 +152,8 @@ const BestSellerClient = () => {
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
-                    if (currentPage > 1) setCurrentPage((p) => p - 1);
+                    if (currentPage > 1)
+                      pushWithParams(currentPage - 1, search);
                   }}
                 />
               </PaginationItem>
@@ -173,7 +169,7 @@ const BestSellerClient = () => {
                       }`}
                       onClick={(e) => {
                         e.preventDefault();
-                        setCurrentPage(item);
+                        pushWithParams(item, search);
                       }}
                     >
                       {item}
@@ -196,7 +192,7 @@ const BestSellerClient = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     if (currentPage < totalPages)
-                      setCurrentPage((p) => p + 1);
+                      pushWithParams(currentPage + 1, search);
                   }}
                 />
               </PaginationItem>

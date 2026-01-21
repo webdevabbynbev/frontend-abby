@@ -16,14 +16,10 @@ import {
   RegularCardSkeleton,
 } from "@/components";
 
-import { getSale } from "@/services/api/promo.services";
 import {
-  normalizeProduct,
   normalizeSaleProduct,
   normalizeFlashSaleItem,
 } from "@/services/api/normalizers/product";
-import { getBrands } from "@/services/api/brands.services";
-import { getApi } from "@/services/api/client";
 
 function buildKey(product) {
   return (
@@ -34,19 +30,25 @@ function buildKey(product) {
   );
 }
 
-export default function SaleClient() {
-  const [loading, setLoading] = useState(true);
+export default function SaleClient({
+  initialFlashSale = null,
+  initialSaleProducts = [],
+  initialBrands = [],
+  categories = [],
+}) {
+  const loading = false;
 
   // Flash sale: meta/serve dari getFlashSale()
-  const [flashSale, setFlashSale] = useState(null);
+  const flashSale = initialFlashSale;
 
-  const [flashSaleLoading, setFlashSaleLoading] = useState(true);
+  const flashSaleLoading = false;
 
   // Sale products dari getSale()
-  const [productRows, setProductRows] = useState([]);
+  const productRows = initialSaleProducts;
 
   // Brand filter
-  const [brands, setBrands] = useState([]);
+  const brands = initialBrands;
+
 
   // Search
   const [search, setSearch] = useState("");
@@ -60,63 +62,6 @@ export default function SaleClient() {
 
   const SALE_STEP = 12;
   const FLASH_STEP = 8;
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setLoading(true);
-        setFlashSaleLoading(true);
-
-        const [flashSaleRes, saleRes, brandRes] = await Promise.all([
-          getApi("/flashsale"), // meta/serve flash sale
-          getSale(), // list sale
-          getBrands(), // brands
-        ]);
-
-        if (!alive) return;
-
-        // flash sale meta/serve
-        setFlashSale(flashSaleRes?.serve ?? flashSaleRes ?? null);
-
-        // brands
-        setBrands(Array.isArray(brandRes?.data) ? brandRes.data : []);
-
-        // sale products dari getSale
-        const saleItems =
-          Array.isArray(saleRes?.list) && saleRes.list.length
-            ? saleRes.list
-            : saleRes?.serve
-            ? [saleRes.serve]
-            : Array.isArray(saleRes?.data)
-            ? saleRes.data
-            : [];
-
-        const saleProducts = saleItems.flatMap((sale) =>
-          Array.isArray(sale?.products) ? sale.products : []
-        );
-
-        setProductRows(saleProducts);
-      } catch (e) {
-        console.error("Failed to load sale/flash sale:", e);
-        if (!alive) return;
-
-        setFlashSale(null);
-        setProductRows([]);
-        setBrands([]);
-      } finally {
-        if (alive) {
-          setLoading(false);
-          setFlashSaleLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // ==== SALE: normalize + hanya yang benar-benar sale + dedupe
   const products = useMemo(() => {
@@ -409,6 +354,7 @@ export default function SaleClient() {
                 </DialogHeader>
                 <Filter
                   brands={brands}
+                  categories={categories}
                   showBrandFilter={true}
                   className="w-full pb-10"
                 />
