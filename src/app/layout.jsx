@@ -26,6 +26,10 @@ const damion = Damion({
 export const metadata = {
   metadataBase: new URL("https://abbynbev.com"),
 
+  icons: {
+    icon: '/favicon.svg',
+  },
+
   title: {
     default:
       "Abby n Bev | Situs Belanja Online Makeup dan Skincare Terbaik Di Indonesia",

@@ -4,6 +4,12 @@ export function normalizeProduct(raw) {
   if (!raw) return null;
 
   const item = raw.product || raw;
+  const productId =
+    raw?.product?.id ??
+    raw?.productId ??
+    raw?.product_id ??
+    item?.id ??
+    null;
 
   // ✅ penting: pastikan extraDiscount kebawa (list biasanya raw.product.extraDiscount)
   const extraDiscount =
@@ -127,6 +133,7 @@ export function normalizeProduct(raw) {
   return {
     ...item,
     id: raw.id || item.id,
+    productId,
     name: item.name || "Unnamed Product",
 
     price: Number(

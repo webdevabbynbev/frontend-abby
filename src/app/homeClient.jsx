@@ -34,6 +34,7 @@ export default function HomeClient({
 
   const router = useRouter();
 
+
   // --- COMPONENT: PICK SECTION (Existing) ---
   const PickSection = ({
     title,

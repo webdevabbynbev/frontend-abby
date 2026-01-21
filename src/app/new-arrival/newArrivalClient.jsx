@@ -12,7 +12,7 @@ export default function NewArrivalClient({ products = [] }) {
   return (
     <div className="max-w-7xl mx-auto px-8 py-8">
       <h1 className="sr-only">
-        Produk baru sudah ready di beauty store Abby n Bev!
+        Produk baru sudah ready di beauty store Abby n Bev! Yuk, cek sekarang!
       </h1>
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-neutral-900 mb-1">
