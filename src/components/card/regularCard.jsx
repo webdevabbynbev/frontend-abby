@@ -120,6 +120,29 @@ const normalizeExtraDiscount = (raw) => {
 
   const baseMinPrice = toNumberOrNaN(raw.baseMinPrice ?? raw.base_min_price);
   const finalMinPrice = toNumberOrNaN(raw.finalMinPrice ?? raw.final_min_price);
+  const eligibleMinPrice = toNumberOrNaN(
+    raw.eligibleMinPrice ?? raw.eligible_min_price,
+  );
+  const eligibleMaxPrice = toNumberOrNaN(
+    raw.eligibleMaxPrice ?? raw.eligible_max_price,
+  );
+
+  const eligibleVariantIdsRaw =
+    raw.eligibleVariantIds ?? raw.eligible_variant_ids ?? [];
+  const eligibleVariantIds = Array.isArray(eligibleVariantIdsRaw)
+    ? eligibleVariantIdsRaw
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0)
+    : [];
+
+  let eligibleVariantCount = Number(
+    raw.eligibleVariantCount ?? raw.eligible_variant_count ?? NaN,
+  );
+  if (!Number.isFinite(eligibleVariantCount) || eligibleVariantCount < 0) {
+    eligibleVariantCount = eligibleVariantIds.length
+      ? eligibleVariantIds.length
+      : null;
+  }
 
   const label =
     typeof raw.label === "string"
@@ -136,6 +159,10 @@ const normalizeExtraDiscount = (raw) => {
     appliesTo,
     baseMinPrice,
     finalMinPrice,
+    eligibleMinPrice,
+    eligibleMaxPrice,
+    eligibleVariantCount,
+    eligibleVariantIds,
     label,
   };
 };
@@ -204,7 +231,12 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
     const raw = product;
 
     const productId =
-      raw.id ?? raw._id ?? raw.productId ?? raw.product_id ?? null;
+      raw.product?.id ??
+      raw.productId ??
+      raw.product_id ??
+      raw.id ??
+      raw._id ??
+      null;
 
     const id =
       productId ??
@@ -239,7 +271,25 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
     let discountBadge = null;
 
     if (extra) {
-      if (Number(extra.appliesTo) === 0) {
+      const appliesTo = Number(extra.appliesTo);
+      const extraBaseMin = extra.baseMinPrice;
+      const extraEligibleMin = Number.isFinite(extra.eligibleMinPrice)
+        ? extra.eligibleMinPrice
+        : extraBaseMin;
+      const extraFinalMin = extra.finalMinPrice;
+      const hasExtraRange =
+        Number.isFinite(extraEligibleMin) &&
+        Number.isFinite(extraFinalMin) &&
+        extraFinalMin < extraEligibleMin;
+      const eligibleVariantCount = Number(extra.eligibleVariantCount ?? 0);
+      const hasEligibleVariants =
+        appliesTo === 3
+          ? eligibleVariantCount > 0 ||
+            (Array.isArray(extra.eligibleVariantIds) &&
+              extra.eligibleVariantIds.length > 0)
+          : true;
+
+      if (appliesTo === 0) {
         const priceAfterDiscount = applyExtraDiscount(extra, finalPrice);
         if (
           Number.isFinite(priceAfterDiscount) &&
@@ -250,18 +300,28 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           }
           finalPrice = priceAfterDiscount;
         }
+      } else if (hasExtraRange) {
+        const shouldUseEligibleRange =
+          appliesTo !== 3 ||
+          !Number.isFinite(basePrice) ||
+          extraFinalMin <= basePrice;
+        if (shouldUseEligibleRange) {
+          compareAtPrice = extraEligibleMin;
+          finalPrice = extraFinalMin;
+        }
       } else if (
-        Number.isFinite(extra.finalMinPrice) &&
-        extra.finalMinPrice < finalPrice
+        Number.isFinite(extraFinalMin) &&
+        extraFinalMin < finalPrice &&
+        hasEligibleVariants
       ) {
         if (!Number.isFinite(compareAtPrice)) {
           const baseMin =
-            Number.isFinite(extra.baseMinPrice) && extra.baseMinPrice > 0
-              ? extra.baseMinPrice
+            Number.isFinite(extraEligibleMin) && extraEligibleMin > 0
+              ? extraEligibleMin
               : finalPrice;
           compareAtPrice = baseMin;
         }
-        finalPrice = extra.finalMinPrice;
+        finalPrice = extraFinalMin;
       }
     }
 
@@ -270,6 +330,25 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
     if (hasAppliedDiscount && showDiscountBadge) {
       discountBadge = buildDiscountBadge(extra, compareAtPrice, finalPrice);
+    } else if (showDiscountBadge && extra) {
+      const appliesTo = Number(extra.appliesTo);
+      const eligibleVariantCount = Number(extra.eligibleVariantCount ?? 0);
+      const hasEligibleVariants =
+        appliesTo === 3
+          ? eligibleVariantCount > 0 ||
+            (Array.isArray(extra.eligibleVariantIds) &&
+              extra.eligibleVariantIds.length > 0)
+          : false;
+
+      if (hasEligibleVariants) {
+        const eligibleMin = Number.isFinite(extra.eligibleMinPrice)
+          ? extra.eligibleMinPrice
+          : extra.baseMinPrice;
+        const eligibleFinal = extra.finalMinPrice;
+        discountBadge =
+          buildDiscountBadge(extra, eligibleMin, eligibleFinal) ??
+          (extra.label ? String(extra.label).trim() : null);
+      }
     }
 
     const image =
