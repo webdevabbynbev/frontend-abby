@@ -489,7 +489,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         <div className="image flex w-full items-center justify-center relative">
           {/* Show a text badge if extraDiscount provides one */}
           {item.discountBadge ? (
-            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] font-bold py-1 px-2 rounded">
+            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] rounded-md font-bold py-1 px-2">
               {item.discountBadge}
             </div>
           ) : (

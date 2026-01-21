@@ -12,6 +12,8 @@ import { useAddresses } from "@/app/hooks/useAddresses";
 import { useLocationNames } from "@/app/hooks/useLocationNames";
 import { useShippingOptions } from "@/app/hooks/useShippingOptions";
 
+export const dynamic = "force-dynamic";
+
 import CheckoutCart from "@/components/checkout/CheckoutCart";
 import CheckoutShipping from "@/components/checkout/CheckoutShipping";
 import CheckoutPayment from "@/components/checkout/CheckoutPayment";

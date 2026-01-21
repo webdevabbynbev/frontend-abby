@@ -3,6 +3,9 @@ import { groupBrandsByAlphabet } from "@/utils";
 import { Button } from "@/components";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
+
 export default function Page() {
   const groupedBrands = groupBrandsByAlphabet(DataBrand);
 

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 
+export const dynamic = "force-dynamic";
+
 const DUMMY_NOTIFICATIONS = [
   {
     id: 1,

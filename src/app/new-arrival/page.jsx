@@ -1,6 +1,8 @@
 import NewArrivalClient from "./newArrivalClient";
 import { getProducts } from "@/services/api/product.services";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "New Arrival",
 

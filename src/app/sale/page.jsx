@@ -4,6 +4,8 @@ import { getCategories } from "@/services/api/category.services";
 import { getSale } from "@/services/api/promo.services";
 import { getApi } from "@/services/api/client";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Sale",
 

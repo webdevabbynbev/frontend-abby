@@ -1,5 +1,7 @@
 import RamadanCheckinClient from "./ramadhanCheckinClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Ramadhan Check-in",
 
