@@ -5,6 +5,7 @@ import "./globals.css";
 import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
 import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
 import { getCategories } from "@/services/api/category.services";
 import { Toaster } from "sonner";
@@ -102,19 +103,21 @@ export default async function RootLayout({ children }) {
         </Script>
         <GAListener />
           <AuthProvider>
-            <WishlistProvider>
-              <NavbarClientGate categories={categories} />
+            <LoginModalProvider>
+              <WishlistProvider>
+                <NavbarClientGate categories={categories} />
 
-              <main className="flex-1">
-                {children}
-                <div className="lg:hidden h-24" />
-              </main>
+                <main className="flex-1">
+                  {children}
+                  <div className="lg:hidden h-24" />
+                </main>
 
-              <Toaster position="top-center" />
-              <MobileBottomNav />
-              <ChatkitWidget/>
-              <Footer />
-            </WishlistProvider>
+                <Toaster position="top-center" />
+                <MobileBottomNav />
+                <ChatkitWidget/>
+                <Footer />
+              </WishlistProvider>
+            </LoginModalProvider>
           </AuthProvider>
       </body>
     </html>
