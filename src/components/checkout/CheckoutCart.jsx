@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { n } from "@/utils/number";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 export default function CheckoutCart({
   checkoutItems = [],
@@ -23,16 +24,25 @@ export default function CheckoutCart({
 
       {checkoutItems.map((item, idx) => {
         const product = item.product || {};
-        const image =
-          product.thumbnail ||
-          product.image ||
-          "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
 
-        const quantity = n(item?.qtyCheckout ?? item?.qty ?? item?.quantity ?? 1, 1);
-        const isBusy = loadingItemId !== null && loadingItemId === item.id;
+        const imageUrl = getImageUrl(
+          product.thumbnail || product.image
+        );
+
+        const quantity = n(
+          item?.qtyCheckout ?? item?.qty ?? item?.quantity ?? 1,
+          1
+        );
+
+        const isBusy =
+          loadingItemId !== null && loadingItemId === item.id;
 
         const productName =
-          product.name || product.title || item.product_name || item.productName || "-";
+          product.name ||
+          product.title ||
+          item.product_name ||
+          item.productName ||
+          "-";
 
         const variantName =
           item?.variant?.name ||
@@ -49,31 +59,43 @@ export default function CheckoutCart({
           >
             <div className="flex gap-3 items-center">
               <Image
-                src={image}
+                src={imageUrl}
                 width={60}
                 height={60}
                 alt={productName}
                 className="rounded-md"
+                onError={(e) => {
+                  e.currentTarget.src = getImageUrl(null);
+                }}
               />
+
               <div>
                 <p className="font-medium">{productName}</p>
-                <p className="text-sm text-gray-500">Variant: {variantName}</p>
+                <p className="text-sm text-gray-500">
+                  Variant: {variantName}
+                </p>
 
                 <div className="mt-2 flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <button
                       disabled={isBusy || quantity <= 1 || loadingPay}
-                      onClick={() => onUpdateQty?.(item, quantity - 1)}
+                      onClick={() =>
+                        onUpdateQty?.(item, quantity - 1)
+                      }
                       className="w-7 h-7 flex items-center justify-center border rounded-full text-sm disabled:opacity-40"
                     >
                       -
                     </button>
 
-                    <span className="min-w-8 text-center">{quantity}</span>
+                    <span className="min-w-8 text-center">
+                      {quantity}
+                    </span>
 
                     <button
                       disabled={isBusy || loadingPay}
-                      onClick={() => onUpdateQty?.(item, quantity + 1)}
+                      onClick={() =>
+                        onUpdateQty?.(item, quantity + 1)
+                      }
                       className="w-7 h-7 flex items-center justify-center border rounded-full text-sm disabled:opacity-40"
                     >
                       +
@@ -92,7 +114,14 @@ export default function CheckoutCart({
             </div>
 
             <p className="font-semibold text-pink-600 text-right">
-              Rp {n(item.amount ?? item.price ?? product.price ?? 0, 0).toLocaleString("id-ID")}
+              Rp{" "}
+              {n(
+                item.amount ??
+                  item.price ??
+                  product.price ??
+                  0,
+                0
+              ).toLocaleString("id-ID")}
             </p>
           </div>
         );

@@ -1,4 +1,4 @@
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { unwrap } from "@/utils/unwrap";
 
 export async function fetchAddresses() {

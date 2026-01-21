@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { n, isNumericLike } from "@/utils/number";
 import { calcWeightRounded } from "@/utils/checkoutWeight";
 import { useCheckoutCartServer } from "@/app/hooks/useCheckoutCartServer";
@@ -11,6 +11,8 @@ import { useCartMutations } from "@/app/hooks/useCartMutations";
 import { useAddresses } from "@/app/hooks/useAddresses";
 import { useLocationNames } from "@/app/hooks/useLocationNames";
 import { useShippingOptions } from "@/app/hooks/useShippingOptions";
+
+export const dynamic = "force-dynamic";
 
 import CheckoutCart from "@/components/checkout/CheckoutCart";
 import CheckoutShipping from "@/components/checkout/CheckoutShipping";

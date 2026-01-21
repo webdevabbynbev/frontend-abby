@@ -3,10 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import axios from "@/lib/axios";
-import { LoginRegisModalForm, SearchBar } from "@/components";
+import { LoginButton, LoginRegisModalForm, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
-import { useEffect, useState } from "react";
 import ShopByCategoryDropdown from "./categoryDropdown";
 
 /* ===================== DROPDOWN DATA ===================== */
@@ -44,36 +42,11 @@ export function NavbarGuest({
   search,
   setSearch,
   onSearch,
+  categories = [],
+  categoriesLoading = false,
 }) {
-  // category dari DB
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [catLoading, setCatLoading] = useState(false);
-
-  // fetch category dari DB
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setCatLoading(true);
-
-        // pastikan baseURL axios kamu sudah benar (atau ganti ke instance axios internal)
-        const res = await axios.get("/category-types");
-
-        const arr = Array.isArray(res?.data?.serve) ? res.data.serve : [];
-        if (alive) setCategoryTypes(arr);
-      } catch (err) {
-        console.error("Failed to load category-types:", err);
-        if (alive) setCategoryTypes([]);
-      } finally {
-        if (alive) setCatLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const categoryTypes = Array.isArray(categories) ? categories : [];
+  const catLoading = Boolean(categoriesLoading);
 
   return (
     <>
@@ -89,7 +62,7 @@ export function NavbarGuest({
         </div>
 
         <div className="shrink-0">
-          <LoginRegisModalForm />
+          <LoginButton />
         </div>
       </div>
 
@@ -110,12 +83,15 @@ export function NavbarGuest({
 
           {/* STATIC LINKS */}
           {links.map((link) => {
-            const isExternal = typeof link.href === "string" && link.href.startsWith("http");
+            const isExternal =
+              typeof link.href === "string" && link.href.startsWith("http");
             const active = isNavActive(link.href);
 
             const className = clsx(
               "whitespace-nowrap text-sm font-medium transition-colors",
-              active ? "text-primary-700" : "text-gray-700 hover:text-primary-500"
+              active
+                ? "text-primary-700"
+                : "text-gray-700 hover:text-primary-500",
             );
 
             if (isExternal) {
@@ -144,7 +120,7 @@ export function NavbarGuest({
             <ShopByCategoryDropdown
               label="Shop By Category"
               categories={categoryTypes}
-              loading={catLoading} // opsional kalau component kamu handle state loading
+              loading={catLoading}
             />
 
             <MegaDropdown label="Shop by Concern" items={shopByConcern} />
@@ -153,14 +129,15 @@ export function NavbarGuest({
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <SearchBar
-            className="max-w-[320px]"
+            className="max-w-75"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onSearch={onSearch}
           />
-          <LoginRegisModalForm />
+
+          <LoginButton />
         </div>
       </div>
     </>

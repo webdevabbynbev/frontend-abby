@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { TxtField } from "..";
 import { formatToRupiah } from "@/utils";
+import { getImageUrl } from "@/utils/getImageUrl";
+import { Bouncy } from "ldrs/react";
+import "ldrs/react/Bouncy.css";
 
 export function SearchBar({
   className = "",
@@ -31,13 +34,10 @@ export function SearchBar({
     setOpen(false);
   };
 
-  // klik di luar → tutup dropdown
   useEffect(() => {
     const onDown = (e) => {
       if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (!wrapRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -64,16 +64,15 @@ export function SearchBar({
 
         const res = await fetch(
           `/api/products/suggest?q=${encodeURIComponent(
-            trimmed
+            trimmed,
           )}&limit=${per_page}`,
-          { signal: abortRef.current.signal }
+          { signal: abortRef.current.signal },
         );
 
         const json = await res.json();
         setItems(Array.isArray(json?.data) ? json.data : []);
         setBrands(Array.isArray(json?.brands) ? json.brands : []);
-      } catch (e) {
-        // abort normal
+      } catch {
       } finally {
         setLoading(false);
       }
@@ -114,7 +113,6 @@ export function SearchBar({
         }}
       />
 
-      {/* Suggestions */}
       {open && (
         <div className="absolute left-0 right-0 mt-2 z-50 rounded-xl border bg-white overflow-hidden">
           <div className="px-3 py-2 text-xs text-neutral-500 border-b">
@@ -122,7 +120,7 @@ export function SearchBar({
           </div>
 
           {loading ? (
-            <div className="p-3 text-sm">Loading...</div>
+            <div className="p-3 text-sm w-full justify-center"><Bouncy size="30" speed="1.2" color="#AE2D68" /></div>
           ) : items.length === 0 && brands.length === 0 ? (
             <div className="p-3 text-sm">Tidak ada suggestion.</div>
           ) : (
@@ -146,7 +144,6 @@ export function SearchBar({
                           <div className="w-10 h-10 rounded-md bg-neutral-100 border flex items-center justify-center text-xs text-neutral-500">
                             BR
                           </div>
-
                           <div className="text-sm font-medium text-primary-700 truncate">
                             {brand.name}
                           </div>
@@ -156,9 +153,11 @@ export function SearchBar({
                   ))}
                 </>
               )}
+
               <li className="px-3 py-2 text-xs font-semibold text-neutral-500 bg-neutral-50">
                 Produk
               </li>
+
               {items.slice(0, 4).map((p) => (
                 <li key={p.id || p.slug || p.name}>
                   <button
@@ -169,33 +168,25 @@ export function SearchBar({
                       setOpen(false);
                     }}
                   >
-                    {p?.image?.url ? (
-                      <img
-                        src={p.image.url}
-                        alt={p.name}
-                        className="w-10 h-10 rounded-md object-cover border"
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <img
-                        src="https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png"
-                        className="w-10 h-10 rounded-md object-cover border"
-                        crossOrigin="anonymous"
-                      />
-                    )}
+                    <img
+                      src={getImageUrl(p?.image?.url || p?.image)}
+                      alt={p.name}
+                      className="w-10 h-10 rounded-md object-cover border"
+                      crossOrigin="anonymous"
+                    />
 
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">
                         {p.name}
                       </div>
                       <div className="text-xs text-neutral-500 truncate">
-                        {formatToRupiah(p.price) ? formatToRupiah(p.price) : ""}
+                        {p.price ? formatToRupiah(p.price) : ""}
                       </div>
                     </div>
                   </button>
                 </li>
               ))}
-
+            
               <li className="border-t">
                 <button
                   type="button"

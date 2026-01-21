@@ -16,97 +16,10 @@ import {
   RegularCardSkeleton,
 } from "@/components";
 
-import { getSale } from "@/services/api/promo.services";
-import { normalizeProduct } from "@/services/api/normalizers/product";
-import { getBrands } from "@/services/api/brands.services";
-import { getApi } from "@/services/api/client";
-
-function normalizeSaleProduct(raw) {
-  const base = normalizeProduct(raw);
-  if (!base) return null;
-
-  const normalPrice = Number(raw?.price ?? base.price ?? 0);
-  const salePrice = Number(raw?.salePrice ?? raw?.sale_price ?? 0);
-
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
-
-  return {
-    ...base,
-    price: isSale ? salePrice : normalPrice,
-    realprice: isSale ? normalPrice : NaN,
-    sale: isSale,
-    salePrice: isSale ? salePrice : 0,
-    stock: Number(raw?.stock ?? 0),
-  };
-}
-
-function normalizeFlashSaleItem(raw) {
-  if (!raw) return raw;
-
-  const source = raw.product ?? raw;
-
-  // Try to find original price
-  const comparePrice = Number(
-    source.realprice ??
-      source.oldPrice ??
-      source.original_price ??
-      source.originalPrice ??
-      0
-  );
-
-  // Try to find base price
-  const currentPrice = Number(
-    source.price ?? source.basePrice ?? source.base_price ?? 0
-  );
-
-  // Determine normal (original) price
-  let normalPrice = currentPrice;
-  if (comparePrice > 0 && comparePrice > currentPrice) {
-    normalPrice = comparePrice;
-  }
-
-  // Determine sale price
-  let salePrice = Number(
-    source.flashPrice ??
-      source.flash_price ??
-      source.salePrice ??
-      source.sale_price ??
-      source.flashSalePrice ??
-      source.flash_sale_price ??
-      source.discountPrice ??
-      source.discount_price ??
-      0
-  );
-
-  // Fallback: if salePrice is 0 but we have a comparePrice > currentPrice, assume currentPrice is the sale price
-  if (salePrice === 0 && comparePrice > 0 && comparePrice > currentPrice) {
-    salePrice = currentPrice;
-  }
-
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
-
-  if (!isSale) return raw;
-
-  const normalizedProduct = {
-    ...source,
-    price: normalPrice, // FlashSaleCard expects 'price' to be original price
-    flashPrice: salePrice, // FlashSaleCard expects 'flashPrice'
-    realprice: normalPrice,
-    sale: true,
-    flashSaleId: raw.flashSaleId ?? source.flashSaleId,
-  };
-
-  if (raw.product) {
-    return {
-      ...raw,
-      product: normalizedProduct,
-    };
-  }
-
-  return normalizedProduct;
-}
+import {
+  normalizeSaleProduct,
+  normalizeFlashSaleItem,
+} from "@/services/api/normalizers/product";
 
 function buildKey(product) {
   return (
@@ -117,19 +30,26 @@ function buildKey(product) {
   );
 }
 
-export default function SaleClient() {
-  const [loading, setLoading] = useState(true);
+export default function SaleClient({
+  initialFlashSale = null,
+  initialSaleProducts = [],
+  initialBrands = [],
+  categories = [],
+  filterCategory = null,
+  filterSubcategory = null,
+}) {
+  const loading = false;
 
   // Flash sale: meta/serve dari getFlashSale()
-  const [flashSale, setFlashSale] = useState(null);
+  const flashSale = initialFlashSale;
 
-  const [flashSaleLoading, setFlashSaleLoading] = useState(true);
+  const flashSaleLoading = false;
 
   // Sale products dari getSale()
-  const [productRows, setProductRows] = useState([]);
+  const productRows = initialSaleProducts;
 
   // Brand filter
-  const [brands, setBrands] = useState([]);
+  const brands = initialBrands;
 
   // Search
   const [search, setSearch] = useState("");
@@ -143,63 +63,6 @@ export default function SaleClient() {
 
   const SALE_STEP = 12;
   const FLASH_STEP = 8;
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setLoading(true);
-        setFlashSaleLoading(true);
-
-        const [flashSaleRes, saleRes, brandRes] = await Promise.all([
-          getApi("/flashsale"), // meta/serve flash sale
-          getSale(), // list sale
-          getBrands(), // brands
-        ]);
-
-        if (!alive) return;
-
-        // flash sale meta/serve
-        setFlashSale(flashSaleRes?.serve ?? flashSaleRes ?? null);
-
-        // brands
-        setBrands(Array.isArray(brandRes?.data) ? brandRes.data : []);
-
-        // sale products dari getSale
-        const saleItems =
-          Array.isArray(saleRes?.list) && saleRes.list.length
-            ? saleRes.list
-            : saleRes?.serve
-            ? [saleRes.serve]
-            : Array.isArray(saleRes?.data)
-            ? saleRes.data
-            : [];
-
-        const saleProducts = saleItems.flatMap((sale) =>
-          Array.isArray(sale?.products) ? sale.products : []
-        );
-
-        setProductRows(saleProducts);
-      } catch (e) {
-        console.error("Failed to load sale/flash sale:", e);
-        if (!alive) return;
-
-        setFlashSale(null);
-        setProductRows([]);
-        setBrands([]);
-      } finally {
-        if (alive) {
-          setLoading(false);
-          setFlashSaleLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // ==== SALE: normalize + hanya yang benar-benar sale + dedupe
   const products = useMemo(() => {
@@ -215,10 +78,29 @@ export default function SaleClient() {
       });
   }, [productRows]);
 
-  // ==== SALE: search filter
+  // ==== SALE: category filter + search filter
   const filtered = useMemo(() => {
     let rows = [...products];
 
+    // Apply category filter if provided
+    if (filterCategory) {
+      rows = rows.filter((p) => {
+        const productCategory = String(p.category || "").toLowerCase();
+        const filterCat = String(filterCategory).toLowerCase();
+        return productCategory.includes(filterCat);
+      });
+    }
+
+    // Apply subcategory filter if provided
+    if (filterSubcategory) {
+      rows = rows.filter((p) => {
+        const categoryType = String(p.categoryType || "").toLowerCase();
+        const filterSubcat = String(filterSubcategory).toLowerCase();
+        return categoryType.includes(filterSubcat);
+      });
+    }
+
+    // Apply search filter
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((p) => {
@@ -229,7 +111,7 @@ export default function SaleClient() {
     }
 
     return rows;
-  }, [products, search]);
+  }, [products, search, filterCategory, filterSubcategory]);
 
   const visibleFiltered = useMemo(() => {
     return filtered.slice(0, visibleSaleCount);
@@ -371,7 +253,7 @@ export default function SaleClient() {
 
   return (
     <div className="w-full">
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-50 via-white to-secondary-100">
+      <section className="relative overflow-hidden bg-linear-to-br from-secondary-50 via-white to-secondary-100">
         <div className="absolute -top-24 right-0 h-56 w-56 rounded-full bg-primary-100/60 blur-3xl" />
         <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-secondary-200/70 blur-2xl" />
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-12 lg:flex-row lg:items-center lg:justify-between lg:py-16">
@@ -492,6 +374,7 @@ export default function SaleClient() {
                 </DialogHeader>
                 <Filter
                   brands={brands}
+                  categories={categories}
                   showBrandFilter={true}
                   className="w-full pb-10"
                 />
@@ -542,7 +425,7 @@ export default function SaleClient() {
                     key={buildKey(item?.product ?? item) ?? `flash-${idx}`}
                     className="relative overflow-hidden rounded-2xl"
                   >
-                    <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[26px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
+                    <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-6.5 items-center rounded-br-lg bg-primary-700 px-2 text-[10px] font-bold uppercase tracking-wide text-neutral-50">
                       Flash Sale
                     </span>
                     <FlashSaleCard
@@ -592,6 +475,7 @@ export default function SaleClient() {
                   }`}
                   product={product}
                   hrefQuery={buildSaleHrefQuery(product)}
+                  showDiscountBadge={false}
                 />
               ))
             ) : (

@@ -1,9 +1,7 @@
 "use client";
-
-console.log("ENV CLOUD:", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 import {
   RegularCardSkeleton,
@@ -22,78 +20,20 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/Carousel";
-import { getProducts } from "@/services/api/product.services";
-import { getCategories } from "@/services/api/category.services";
 
-export default function HomeClient() {
-  const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [bestSellers, setBestSellers] = useState([]);
-  const [bestSellersLoading, setBestSellersLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [, setCategoriesLoading] = useState(true);
+export default function HomeClient({
+  banners = [],
+  categories = [],
+  products = [],
+  bestSellers = [],
+  flashSaleItems = [],
+}) {
+  const productsLoading = false;
+  const bestSellersLoading = false;
+
 
   const router = useRouter();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await getCategories();
-
-        const arr = Array.isArray(res?.serve)
-          ? res.serve
-          : Array.isArray(res?.serve?.data)
-          ? res.serve.data
-          : [];
-
-        const level1 = arr.filter(
-          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null)
-        );
-        setCategories(level1);
-      } catch (err) {
-        console.error("getCategories error:", err);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await getProducts({
-          page: 1,
-          per_page: 30,
-          sort_by: "created_at",
-          order: "desc",
-        });
-        setProducts(data);
-      } catch (err) {
-        console.error("getProducts error:", err);
-      } finally {
-        setProductsLoading(false);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        // ✅ Mengambil data Best Seller: urutkan berdasarkan 'sold' (terjual) secara descending (terbanyak)
-        const { data } = await getProducts({
-          page: 1,
-          per_page: 15,
-          sort_by: "sold",
-          order: "desc",
-        });
-        setBestSellers(data);
-      } catch (err) {
-        console.error("getBestSellers error:", err);
-      } finally {
-        setBestSellersLoading(false);
-      }
-    })();
-  }, []);
 
   // --- COMPONENT: PICK SECTION (Existing) ---
   const PickSection = ({
@@ -169,57 +109,42 @@ export default function HomeClient() {
 
   // --- NEW COMPONENT: DUAL PROMO SECTION (Split Left/Right) ---
   const DualPromoSection = () => {
-    // Data untuk carousel (ambil dari products state)
-    // Gunakan slice yang berbeda agar variatif, fallback ke array kosong
     const editorPicks = products.length > 0 ? products.slice(0, 15) : [];
     const trendingPicks = bestSellers;
 
-    const bannerUrl =
-      "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
+    const bannerSrc = getImageUrl(
+      "Products/abby-product-placeholder-image.png",
+    );
 
     return (
       <div className="w-full xl:max-w-7xl lg:max-w-240 mx-auto px-6 py-6">
-        {/* Grid 2 Kolom: Kiri dan Kanan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
-          {/* === BAGIAN KIRI (Left Section) === */}
+          {/* ================= LEFT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Bagian Kiri Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
-              {/* Placeholder IMG untuk Banner Kiri */}
+            {/* Banner kiri */}
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
               <img
-                src={bannerUrl}
+                src={bannerSrc}
                 alt="Left Banner"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentNode.classList.add(
-                    "flex",
-                    "items-center",
-                    "justify-center",
-                    "text-gray-500",
-                    "font-bold"
-                  );
-                  e.target.parentNode.innerText = "BANNER KIRI (Top Left)";
+                  e.currentTarget.src = getImageUrl();
                 }}
               />
             </div>
 
-            {/* Bagian Kiri Bawah: Carousel */}
+            {/* Carousel kiri */}
             <div className="space-y-2">
               <h4 className="font-damion text-2xl text-primary-700">
                 New Arrival
               </h4>
-              <Carousel
-                opts={{
-                  align: "start",
-                }}
-                className="w-full relative"
-              >
+
+              <Carousel opts={{ align: "start" }} className="w-full relative">
                 <CarouselContent className="-ml-2 md:-ml-4">
                   {productsLoading
                     ? Array.from({ length: 3 }).map((_, i) => (
                         <CarouselItem
-                          key={`skel-left-${i}`}
+                          key={`left-skel-${i}`}
                           className="pl-2 md:pl-4 basis-1/2"
                         >
                           <RegularCardSkeleton />
@@ -240,45 +165,32 @@ export default function HomeClient() {
             </div>
           </div>
 
-          {/* === BAGIAN KANAN (Right Section) === */}
+          {/* ================= RIGHT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Bagian Kanan Atas: Banner */}
-            <div className="w-full aspect-[16/9] bg-gray-200 rounded-xl overflow-hidden relative shadow-sm group">
-              {/* Placeholder IMG untuk Banner Kanan */}
+            {/* Banner kanan */}
+            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
               <img
-                src={bannerUrl}
+                src={bannerSrc}
                 alt="Right Banner"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentNode.classList.add(
-                    "flex",
-                    "items-center",
-                    "justify-center",
-                    "text-gray-500",
-                    "font-bold"
-                  );
-                  e.target.parentNode.innerText = "BANNER KANAN (Top Right)";
+                  e.currentTarget.src = getImageUrl();
                 }}
               />
             </div>
 
-            {/* Bagian Kanan Bawah: Carousel */}
+            {/* Carousel kanan */}
             <div className="space-y-2">
               <h4 className="font-damion text-2xl text-primary-700">
                 Best Seller
               </h4>
-              <Carousel
-                opts={{
-                  align: "start",
-                }}
-                className="w-full relative"
-              >
+
+              <Carousel opts={{ align: "start" }} className="w-full relative">
                 <CarouselContent className="-ml-2 md:-ml-4">
                   {bestSellersLoading
                     ? Array.from({ length: 3 }).map((_, i) => (
                         <CarouselItem
-                          key={`skel-right-${i}`}
+                          key={`right-skel-${i}`}
                           className="pl-2 md:pl-4 basis-1/2"
                         >
                           <RegularCardSkeleton />
@@ -302,6 +214,7 @@ export default function HomeClient() {
       </div>
     );
   };
+
   // ----------------------------------------------------
 
   const abbyPicks = products.slice(0, 12);
@@ -314,7 +227,7 @@ export default function HomeClient() {
       </h1>
       <div className="Hero-wrapper w-full flex flex-row py-0 lg:py-6 justify-between h-full mx-auto xl:max-w-7xl lg:max-w-240">
         <div className="h-auto w-full px-0 lg:px-6 items-center">
-          <HeroCarousel />
+          <HeroCarousel banners={banners} />
         </div>
       </div>
 
@@ -366,7 +279,7 @@ export default function HomeClient() {
             </div>
           </div>
           <div className="w-full">
-            <FlashSaleCarousel />
+            <FlashSaleCarousel rawItems={flashSaleItems} />
           </div>
         </div>
       </div>

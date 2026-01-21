@@ -11,7 +11,7 @@ import {
   startOfMonth,
   subMonths,
 } from "date-fns";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -27,6 +27,7 @@ import {
   Ban,
   Clock,
 } from "lucide-react";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const Wheel = dynamic(
   () => import("react-custom-roulette-r19").then((mod) => mod.Wheel),
@@ -34,21 +35,17 @@ const Wheel = dynamic(
 );
 
 // =======================
-// BEAUTY THEME (PALETTE)
+// THEME
 // =======================
-const BRAND_PRIMARY = "#AE2D68"; // primary-700
-const BRAND_DARK = "#762549"; // primary-900
-const BRAND_HOVER = "#8D2754"; // primary-800
-
-const BRAND_BG = "#FCF3F8"; // primary-50
-const BRAND_SOFT = "#FEF1F6"; // secondary-50
-const BRAND_SOFT2 = "#F9EAF4"; // primary-100
-
-const BRAND_BORDER = "#FEE5EE"; // secondary-100
-const BRAND_BORDER_STRONG = "#FECCDF"; // secondary-200
-
-const BRAND_ACCENT = "#F83C77"; // secondary-500
-const BRAND_ACCENT_SOFT = "#FFAFCC"; // secondary-300
+const BRAND_PRIMARY = "#AE2D68";
+const BRAND_DARK = "#762549";
+const BRAND_BG = "#FCF3F8";
+const BRAND_SOFT = "#FEF1F6";
+const BRAND_SOFT2 = "#F9EAF4";
+const BRAND_BORDER = "#FEE5EE";
+const BRAND_BORDER_STRONG = "#FECCDF";
+const BRAND_ACCENT = "#F83C77";
+const BRAND_ACCENT_SOFT = "#FFAFCC";
 
 // --- UTILS ---
 const formatToRupiah = (number) =>
@@ -59,53 +56,9 @@ const formatToRupiah = (number) =>
     maximumFractionDigits: 0,
   }).format(number);
 
-// --- DATA ---
-const DEFAULT_RECOMMENDATION_IMAGE =
-  "https://res.cloudinary.com/abbymedia/image/upload/v1766202017/placeholder.png";
-
-const SPIN_COLORS = [
-  { backgroundColor: "#AE2D68", textColor: "#ffffff" },
-  { backgroundColor: "#C53D7F", textColor: "#ffffff" },
-  { backgroundColor: "#D85C9E", textColor: "#ffffff" },
-  { backgroundColor: "#FE689B", textColor: "#ffffff" },
-  { backgroundColor: "#FFAFCC", textColor: "#762549" },
-  { backgroundColor: "#8D2754", textColor: "#ffffff" },
-];
-
-const SPIN_STORAGE_KEY = "ramadan_spin_prizes";
-
-const saveSpinPrize = (prize) => {
-  if (!prize?.name) return;
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(SPIN_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    const list = Array.isArray(parsed) ? parsed : [];
-    const exists = list.some(
-      (item) => item?.id === prize?.id || item?.name === prize?.name
-    );
-    if (exists) return;
-    const next = [
-      ...list,
-      {
-        id: prize?.id ?? null,
-        name: prize?.name,
-        wonAt: new Date().toISOString(),
-      },
-    ];
-    window.localStorage.setItem(SPIN_STORAGE_KEY, JSON.stringify(next));
-  } catch {}
-};
-
-const TOTAL_DAYS = 30;
-const MAX_EXEMPT_DAYS = 7;
-const FASTING_TICKET_THRESHOLD = 23;
-const CHECKIN_QUOTES = [
-  "Setiap langkah kecil hari ini membawa berkah besar esok hari.",
-  "Kebaikan yang konsisten akan membentuk kebiasaan baik.",
-];
-
-// --- RECOMMENDATION UI ---
+// =======================
+// RECOMMENDATION CARD
+// =======================
 const RecommendationCard = ({ data }) => {
   const hasSale = (data.compareAt ?? 0) > (data.price ?? 0);
   const href = data.slug ? `/product/${data.slug}` : "#";
@@ -130,12 +83,13 @@ const RecommendationCard = ({ data }) => {
               SALE
             </div>
           )}
+
           <img
-            src={data.image}
+            src={getImageUrl(data.image)}
             alt={data.name}
             className="w-full h-full object-cover transition-transform duration-500 md:group-hover:scale-110 mix-blend-multiply"
             onError={(e) => {
-              e.currentTarget.style.display = "none";
+              e.currentTarget.src = getImageUrl(null);
             }}
           />
         </div>
@@ -176,346 +130,6 @@ const RecommendationCard = ({ data }) => {
           </div>
         </div>
       </Link>
-    </div>
-  );
-};
-
-const RecommendationList = ({ products, loading }) => (
-  <div className="mt-6 w-full animate-slide-up">
-    <div className="flex items-center justify-center gap-2 mb-4 opacity-90">
-      <Sparkles size={14} style={{ color: BRAND_ACCENT }} />
-      <p
-        className="text-xs font-extrabold uppercase tracking-widest"
-        style={{ color: `${BRAND_DARK}B3` }}
-      >
-        Rekomendasi Hari Ini
-      </p>
-      <Sparkles size={14} style={{ color: BRAND_ACCENT }} />
-    </div>
-
-    {loading ? (
-      <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div
-            key={`recommendation-skeleton-${index}`}
-            className="h-48 rounded-2xl border animate-pulse"
-            style={{ backgroundColor: BRAND_SOFT, borderColor: BRAND_BORDER }}
-          />
-        ))}
-      </div>
-    ) : products.length ? (
-      <div className="grid grid-cols-2 gap-3">
-        {products.map((product) => (
-          <RecommendationCard key={product.id} data={product} />
-        ))}
-      </div>
-    ) : (
-      <div
-        className="rounded-2xl border border-dashed bg-white p-4 text-center text-xs font-bold"
-        style={{ borderColor: BRAND_BORDER, color: `${BRAND_DARK}B3` }}
-      >
-        Belum ada rekomendasi Ramadan untuk hari ini.
-      </div>
-    )}
-  </div>
-);
-
-// --- SPIN MODAL ---
-const SpinWheelModal = ({ open, onClose, prizes, tickets, onSpin }) => {
-  const [mustSpin, setMustSpin] = useState(false);
-  const [prizeNumber, setPrizeNumber] = useState(0);
-  const [showResult, setShowResult] = useState(false);
-  const [spinLoading, setSpinLoading] = useState(false);
-  const [spinError, setSpinError] = useState("");
-  const [activePrize, setActivePrize] = useState(null);
-
-  if (!open) return null;
-
-  const wheelData = (prizes || []).map((p, idx) => ({
-    option: p?.name ?? `Hadiah ${idx + 1}`,
-    style: SPIN_COLORS[idx % SPIN_COLORS.length],
-  }));
-
-  const handleStopSpinning = () => {
-    setMustSpin(false);
-    setShowResult(true);
-  };
-
-  const resetAndClose = () => {
-    setShowResult(false);
-    setMustSpin(false);
-    setSpinLoading(false);
-    setSpinError("");
-    setActivePrize(null);
-    setPrizeNumber(0);
-    onClose();
-  };
-
-  const handleSpinClick = async () => {
-    if (mustSpin || spinLoading) return;
-
-    if (!tickets) return setSpinError("Ticket spin belum tersedia.");
-    if (!wheelData.length) return setSpinError("Hadiah spin belum tersedia.");
-
-    setSpinLoading(true);
-    setSpinError("");
-
-    try {
-      const prize = await onSpin();
-      if (!prize) {
-        setSpinError("Hadiah tidak tersedia.");
-        return;
-      }
-
-      const index = (prizes || []).findIndex((item) => item?.id === prize?.id);
-      setActivePrize(prize);
-      setPrizeNumber(index >= 0 ? index : 0);
-      setMustSpin(true);
-      setShowResult(false);
-    } catch (error) {
-      setSpinError(error?.response?.data?.message || "Gagal melakukan spin.");
-    } finally {
-      setSpinLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md transition-all">
-      <div
-        className="w-full max-w-[90%] md:max-w-md rounded-3xl md:rounded-[2.5rem] bg-white p-6 md:p-8 shadow-2xl text-center relative overflow-hidden flex flex-col items-center border-4"
-        style={{ borderColor: BRAND_BORDER }}
-      >
-        <div
-          className="absolute top-0 inset-x-0 h-24 md:h-32 pointer-events-none"
-          style={{
-            background: `linear-gradient(180deg, ${BRAND_SOFT2} 0%, ${BRAND_BG} 100%)`,
-          }}
-        />
-
-        <h2
-          className="text-xl md:text-2xl font-extrabold mb-1 relative z-10"
-          style={{ color: BRAND_DARK }}
-        >
-          Putar Keberuntungan!
-        </h2>
-        <p
-          className="mb-4 text-xs md:text-sm relative z-10"
-          style={{ color: `${BRAND_DARK}99` }}
-        >
-          Hadiah spesial menantimu hari ini
-        </p>
-
-        <div className="mb-6 scale-90 md:scale-100 pointer-events-none drop-shadow-xl relative z-10">
-          <Wheel
-            mustStartSpinning={mustSpin}
-            prizeNumber={prizeNumber}
-            data={wheelData.length ? wheelData : [{ option: "..." }]}
-            onStopSpinning={handleStopSpinning}
-            backgroundColors={[BRAND_PRIMARY, BRAND_ACCENT]}
-            textColors={["#ffffff"]}
-            outerBorderColor={BRAND_PRIMARY}
-            outerBorderWidth={5}
-            innerRadius={20}
-            innerBorderColor={BRAND_PRIMARY}
-            innerBorderWidth={0}
-            radiusLineColor={BRAND_BORDER}
-            radiusLineWidth={1}
-            fontSize={14}
-          />
-        </div>
-
-        {showResult ? (
-          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-20 animate-fade-in p-6">
-            <div className="mb-4 flex items-center justify-center">
-              <div
-                className="rounded-full p-3 md:p-4 border shadow-inner"
-                style={{
-                  backgroundColor: BRAND_SOFT2,
-                  borderColor: BRAND_BORDER,
-                }}
-              >
-                <Sparkles
-                  size={32}
-                  className="md:w-10 md:h-10"
-                  style={{ color: BRAND_ACCENT }}
-                />
-              </div>
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-800">
-              Selamat!
-            </h3>
-            <p className="mt-2 text-sm" style={{ color: `${BRAND_DARK}B3` }}>
-              Kamu mendapatkan:
-            </p>
-            <div
-              className="mt-4 mb-6 px-6 py-3 rounded-xl text-lg md:text-2xl font-extrabold border-2"
-              style={{
-                backgroundColor: BRAND_SOFT,
-                color: BRAND_PRIMARY,
-                borderColor: BRAND_BORDER,
-              }}
-            >
-              {activePrize?.name || wheelData[prizeNumber]?.option || "-"}
-            </div>
-            <button
-              onClick={resetAndClose}
-              className="w-full text-white py-3 md:py-4 rounded-xl font-extrabold shadow-lg active:scale-95 transition-transform"
-              style={{
-                backgroundColor: BRAND_PRIMARY,
-                boxShadow: "0 14px 28px rgba(174,45,104,0.18)",
-              }}
-            >
-              Klaim Hadiah
-            </button>
-          </div>
-        ) : (
-          <div className="w-full relative z-10">
-            {spinError && (
-              <div className="mb-3 rounded-2xl bg-red-50 text-red-600 text-xs px-3 py-2 border border-red-200 font-bold">
-                {spinError}
-              </div>
-            )}
-            <button
-              onClick={handleSpinClick}
-              disabled={mustSpin || spinLoading || !tickets}
-              className="w-full rounded-xl md:rounded-2xl px-4 py-3 md:py-4 text-white font-extrabold shadow-lg active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-sm md:text-base"
-              style={{
-                backgroundColor: BRAND_PRIMARY,
-                boxShadow: "0 14px 28px rgba(248,60,119,0.18)",
-              }}
-            >
-              {mustSpin || spinLoading ? "Sedang Memutar..." : "PUTAR SEKARANG"}
-            </button>
-          </div>
-        )}
-
-        {!mustSpin && !showResult && (
-          <button
-            onClick={resetAndClose}
-            className="absolute top-4 right-4 p-2 rounded-full transition z-20"
-            style={{ backgroundColor: BRAND_SOFT2, color: BRAND_PRIMARY }}
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- OFFER MODAL ---
-const OfferModal = ({ open, onClose, recommendations, loading }) => {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-80 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div
-        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-4 relative"
-        style={{ borderColor: BRAND_BORDER }}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <h3
-            className="text-lg font-extrabold flex items-center gap-2"
-            style={{ color: BRAND_DARK }}
-          >
-            <Sparkles size={18} style={{ color: BRAND_ACCENT }} />
-            Rekomendasi Hari Ini
-          </h3>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full transition"
-            style={{ backgroundColor: BRAND_SOFT2, color: BRAND_PRIMARY }}
-            aria-label="Tutup"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <p className="text-xs text-gray-500 mb-4">
-          Pilihan produk terbaik untuk menemani Ramadanmu.
-        </p>
-
-        <div
-          className="rounded-2xl border-2 p-4"
-          style={{
-            background: `linear-gradient(135deg, ${BRAND_SOFT} 0%, ${BRAND_SOFT2} 100%)`,
-            borderColor: BRAND_BORDER,
-          }}
-        >
-          <RecommendationList products={recommendations} loading={loading} />
-        </div>
-
-        <button
-          onClick={onClose}
-          className="mt-5 w-full text-white py-3 rounded-2xl font-extrabold hover:opacity-90 active:scale-95 transition"
-          style={{ backgroundColor: BRAND_PRIMARY }}
-        >
-          Tutup
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const ClaimTicketModal = ({ open, onSpinNow, onSpinLater, onClose }) => {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-75 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div
-        className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-4 relative text-center"
-        style={{ borderColor: BRAND_BORDER }}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full transition"
-          style={{ backgroundColor: BRAND_SOFT2, color: BRAND_PRIMARY }}
-          aria-label="Tutup"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="mb-4 flex items-center justify-center">
-          <div
-            className="rounded-full p-3 border shadow-inner"
-            style={{ backgroundColor: BRAND_SOFT2, borderColor: BRAND_BORDER }}
-          >
-            <Gift size={32} style={{ color: BRAND_PRIMARY }} />
-          </div>
-        </div>
-        <h3
-          className="text-lg font-extrabold mb-2"
-          style={{ color: BRAND_DARK }}
-        >
-          Selamat!
-        </h3>
-        <p className="text-xs text-gray-600 mb-6 leading-relaxed">
-          Kamu mendapatkan <b>1 tiket</b> untuk spin. Mau langsung spin
-          sekarang?
-        </p>
-
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={onSpinNow}
-            className="w-full text-white py-3 rounded-2xl font-extrabold hover:opacity-90 active:scale-95 transition"
-            style={{ backgroundColor: BRAND_PRIMARY }}
-          >
-            Spin Sekarang
-          </button>
-          <button
-            onClick={onSpinLater}
-            className="w-full py-3 rounded-2xl font-extrabold border-2 hover:opacity-95 active:scale-95 transition"
-            style={{
-              backgroundColor: BRAND_SOFT2,
-              color: BRAND_PRIMARY,
-              borderColor: BRAND_BORDER,
-            }}
-          >
-            Spin Nanti
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -607,7 +221,7 @@ export default function RamadanCheckinClient() {
           compareAt: null,
           brand: product.brand?.name ?? "AbbynBev",
           category: product.categoryType?.name ?? "",
-          image: media?.url || DEFAULT_RECOMMENDATION_IMAGE,
+          image: media?.url ?? null,
           slug: product.slug ?? "",
         };
       })

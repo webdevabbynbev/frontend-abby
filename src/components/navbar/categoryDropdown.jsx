@@ -3,7 +3,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 function cx(...classes) {
@@ -92,6 +92,7 @@ export default function ShopByCategoryDropdown({
   maxLeafPerGroup = 10,
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const canHover = useCanHover();
 
   const roots = useMemo(() => sanitizeCategories(categories), [categories]);
@@ -141,6 +142,17 @@ export default function ShopByCategoryDropdown({
     if (!activeRoot) return [];
     return filterRootPanel(activeRoot, query);
   }, [activeRoot, query]);
+
+  // Handle category selection with URL params
+  const handleCategorySelect = (categorySlug, subCategorySlug = null) => {
+    const params = new URLSearchParams();
+    params.set("category", categorySlug);
+    if (subCategorySlug) {
+      params.set("subcategory", subCategorySlug);
+    }
+    router.push(`/best-seller?${params.toString()}`);
+    setOpen(false);
+  };
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
@@ -227,36 +239,35 @@ export default function ShopByCategoryDropdown({
             {/* Left: lvl1 roots */}
             <div className="max-h-[65vh] overflow-auto p-2">
               <div className="flex flex-col gap-1">
-                {roots.map((root) => {
-                  const isActive = root.slug === activeSlug;
-                  const href = buildCategoryHref([root]);
-                  const isCurrent = pathname === href;
+                  {roots.map((root) => {
+                    const isActive = root.slug === activeSlug;
+                    const href = buildCategoryHref([root]);
+                    const isCurrent = pathname === href;
 
-                  return (
-                    <DropdownMenu.Item key={root.id} asChild>
-                      <Link
-                        href={href}
-                        onMouseEnter={() => setActiveSlug(root.slug)}
-                        onFocus={() => setActiveSlug(root.slug)}
-                        aria-current={isCurrent ? "page" : undefined}
-                        className={cx(
-                          "flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm outline-none",
-                          "hover:bg-gray-50 focus:bg-gray-50",
-                          isActive && "bg-gray-50",
-                          isCurrent && "text-primary-700 font-semibold"
-                        )}
-                      >
-                        <span className="truncate">{root.name}</span>
-                        <ChevronRightIcon
+                    return (
+                      <DropdownMenu.Item key={root.id} asChild>
+                        <button
+                          type="button"
+                          onClick={() => handleCategorySelect(root.slug)}
                           className={cx(
-                            "h-4 w-4 text-gray-300 transition",
-                            isActive && "text-gray-400"
+                            "flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm outline-none text-black w-full text-left",
+                            "hover:bg-gray-100 focus:bg-gray-50",
+                            isActive && "bg-gray-50 text-primary-700",
                           )}
-                        />
-                      </Link>
-                    </DropdownMenu.Item>
-                  );
-                })}
+                          onMouseEnter={() => setActiveSlug(root.slug)}
+                          onFocus={() => setActiveSlug(root.slug)}
+                        >
+                          <span className="truncate">{root.name}</span>
+                          <ChevronRightIcon
+                            className={cx(
+                              "h-4 w-4 text-gray-300 transition",
+                              isActive && "text-gray-400"
+                            )}
+                          />
+                        </button>
+                      </DropdownMenu.Item>
+                    );
+                  })}
               </div>
             </div>
 
@@ -290,15 +301,16 @@ export default function ShopByCategoryDropdown({
                     return (
                       <div key={lvl2.id} className="min-w-0 rounded-xl p-2">
                         <DropdownMenu.Item asChild>
-                          <Link
-                            href={lvl2Href}
+                          <button
+                            type="button"
+                            onClick={() => handleCategorySelect(activeRoot.slug, lvl2.slug)}
                             className={cx(
-                              "mb-2 block rounded-lg px-2 py-1 text-sm font-semibold text-gray-900",
+                              "mb-2 block rounded-lg px-2 py-1 text-sm font-semibold text-black w-full text-left",
                               "hover:bg-gray-50 focus:bg-gray-50 outline-none"
                             )}
                           >
                             {lvl2.name}
-                          </Link>
+                          </button>
                         </DropdownMenu.Item>
 
                         <div className="flex flex-col gap-1">
@@ -313,17 +325,17 @@ export default function ShopByCategoryDropdown({
 
                               return (
                                 <DropdownMenu.Item key={lvl3Item.id} asChild>
-                                  <Link
-                                    href={lvl3Href}
-                                    aria-current={isCurrent ? "page" : undefined}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCategorySelect(activeRoot.slug, lvl2.slug)}
                                     className={cx(
-                                      "rounded-lg px-2 py-1 text-sm text-gray-700 outline-none",
+                                      "rounded-lg px-2 py-1 text-sm text-black outline-none w-full text-left",
                                       "hover:bg-gray-50 focus:bg-gray-50",
                                       isCurrent && "text-primary-700 font-semibold"
                                     )}
                                   >
                                     {lvl3Item.name}
-                                  </Link>
+                                  </button>
                                 </DropdownMenu.Item>
                               );
                             })

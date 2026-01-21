@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import api from "@/lib/axios";
+import api from "@/lib/axios.js";
+
+export const dynamic = "force-dynamic";
 
 export default function PrivacyPolicyPage() {
   const [html, setHtml] = useState("");
