@@ -14,7 +14,7 @@ import {
 } from "@/components";
 import { getImageUrl } from "@/utils/getImageUrl";
 
-export default function BrandDetailClient({ brandData }) {
+export default function BrandDetailClient({ brandData, categories = [] }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
@@ -75,7 +75,11 @@ export default function BrandDetailClient({ brandData }) {
         <div className="flex w-full justify-between">
           {/* Sidebar filter */}
           <div className="w-100 pr-5 py-6">
-            <Filter showBrandFilter={false} className="w-full py-24" />
+           <Filter
+              categories={categories}
+              showBrandFilter={false}
+              className="w-full py-24"
+            />
           </div>
 
           {/* Products list */}
