@@ -1,4 +1,5 @@
 import { getBrandBySlug } from "@/services/api/brands.services";
+import { getCategories } from "@/services/api/category.services";
 import BrandDetailClient from "./BrandDetailClient";
 import { notFound } from "next/navigation";
 
@@ -45,11 +46,22 @@ export async function generateMetadata(props) {
 
 export default async function BrandDetailPage(props) {
   const params = await props.params;
-  const brandData = await getBrandBySlug(params.slug);
+  const [brandData, categoriesRes] = await Promise.all([
+    getBrandBySlug(params.slug),
+    getCategories(),
+  ]);
 
   if (!brandData) {
     notFound();
   }
 
-  return <BrandDetailClient brandData={brandData} />;
+    const categories = Array.isArray(categoriesRes?.serve)
+    ? categoriesRes.serve
+    : Array.isArray(categoriesRes?.data)
+      ? categoriesRes.data
+      : Array.isArray(categoriesRes)
+        ? categoriesRes
+        : [];
+
+  return <BrandDetailClient brandData={brandData} categories={categories} />;
 }

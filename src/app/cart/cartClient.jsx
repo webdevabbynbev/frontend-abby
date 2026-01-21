@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import {
   MobileCartActionBar,
   Button,

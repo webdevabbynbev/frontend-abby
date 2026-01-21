@@ -12,7 +12,7 @@ import {
 } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { DataReview } from "@/data";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 

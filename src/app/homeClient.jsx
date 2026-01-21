@@ -1,5 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { getImageUrl } from "@/utils/getImageUrl";
@@ -21,121 +20,19 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/Carousel";
-import { getProducts } from "@/services/api/product.services";
-import { getCategories } from "@/services/api/category.services";
 
-export default function HomeClient() {
-  const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [bestSellers, setBestSellers] = useState([]);
-  const [bestSellersLoading, setBestSellersLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [, setCategoriesLoading] = useState(true);
+export default function HomeClient({
+  banners = [],
+  categories = [],
+  products = [],
+  bestSellers = [],
+  flashSaleItems = [],
+}) {
+  const productsLoading = false;
+  const bestSellersLoading = false;
+
 
   const router = useRouter();
-
-  const attachApiExtraDiscounts = (normalizedItems, rawRows) => {
-    if (!Array.isArray(normalizedItems)) return [];
-
-    const extraById = new Map();
-    if (Array.isArray(rawRows)) {
-      rawRows.forEach((row) => {
-        const source = row?.product ?? row;
-        const key = Number(
-          source?.id ??
-            source?.productId ??
-            source?.product_id ??
-            source?._id ??
-            0,
-        );
-        if (!key) return;
-        const extra =
-          row?.product?.extraDiscount ??
-          row?.extraDiscount ??
-          source?.extraDiscount ??
-          null;
-        if (extra) {
-          extraById.set(key, extra);
-        }
-      });
-    }
-
-    return normalizedItems.map((item) => {
-      const key = Number(
-        item?.productId ?? item?.product_id ?? item?.id ?? item?._id ?? 0,
-      );
-      const extra = extraById.get(key) ?? item?.extraDiscount ?? null;
-      return extra ? { ...item, extraDiscount: extra } : item;
-    });
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      try {
-        const res = await getCategories();
-        if (cancelled) return;
-
-        const arr = Array.isArray(res?.serve)
-          ? res.serve
-          : Array.isArray(res?.serve?.data)
-            ? res.serve.data
-            : [];
-
-        const level1 = arr.filter(
-          (c) => c.level === 1 && (c.parentId == null || c.parent_id == null),
-        );
-        setCategories(level1);
-      } catch (err) {
-        console.error("getCategories error:", err);
-      } finally {
-        if (!cancelled) setCategoriesLoading(false);
-      }
-
-      if (cancelled) return;
-
-      try {
-        const { data, dataRaw } = await getProducts({
-          page: 1,
-          per_page: 30,
-          sort_by: "created_at",
-          order: "desc",
-        });
-        if (!cancelled) {
-          setProducts(attachApiExtraDiscounts(data, dataRaw));
-        }
-      } catch (err) {
-        console.error("getProducts error:", err);
-      } finally {
-        if (!cancelled) setProductsLoading(false);
-      }
-
-      if (cancelled) return;
-
-      try {
-        const { data, dataRaw } = await getProducts({
-          page: 1,
-          per_page: 15,
-          sort_by: "sold",
-          order: "desc",
-        });
-        if (!cancelled) {
-          setBestSellers(attachApiExtraDiscounts(data, dataRaw));
-        }
-      } catch (err) {
-        console.error("getBestSellers error:", err);
-      } finally {
-        if (!cancelled) setBestSellersLoading(false);
-      }
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
 
   // --- COMPONENT: PICK SECTION (Existing) ---
@@ -330,7 +227,7 @@ export default function HomeClient() {
       </h1>
       <div className="Hero-wrapper w-full flex flex-row py-0 lg:py-6 justify-between h-full mx-auto xl:max-w-7xl lg:max-w-240">
         <div className="h-auto w-full px-0 lg:px-6 items-center">
-          <HeroCarousel />
+          <HeroCarousel banners={banners} />
         </div>
       </div>
 
@@ -382,7 +279,7 @@ export default function HomeClient() {
             </div>
           </div>
           <div className="w-full">
-            <FlashSaleCarousel />
+            <FlashSaleCarousel rawItems={flashSaleItems} />
           </div>
         </div>
       </div>

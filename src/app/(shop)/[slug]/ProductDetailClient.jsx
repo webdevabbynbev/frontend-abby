@@ -11,7 +11,7 @@ import {
   applyExtraDiscount,
 } from "@/utils";
 import { toast } from "sonner";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { useAuth } from "@/context/AuthContext";
 
 import {

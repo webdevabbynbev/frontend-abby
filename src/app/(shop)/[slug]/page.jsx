@@ -13,7 +13,7 @@ export async function generateMetadata(props) {
     const resByPath = await getProductByPath(slugParam);
     const product = resByPath?.data;
 
-    if (!product) return { title: "Produk Tidak Ditemukan | Abby n Bev" };
+    if (!product) return { title: "Halaman Tidak Ditemukan | Abby n Bev" };
 
     return {
       title: `${product.name} | Abby n Bev`,

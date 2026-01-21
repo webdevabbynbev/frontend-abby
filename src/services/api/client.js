@@ -14,22 +14,19 @@ export async function getApi(path, options = {}) {
     ? path
     : new URL(cleanPath, BASE).toString();
 
-  const isGet = !options.method || options.method === "GET";
+  // const isGet = !options.method || options.method === "GET";
 
   const res = await fetch(url, {
-    ...options,
+  ...options,
 
-    // ✅ CACHE UNTUK APP ROUTER (HANYA GET)
-    ...(isGet && { next: { revalidate: 60 } }),
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  },
 
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-
-    ...(typeof window === "undefined" && { credentials: "include" }),
-  });
+  ...(typeof window === "undefined" && { credentials: "include" }),
+});
 
   const contentType = res.headers.get("content-type");
   let data = {};
