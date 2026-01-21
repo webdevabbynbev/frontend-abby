@@ -1,122 +1,105 @@
 import { NextResponse } from "next/server";
 import { searchProductsServer } from "@/services/product/search.server";
 import { getProducts } from "@/services/api/product.services";
-import { slugify } from "@/utils";
+import { getBrands } from "@/services/api/brands.services";
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get("q") || "").trim();
-    const per_page = Number(searchParams.get("limit") || 4);
     const needle = q.toLowerCase();
+    const len = needle.length;
+    const limit = Number(searchParams.get("limit") || 10);
 
     if (!q) {
-      return NextResponse.json(
-        { data: [], meta: {} },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      return NextResponse.json({ brands: [], data: [] });
+    }
+
+    /* ===============================
+     * 1️⃣ BRAND MATCH MODE
+     * =============================== */
+    const allBrands = await getBrands();
+
+    const brandMatcher =
+      len <= 3
+        ? (name) => name.startsWith(needle)
+        : (name) => name.includes(needle);
+
+    const matchedBrands = allBrands
+      .filter((b) => brandMatcher(b.brandname.toLowerCase()))
+      .map((b) => ({
+        id: b.id,
+        name: b.brandname,
+        slug: b.slug,
+      }));
+
+    const primaryBrand =
+      matchedBrands.find((b) => b.name.toLowerCase() === needle) ||
+      matchedBrands.find((b) => b.name.toLowerCase().startsWith(needle)) ||
+      matchedBrands[0] ||
+      null;
+
+    /* ===============================
+     * 2️⃣ PRODUK DARI BRAND
+     * =============================== */
+    /* ===============================
+     * 2️⃣ PRODUK DARI BRAND (FINAL & BENAR)
+     * =============================== */
+    let products = [];
+
+    if (primaryBrand?.id) {
+      const res = await getProducts({
+        page: 1,
+        per_page: 100,
+        brand_id: primaryBrand.id,
+      });
+
+      products = (res?.data || []).filter((p) => {
+        const name = (p.name || "").toLowerCase();
+        const sku = (p.sku || "").toLowerCase();
+        const brand =
+          p?.brand?.name?.toLowerCase() ||
+          p?.brand?.brandname?.toLowerCase() ||
+          "";
+
+        return brandMatcher(name) || brandMatcher(sku) || brandMatcher(brand);
+      });
+    }
+
+    /* ===============================
+     * 3️⃣ FALLBACK PRODUCT SEARCH
+     * =============================== */
+    if (!primaryBrand && products.length === 0) {
+      const textRes = await searchProductsServer({
+        q,
+        page: 1,
+        per_page: 100,
+        fetch_size: 100,
+      });
+
+      products = (Array.isArray(textRes?.data) ? textRes.data : []).filter(
+        (p) => {
+          const name = (p.name || "").toLowerCase();
+          const sku = (p.sku || "").toLowerCase();
+          const brand =
+            p?.brand?.name?.toLowerCase() ||
+            p?.brand?.brandname?.toLowerCase() ||
+            "";
+
+          return brandMatcher(name) || brandMatcher(sku) || brandMatcher(brand);
+        },
       );
     }
 
-    const result = await searchProductsServer({
-      q,
-      page: 1,
-      per_page,
-      fetch_size: 100,
+    return NextResponse.json({
+      brands: matchedBrands.slice(0, 5),
+      data: products.slice(0, limit),
     });
-
-    const brandSource = await getProducts({ page: 1, per_page: 500 });
-    const baseProducts =
-      (result?.data || []).length > 0
-        ? result.data
-        : brandSource?.data || [];
-    const filteredProducts = baseProducts.filter((item) => {
-      const name = (item?.name || "").toString().toLowerCase();
-      const sku = (item?.sku || "").toString().toLowerCase();
-      const brandName = (
-        item?.brand?.name ??
-        item?.brand?.brandname ??
-        item?.brand ??
-        ""
-      )
-        .toString()
-        .toLowerCase();
-      const brandSlug = (
-        item?.brand?.slug ??
-        item?.brand_slug ??
-        ""
-      )
-        .toString()
-        .toLowerCase();
-      const matches =
-        needle.length === 1
-          ? name.startsWith(needle) ||
-            brandName.startsWith(needle) ||
-            brandSlug.startsWith(needle) ||
-            sku.startsWith(needle)
-          : name.includes(needle) ||
-            brandName.includes(needle) ||
-            brandSlug.includes(needle) ||
-            sku.includes(needle);
-      return matches;
-    });
-
-    const brandMap = new Map();
-    (brandSource?.data || []).forEach((item) => {
-      const brandName =
-        item?.brand?.name ?? item?.brand?.brandname ?? item?.brand ?? "";
-      if (!brandName) return;
-      const brandSlug =
-        item?.brand?.slug ?? item?.brand_slug ?? slugify(brandName);
-      const normalizedName = brandName.toString().toLowerCase();
-      const normalizedSlug = brandSlug.toLowerCase();
-      const brandMatch =
-        needle.length === 1
-          ? normalizedName.startsWith(needle) ||
-            normalizedSlug.startsWith(needle)
-          : normalizedName.includes(needle) ||
-            normalizedSlug.includes(needle);
-      if (!brandMatch) return;
-      const brandId = item?.brand_id ?? item?.brandId ?? item?.brand?.id ?? "";
-      const key = (brandSlug || brandName || brandId).toString();
-      if (!key || brandMap.has(key)) return;
-      brandMap.set(key, {
-        name: brandName,
-        slug: brandSlug,
-        id: brandId,
-      });
-    });
-    
-    return NextResponse.json(
-      {
-        ...result,
-        data: filteredProducts.slice(0, per_page),
-        meta: {
-          ...(result?.meta || {}),
-          total: filteredProducts.length,
-        },
-        brands: Array.from(brandMap.values()),
-      },
-      {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    ;
-
   } catch (err) {
-    console.error("[/api/products/suggest] Error:", err.message);
+    console.error("[suggest]", err);
     return NextResponse.json(
-      { data: [], meta: {}, error: err.message || "Suggest API error" },
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+      { brands: [], data: [], error: err.message },
+      { status: 500 },
     );
   }
 }

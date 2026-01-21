@@ -33,7 +33,6 @@ export function Filter({
   showBrandFilter = true,
   className = "",
 }) {
-
   // state pilihan filter
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [minPrice, setMinPrice] = useState("");
@@ -58,19 +57,18 @@ export function Filter({
       .replace(/\s+/g, " ")
       .trim();
 
-    const brandOptions =
-    Array.isArray(brands) && brands.length > 0 ? brands : DataBrand;
+  const brandOptions = Array.isArray(brands) && brands.length > 0 ? brands : [];
 
   const filteredBrands = useMemo(() => {
     const q = norm(debouncedSearch);
     if (!q) return brandOptions;
-    return brandOptions.filter((b) => norm(b.brandname).includes(q));
+    return brandOptions.filter((b) => norm(b.brandname || b.name).includes(q));
   }, [brandOptions, debouncedSearch]);
 
   const handleSelect = (prefix, id) => {
     const key = `${prefix}-${id}`;
     setSelectedFilters((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
 
@@ -136,10 +134,9 @@ export function Filter({
         ],
       },
     ],
-    [selectedFilters]
+    [selectedFilters],
   );
 
-  // ✅ Sections category hanya dari DB (tanpa fallback)
   const sections = useMemo(() => {
     const roots = Array.isArray(categoryTypes) ? categoryTypes : [];
     if (roots.length === 0) return [];
@@ -176,7 +173,6 @@ export function Filter({
       };
     });
   }, [categoryTypes, selectedFilters]);
-
   return (
     <div className={`flex-row space-y-10 h-full max-w-75 ${className}`}>
       {/* Brand (opsional) */}
@@ -215,11 +211,11 @@ export function Filter({
                 return (
                   <Chip
                     key={item.id}
-                    label={item.brandname}
+                    label={item.brandname || item.name}
                     onClick={() => handleSelect("brand", item.id)}
                     isActive={isActive}
                   >
-                    {item.brandname}
+                    {item.brandname || item.name}
                   </Chip>
                 );
               })
