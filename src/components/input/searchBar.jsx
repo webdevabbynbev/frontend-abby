@@ -184,7 +184,7 @@ export function SearchBar({
                   </button>
                 </li>
               ))}
-
+            
               <li className="border-t">
                 <button
                   type="button"
