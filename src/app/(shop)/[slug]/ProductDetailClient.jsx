@@ -54,16 +54,30 @@ export default function ProductDetailClient({ product }) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
+  const salePriceParam = parseNumericParam(searchParams?.get("salePrice"));
+  const realPriceParam = parseNumericParam(searchParams?.get("realPrice"));
+  const saleVariantParam = parseNumericParam(
+    searchParams?.get("saleVariantId"),
+  );
 
+  const hasSaleVariantParam =
+    Number.isFinite(saleVariantParam) && saleVariantParam > 0;
   // Prevent hydration mismatch for relative time
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
-  const [selectedVariantId, setSelectedVariantId] = useState(
-    variants.length ? variants[0].id : null,
-  );
+  const [selectedVariantId, setSelectedVariantId] = useState(() => {
+    if (
+      hasSaleVariantParam &&
+      variants.some((variant) => Number(variant.id) === saleVariantParam)
+    ) {
+      return saleVariantParam;
+    }
+
+    return variants.length ? variants[0].id : null;
+  });
 
   const selectedVariantObj = useMemo(() => {
     return variants.find((v) => v.id === selectedVariantId) || null;
@@ -71,10 +85,18 @@ export default function ProductDetailClient({ product }) {
 
   // kalau selectedVariantId kosong tapi variants ada, set default
   useEffect(() => {
+    if (
+      hasSaleVariantParam &&
+      variants.some((variant) => Number(variant.id) === saleVariantParam) &&
+      Number(selectedVariantId) !== saleVariantParam
+    ) {
+      setSelectedVariantId(saleVariantParam);
+      return;
+    }
     if (!selectedVariantId && variants.length > 0) {
       setSelectedVariantId(variants[0].id);
     }
-  }, [selectedVariantId, variants]);
+  }, [hasSaleVariantParam, saleVariantParam, selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
   // fallback: product.images, lalu product.image
@@ -100,11 +122,17 @@ export default function ProductDetailClient({ product }) {
 
   const [qty, setQty] = useState(1);
 
-  const salePriceParam = parseNumericParam(searchParams?.get("salePrice"));
-  const realPriceParam = parseNumericParam(searchParams?.get("realPrice"));
+  const saleVariantExists =
+    hasSaleVariantParam &&
+    variants.some((variant) => Number(variant.id) === saleVariantParam);
+  const saleAppliesToVariant = !saleVariantExists
+    ? true
+    : Number(selectedVariantId) === saleVariantParam;
 
   const priceOverride =
-    Number.isFinite(salePriceParam) && salePriceParam > 0
+    saleAppliesToVariant &&
+    Number.isFinite(salePriceParam) &&
+    salePriceParam > 0
       ? salePriceParam
       : undefined;
 
@@ -123,7 +151,9 @@ export default function ProductDetailClient({ product }) {
     priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
 
   const realPriceOverride =
-    Number.isFinite(realPriceParam) && realPriceParam > 0
+    saleAppliesToVariant &&
+    Number.isFinite(realPriceParam) &&
+    realPriceParam > 0
       ? realPriceParam
       : undefined;
 
@@ -134,7 +164,7 @@ export default function ProductDetailClient({ product }) {
     Number.isFinite(baseCompareAt) &&
     priceOverride < baseCompareAt;
 
-  const isSale = product?.sale || saleOverrideActive;
+  const isSale = (product?.sale && saleAppliesToVariant) || saleOverrideActive;
 
   // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
