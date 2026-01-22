@@ -36,16 +36,16 @@ export default function AuthCallbackPage() {
           throw new Error(sessionError.message);
         }
 
-        const providerToken =
-          data?.session?.provider_token || data?.session?.access_token;
+        const providerToken = data?.session?.provider_token;
+
         if (!providerToken) {
-          throw new Error("Token Google tidak ditemukan.");
+          throw new Error("Google provider token tidak ditemukan.");
         }
 
         const payload = await LoginGoogle(
           providerToken,
           storedMode,
-          acceptPrivacy
+          acceptPrivacy,
         );
 
         const isNewUser = !!payload?.serve?.is_new_user;
@@ -54,9 +54,7 @@ export default function AuthCallbackPage() {
 
         if (user) {
           login({ user });
-          router.replace(
-            isNewUser || needsProfile ? "/account/profile" : "/"
-          );
+          router.replace(isNewUser || needsProfile ? "/account/profile" : "/");
           return;
         }
 
@@ -72,7 +70,7 @@ export default function AuthCallbackPage() {
     };
 
     finishLogin();
-  }, [login, router, searchParams]);
+  }, [login, router]);
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-3 px-4 text-center">
