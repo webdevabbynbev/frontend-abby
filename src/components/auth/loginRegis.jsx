@@ -182,6 +182,17 @@ export function LoginRegisModalForm() {
   };
 
   // ✅ FIX UTAMA: nama fungsi SESUAI dengan pemanggilan di UI
+
+
+    const handleGoogleLogin = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+};
+
   const handleGoogleOAuth = async (mode = "login") => {
     if (mode === "register" && !acceptPrivacy) {
       setMessage("Centang Privacy Policy dulu untuk daftar dengan Google.");
