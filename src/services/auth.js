@@ -1,5 +1,5 @@
 import api from "@/lib/axios.js";
-import { setToken, clearToken } from "@/services/authToken";
+import { setToken, clearToken, hasSession } from "@/services/authToken";
 
 function s(v) {
   return String(v ?? "").trim();
@@ -25,22 +25,31 @@ export async function getUser() {
     });
 
     if (res.status === 401 || res.status === 403) {
+      clearToken();
       return { user: null };
     }
 
     const payload = res.data;
 
-    const user =
-      payload?.serve ??
-      payload?.user ??
-      payload?.data?.user ??
-      payload?.data?.serve ??
-      null;
+    // Parse user from various response formats
+    let user = null;
+    if (payload?.serve) {
+      user = typeof payload.serve === 'object' && payload.serve.user ? payload.serve.user : payload.serve;
+    } else if (payload?.user) {
+      user = payload.user;
+    } else if (payload?.data) {
+      user = payload.data.user || payload.data.serve || payload.data;
+    }
+
+    if (!user || typeof user !== 'object') {
+      return { user: null };
+    }
 
     return { user };
   } catch (err) {
     const msg = err?.response?.data?.message || "Failed to fetch user profile";
-    throw new Error(msg);
+    console.error("getUser error:", err);
+    return { user: null };
   }
 }
 
@@ -128,8 +137,20 @@ export async function regis(
     const res = await api.post("/auth/register", payload);
     return res.data;
   } catch (err) {
-    const msg =
-      err?.response?.data?.message || err?.message || "Register gagal";
+    const status = err?.response?.status;
+    let msg = "Register gagal";
+    
+    if (status === 409) {
+      msg = "Email atau nomor HP sudah terdaftar";
+    } else if (status === 400) {
+      msg = err?.response?.data?.message || "Data tidak valid";
+    } else if (status === 500) {
+      msg = "Server error. Coba lagi nanti.";
+    } else {
+      msg = err?.response?.data?.message || err?.message || msg;
+    }
+    
+    console.error("regis error:", err);
     throw new Error(msg);
   }
 }
@@ -169,7 +190,20 @@ export async function OtpRegis(
 
     return data;
   } catch (err) {
-    const msg = err?.response?.data?.message || err?.message || "OTP Salah";
+    const status = err?.response?.status;
+    let msg = "OTP salah atau register gagal";
+    
+    if (status === 400) {
+      msg = "OTP tidak valid atau sudah kadaluarsa";
+    } else if (status === 429) {
+      msg = "Terlalu banyak percobaan. Coba lagi nanti.";
+    } else if (status === 500) {
+      msg = "Server error. Coba lagi nanti.";
+    } else {
+      msg = err?.response?.data?.message || err?.message || msg;
+    }
+    
+    console.error("OtpRegis error:", err);
     throw new Error(msg);
   }
 }
@@ -196,7 +230,20 @@ export async function loginUser(email_or_phone, password, remember_me = false) {
 
     return data;
   } catch (err) {
-    const msg = err?.response?.data?.message || err?.message || "Login gagal";
+    const status = err?.response?.status;
+    let msg = "Login gagal";
+    
+    if (status === 401 || status === 403) {
+      msg = "Email/Phone atau password salah";
+    } else if (status === 429) {
+      msg = "Terlalu banyak percobaan login. Coba lagi nanti.";
+    } else if (status === 500) {
+      msg = "Server error. Coba lagi nanti.";
+    } else {
+      msg = err?.response?.data?.message || err?.message || msg;
+    }
+    
+    console.error("loginUser error:", err);
     throw new Error(msg);
   }
 }
@@ -210,33 +257,39 @@ export async function LoginGoogle(
   accept_privacy_policy = false,
 ) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/login-google`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          token,
-          mode: s(mode),
-          accept_privacy_policy: Boolean(accept_privacy_policy),
-        }),
-      },
-    );
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/login-google`;
+    
+    if (!process.env.NEXT_PUBLIC_API_URL) {
+      throw new Error("NEXT_PUBLIC_API_URL belum dikonfigurasi");
+    }
+
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        token,
+        mode: s(mode),
+        accept_privacy_policy: Boolean(accept_privacy_policy),
+      }),
+    });
 
     const payload = await res.json().catch(() => null);
 
     if (!res.ok) {
-      throw new Error(
-        payload?.message || `LoginGoogle gagal (HTTP ${res.status})`,
-      );
+      const errorMsg = 
+        payload?.message || 
+        `Login Google gagal (HTTP ${res.status})`;
+      throw new Error(errorMsg);
     }
 
+    // Set token to localStorage flag untuk indicate session
     const accessToken = payload?.serve?.token;
     if (accessToken) setToken(accessToken);
 
     return payload;
   } catch (err) {
+    console.error("LoginGoogle error:", err);
     throw new Error(err?.message || "Login Google gagal");
   }
 }

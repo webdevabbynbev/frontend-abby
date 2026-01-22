@@ -99,14 +99,14 @@ export function NavbarLoggedIn({
       <div className="hidden lg:flex items-center justify-between gap-6">
         {/* LEFT SIDE */}
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <Image
               src="/Logoabby-text.svg"
               alt="Logo"
               width={160}
               height={80}
             />
-          </div>
+          </Link>
 
           {/* STATIC LINKS */}
           {links.map((link) => {
@@ -175,60 +175,85 @@ export function NavbarLoggedIn({
               <BtnIcon as="span" iconName="User" variant="tertiary" size="sm" />
             </SheetTrigger>
 
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <img
-                  src={
-                    user?.photoProfile
-                      ? user.photoProfile
-                      : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                  }
-                  alt="user"
-                  className="h-8 w-8 rounded-full"
-                />
-                <div className="text-sm">
-                  {user?.firstName
-                    ? `${user?.firstName} ${user?.lastName}`
-                    : "User"}
-                </div>
-              </SheetTitle>
-              <SheetDescription className="py-1">Account menu</SheetDescription>
-            </SheetHeader>
-
-            <div className="mt-4 space-y-4">
-              {linksidebar.map((item) => {
-                const Icon = FaIcons[item.icon] || null;
-
-                return (
-                  <button
-                    key={item.href}
-                    className={clsx(
-                      "flex items-center gap-2 text-sm",
-                      pathname === item.href
-                        ? "text-primary-700"
-                        : "text-neutral-600 hover:text-primary-700",
-                    )}
-                    onClick={() => router.push(item.href)}
+            {/* ✅ Hide account menu untuk Google login users */}
+            {user?.photoProfile?.includes("googleusercontent") ? (
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Account</SheetTitle>
+                  <SheetDescription>
+                    Google login users tidak dapat akses profile management di sini. 
+                    Gunakan <Link href="/account/profile" className="text-primary-700 underline">profile page</Link> untuk mengelola akun.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4">
+                  <Button
+                    variant="error"
+                    size="sm"
+                    onClick={onLogout}
+                    className="w-full"
                   >
-                    {Icon && <Icon />}
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
+                    Log out
+                  </Button>
+                </div>
+              </SheetContent>
+            ) : (
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <img
+                      src={
+                        user?.photoProfile
+                          ? user.photoProfile
+                          : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                      }
+                      alt="user"
+                      className="h-8 w-8 rounded-full"
+                    />
+                    <div className="text-sm">
+                      {user?.firstName
+                        ? `${user?.firstName} ${user?.lastName}`
+                        : "User"}
+                    </div>
+                  </SheetTitle>
+                  <SheetDescription className="py-1">Account menu</SheetDescription>
+                </SheetHeader>
 
-              <div className="border-t pt-4">
-                <Button
-                  variant="error"
-                  size="sm"
-                  onClick={onLogout}
-                  className="w-full"
-                >
-                  Log out
-                </Button>
-              </div>
-            </div>
+                <div className="mt-4 space-y-4">
+                  {linksidebar.map((item) => {
+                    const Icon = FaIcons[item.icon] || null;
 
-            <SheetDescription />
+                    return (
+                      <button
+                        key={item.href}
+                        className={clsx(
+                          "flex items-center gap-2 text-sm",
+                          pathname === item.href
+                            ? "text-primary-700"
+                            : "text-neutral-600 hover:text-primary-700",
+                        )}
+                        onClick={() => router.push(item.href)}
+                      >
+                        {Icon && <Icon />}
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+
+                  <div className="border-t pt-4">
+                    <Button
+                      variant="error"
+                      size="sm"
+                      onClick={onLogout}
+                      className="w-full"
+                    >
+                      Log out
+                    </Button>
+                  </div>
+                </div>
+
+                <SheetDescription />
+              </SheetContent>
+            )}
           </Sheet>
         </div>
       </div>

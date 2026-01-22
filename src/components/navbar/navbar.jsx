@@ -33,7 +33,6 @@ export function Navbar({ categories = [] }) {
   };
 
   const links = [
-    { href: "/", label: "Home" },
     // { href: "/best-seller", label: "Best seller" },
     // { href: "/sale", label: "Sale" },
     // { href: "/new-arrival", label: "New arrival" },
