@@ -3,11 +3,7 @@ const nextConfig = {
   reactStrictMode: false,
   output: "standalone",
   images: {
-    domains: [
-      "d2ntedlnuwws1k.cloudfront.net",
-      "localhost",
-      "127.0.0.1",
-    ],
+    domains: ["d2ntedlnuwws1k.cloudfront.net", "localhost", "127.0.0.1"],
     remotePatterns: [
       { protocol: "http", hostname: "localhost", pathname: "/uploads/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/uploads/**" },
@@ -18,9 +14,14 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      // AUTH
       {
-        source: "/auth/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/auth/:path*`,
+        source: "/api/auth/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/:path*`,
+      },
+      {
+        source: "/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`,
       },
     ];
   },
