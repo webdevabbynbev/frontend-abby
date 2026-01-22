@@ -17,7 +17,7 @@ function NestedSectionComponent({ title, items = [], outerClassName }) {
       type="single"
       className={clsx(
         "rounded-2xl w-full bg-white px-4 transition-all outline-1 outline-neutral-100",
-        outerClassName
+        outerClassName,
       )}
       collapsible
     >
@@ -30,6 +30,7 @@ function NestedSectionComponent({ title, items = [], outerClassName }) {
 
         <AccordionContent>
           <Accordion
+            type="single"
             className="w-auto px-4 transition-all justify-between rounded-r-[12px] space-y-4"
             collapsible
           >
