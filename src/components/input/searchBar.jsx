@@ -12,7 +12,7 @@ import "ldrs/react/Bouncy.css";
 export function SearchBar({
   className = "",
   placeholder = "Cari disini . . .",
-  per_page = 4,
+  per_page = 10,
 }) {
   const router = useRouter();
   const wrapRef = useRef(null);
@@ -130,7 +130,7 @@ export function SearchBar({
                   <li className="px-3 py-2 text-xs font-semibold text-neutral-500 bg-neutral-50">
                     Brand
                   </li>
-                  {brands.slice(0, 3).map((brand) => (
+                  {brands.map((brand) => (
                     <li key={brand.id || brand.slug || brand.name}>
                       <button
                         type="button"
@@ -158,7 +158,7 @@ export function SearchBar({
                 Produk
               </li>
 
-              {items.slice(0, 4).map((p) => (
+              {items.map((p) => (
                 <li key={p.id || p.slug || p.name}>
                   <button
                     type="button"

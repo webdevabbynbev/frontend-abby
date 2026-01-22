@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  BrandCard,
   Button,
   Dialog,
   DialogContent,
@@ -26,8 +27,30 @@ export default function SearchResultsClient({
   const page = Number(sp.get("page") || 1);
   const limit = Number(sp.get("limit") || itemsPerPage);
 
+  const keyword = q.toLowerCase();
+  const brandMatcher =
+    keyword.length <= 4
+      ? (value) => value.startsWith(keyword)
+      : (value) => value.includes(keyword);
+
+  const matchedBrands = (brands || []).filter((brand) => {
+    const brandName = String(
+      brand?.brandname || brand?.name || "",
+    ).toLowerCase();
+    return brandName ? brandMatcher(brandName) : false;
+  });
+
   // support beberapa key brand
-  const products = initialProducts || [];
+  const products = (initialProducts || []).map((product) => ({
+    ...product,
+    brand:
+      product?.brand?.name ||
+      product?.brand?.brandname ||
+      product?.brand_name ||
+      product?.brandName ||
+      product?.brand ||
+      "",
+  }));
   const meta = initialMeta || {};
 
   const totalPages = meta?.total_pages || meta?.lastPage || 1;
@@ -74,11 +97,34 @@ export default function SearchResultsClient({
           </Dialog>
         </div>
 
+        {/* Brand Results */}
+         {matchedBrands.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-neutral-500 mb-3">
+              Brand
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {matchedBrands.map((brand) => {
+                const brandName = brand?.brandname || brand?.name || "—";
+                return (
+                  <BrandCard
+                    key={brand.id || brand.slug || brandName}
+                    logo={brand.logo || brand.image || brand.icon}
+                    brandname={brandName}
+                    slug={brand?.slug}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Grid */}
         {products.length > 0 ? (
-          <ProductSkeletonGrid count={itemsPerPage} />
-        ) : products.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <h2 className="text-sm font-semibold text-neutral-500 mb-3">
+              Produk
+            </h2>
             {products.map((p) => (
               <RegularCard key={p.id} product={p} />
             ))}
@@ -125,4 +171,3 @@ export default function SearchResultsClient({
     </div>
   );
 }
-

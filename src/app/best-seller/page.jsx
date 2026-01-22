@@ -50,7 +50,7 @@ export default async function BestSeller({ searchParams }) {
     <BestSellerClient
       products={productsRes?.data || []}
       meta={productsRes?.meta || {}}
-      brands={brandsRes?.data || []}
+      brands={brandsRes}
       categories={categories}
       currentPage={currentPage}
       search={search}

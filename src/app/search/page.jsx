@@ -15,11 +15,18 @@ export default async function SearchPage({ searchParams }) {
   const page = Number(sp?.page || 1);
   const limit = Number(sp?.limit || 24);
 
- const [resBrands, resCategories] = await Promise.all([
+  const [resBrands, resCategories] = await Promise.all([
     getBrands(),
     getCategories(),
   ]);
-  const brands = resBrands?.data || [];
+  
+  const brands = Array.isArray(resBrands)
+    ? resBrands
+    : Array.isArray(resBrands?.serve)
+      ? resBrands.serve
+      : Array.isArray(resBrands?.data)
+        ? resBrands.data
+        : [];
   const categories = Array.isArray(resCategories?.serve)
     ? resCategories.serve
     : Array.isArray(resCategories?.data)
