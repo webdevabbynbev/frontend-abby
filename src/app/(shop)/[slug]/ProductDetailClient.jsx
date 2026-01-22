@@ -61,20 +61,20 @@ export default function ProductDetailClient({ product }) {
 
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
-  const [selectedVariant, setSelectedVariant] = useState(
-    variants.length ? variants[0].label : null,
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    variants.length ? variants[0].id : null,
   );
 
   const selectedVariantObj = useMemo(() => {
-    return variants.find((v) => v.label === selectedVariant) || null;
-  }, [variants, selectedVariant]);
+    return variants.find((v) => v.id === selectedVariantId) || null;
+  }, [variants, selectedVariantId]);
 
-  // kalau selectedVariant kosong tapi variants ada, set default
+  // kalau selectedVariantId kosong tapi variants ada, set default
   useEffect(() => {
-    if (!selectedVariant && variants.length > 0) {
-      setSelectedVariant(variants[0].label);
+    if (!selectedVariantId && variants.length > 0) {
+      setSelectedVariantId(variants[0].id);
     }
-  }, [selectedVariant, variants]);
+  }, [selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
   // fallback: product.images, lalu product.image
@@ -142,8 +142,7 @@ export default function ProductDetailClient({ product }) {
   const extraAppliesTo = Number(extra?.appliesTo ?? NaN);
 
   const eligibleVariantIds = useMemo(() => {
-    const raw =
-      extra?.eligibleVariantIds ?? extra?.eligible_variant_ids ?? [];
+    const raw = extra?.eligibleVariantIds ?? extra?.eligible_variant_ids ?? [];
     if (!Array.isArray(raw)) return [];
     return raw
       .map((value) => Number(value))
@@ -154,7 +153,6 @@ export default function ProductDetailClient({ product }) {
     extra?.eligibleVariantCount ?? extra?.eligible_variant_count ?? 0,
   );
 
-  const selectedVariantId = selectedVariantObj?.id ?? null;
   const isVariantEligible =
     extraAppliesTo === 3 &&
     selectedVariantId !== null &&
@@ -166,8 +164,7 @@ export default function ProductDetailClient({ product }) {
       : true;
 
   const showExtraLabel =
-    Boolean(extraLabel) &&
-    (extraAppliesTo !== 3 || hasEligibleVariant);
+    Boolean(extraLabel) && (extraAppliesTo !== 3 || hasEligibleVariant);
 
   // ====== DISPLAY PRICE (setelah extraDiscount storewide) ======
   let displayFinalPrice = Number(baseFinalPrice || 0);
@@ -208,8 +205,24 @@ export default function ProductDetailClient({ product }) {
   const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
   const subtotal = displayFinalPrice * qty;
 
-  const handleSelect = (label) => {
-    setSelectedVariant((prev) => (prev === label ? null : label));
+  const handleSelect = (id) => {
+    setSelectedVariantId((prev) => (prev === id ? null : id));
+  };
+
+  const getVariantDisplayName = (variant) => {
+    if (!variant) return "";
+    // Check for both camelCase and snake_case
+    const attributes = variant.attribute_values || variant.attributeValues;
+    if (attributes && Array.isArray(attributes) && attributes.length > 0) {
+      // Check for property 'name' or 'value' inside the attribute object
+      const displayValues = attributes
+        .map((av) => av.value || av.name)
+        .filter(Boolean);
+      if (displayValues.length > 0) {
+        return displayValues.join(" / ");
+      }
+    }
+    return variant.label;
   };
 
   const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
@@ -385,7 +398,9 @@ export default function ProductDetailClient({ product }) {
                     <img
                       src={activeImage || product?.image}
                       alt={`${product?.name} ${
-                        selectedVariant ? `- ${selectedVariant}` : ""
+                        selectedVariantObj
+                          ? `- ${getVariantDisplayName(selectedVariantObj)}`
+                          : ""
                       }`}
                       className="w-full h-auto object-cover border border-neutral-400 lg:max-w-75 lg:max-h-75"
                     />
@@ -475,21 +490,22 @@ export default function ProductDetailClient({ product }) {
                       const variantThumb = Array.isArray(v?.images)
                         ? v.images[0]
                         : null;
+                      const variantDisplayName = getVariantDisplayName(v);
                       return (
                         <Chip
                           key={v.id}
-                          onClick={() => handleSelect(v.label)}
-                          isActive={selectedVariant === v.label}
+                          onClick={() => handleSelect(v.id)}
+                          isActive={selectedVariantId === v.id}
                         >
                           <span className="flex items-center gap-2">
                             {variantThumb ? (
                               <img
                                 src={variantThumb}
-                                alt={v.label}
+                                alt={variantDisplayName}
                                 className="h-5 w-5 rounded-xs object-cover"
                               />
                             ) : null}
-                            <span>{v.label}</span>
+                            <span>{variantDisplayName}</span>
                           </span>
                         </Chip>
                       );
@@ -644,13 +660,13 @@ export default function ProductDetailClient({ product }) {
               </div>
 
               <div className="flex-row space-y-1">
-                {showDiscount && (
+                {/* {showDiscount && (
                   <img
                     src="/sale-tag-square.svg"
                     alt="Discount"
                     className="w-8 h-8"
                   />
-                )}
+                )} */}
               </div>
             </div>
 
@@ -662,7 +678,9 @@ export default function ProductDetailClient({ product }) {
               <div className="flex space-x-1 items-center">
                 <div className="text-xs text-neutral-600">Variant:</div>
                 <div className="text-xs font-bold text-primary-700">
-                  {selectedVariant ? selectedVariant : "-"}
+                  {selectedVariantObj
+                    ? getVariantDisplayName(selectedVariantObj)
+                    : "-"}
                 </div>
               </div>
 
