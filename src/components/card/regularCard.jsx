@@ -451,11 +451,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
       try {
         if (next) {
-          await axios.post("/wishlists", {
+          await axios.post("/api/wishlists", {
             product_id: String(productId),
           });
         } else {
-          await axios.delete("/wishlists", {
+          await axios.delete("/api/wishlists", {
             data: { product_id: String(productId) },
           });
         }
