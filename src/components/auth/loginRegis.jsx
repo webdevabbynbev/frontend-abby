@@ -203,7 +203,8 @@ export function LoginRegisModalForm() {
 
       // ✅ Redirect URI harus EXACT match dengan Google Cloud Console & Supabase
       // Jangan tambah query params di sini - Supabase akan handle PKCE flow
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}/OAuth/callback?mode=${mode}`;
+
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

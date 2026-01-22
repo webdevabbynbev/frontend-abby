@@ -2,9 +2,6 @@
 const nextConfig = {
   reactStrictMode: false,
   output: "standalone",
-  turbopack: {
-    root: __dirname,
-  },
   images: {
     domains: [
       "d2ntedlnuwws1k.cloudfront.net",
