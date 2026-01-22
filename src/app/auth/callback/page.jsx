@@ -1,111 +1,72 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { LoginGoogle, getUser } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [message, setMessage] = useState("Menyelesaikan login Google...");
-  const processingRef = useRef(false); // ✅ Prevent double processing
+  const ranRef = useRef(false);
 
-  const finishLogin = useCallback(async () => {
-    // ✅ Only process once
-    if (processingRef.current) return;
-    processingRef.current = true;
+  useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
 
-    try {
-      // Get mode dari sessionStorage (di-set oleh loginRegis.jsx sebelum redirect)
-      const storedMode =
-        (typeof window !== "undefined" &&
-          sessionStorage.getItem("google_oauth_mode")) ||
-        "login";
+    const run = async () => {
+      try {
+        const storedMode =
+          sessionStorage.getItem("google_oauth_mode") || "login";
 
-      // Debug: Check URL
-      const fullUrl = window.location.href;
-      console.log("Callback URL:", fullUrl);
-      const urlObj = new URL(fullUrl);
-      const code = urlObj.searchParams.get("code");
-      console.log("Auth code present:", !!code);
+        // ✅ INI WAJIB — finalize PKCE
+        const { error } =
+          await supabase.auth.exchangeCodeForSession(window.location.href);
 
-      // ✅ Dengan detectSessionInUrl: true, Supabase auto-handle PKCE
-      setMessage("Mengambil session dari Supabase...");
-      
-      // Wait untuk Supabase auto-detect & process
-      await new Promise(resolve => setTimeout(resolve, 500));
+        if (error) {
+          throw error;
+        }
 
-      // Step 1: Get session yang sudah di-create oleh Supabase auto-detection
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
 
-      if (!data?.session) {
-        console.log("No session found after auto-detection");
-        throw new Error("Tidak dapat membuat session dari Google. Coba lagi.");
-      }
+        if (!session?.provider_token) {
+          throw new Error("Google provider token tidak ditemukan.");
+        }
 
-      console.log("Session retrieved successfully");
+        // ✅ Kirim Google token ke backend
+        await LoginGoogle(
+          session.provider_token,
+          storedMode,
+          sessionStorage.getItem("google_oauth_accept_privacy") === "1"
+        );
 
-      // Step 2: Extract Supabase user data
-      const supabaseUser = data.session.user;
-      if (!supabaseUser) {
-        throw new Error("User data tidak ditemukan di Supabase session.");
-      }
+        // ✅ Ambil user dari backend
+        const { user } = await getUser();
 
-      setMessage("Menyiapkan user data...");
+        if (!user) {
+          throw new Error("User backend tidak ditemukan.");
+        }
 
-      const userData = {
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        firstName: supabaseUser.user_metadata?.name?.split(' ')[0] || "",
-        lastName: supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || "",
-        photoProfile: supabaseUser.user_metadata?.picture || null,
-      };
+        login({ user });
 
-      console.log("User authenticated:", userData.id);
-
-      // Step 3: Update auth context
-      setMessage("Login berhasil! Mengalihkan...");
-      login({ user: userData });
-      
-      // For new user atau incomplete profile, redirect to profile completion
-      const isNewUser = storedMode === "register";
-      const needsProfile = !userData.firstName || !userData.lastName;
-      
-      const redirectUrl = isNewUser || needsProfile ? "/account/profile" : "/";
-      console.log("Redirecting to:", redirectUrl);
-
-      // ✅ Use small delay before redirect
-      setTimeout(() => {
-        router.replace(redirectUrl);
-      }, 300);
-      
-      return;
-    } catch (err) {
-      console.error("Auth callback error:", err);
-      setMessage(
-        err?.message || "Login Google gagal. Silakan coba lagi di halaman login."
-      );
-      
-      // Redirect back to sign-in after 3 seconds
-      setTimeout(() => {
-        router.replace("/sign-in");
-      }, 3000);
-    } finally {
-      if (typeof window !== "undefined") {
+        router.replace(
+          user.needs_profile_completion ? "/account/profile" : "/"
+        );
+      } catch (err) {
+        console.error(err);
+        setMessage(err?.message || "Login Google gagal.");
+        setTimeout(() => router.replace("/sign-in"), 2500);
+      } finally {
         sessionStorage.removeItem("google_oauth_mode");
         sessionStorage.removeItem("google_oauth_accept_privacy");
       }
-    }
-  }, [login, router]);
+    };
 
-  useEffect(() => {
-    finishLogin();
-  }, []); // ✅ Empty dependency - run only once on mount
+    run();
+  }, [login, router]);
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-3 px-4 text-center">
