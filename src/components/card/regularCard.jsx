@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { FaStar } from "react-icons/fa6";
-import { BtnIconToggle } from "..";
+import { BtnIconToggle, Button } from "..";
 import {
   formatToRupiah,
   slugify,
@@ -17,6 +17,58 @@ import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
+
+const handleAddToCart = async () => {
+  try {
+    if (!user) {
+      toast.error("Silakan login dulu untuk menambahkan ke keranjang.", {
+        action: {
+          label: "Login",
+          onClick: () => router.push("/sign-in"),
+        },
+      });
+      return;
+    }
+
+    if (!product?.id) {
+      toast("Product id tidak ditemukan");
+      return;
+    }
+
+    const variantItems = product?.variantItems ?? [];
+    let variant =
+      selectedVariantObj ?? (variantItems.length ? variantItems[0] : null);
+
+    if (!variant) {
+      toast("Varian produk tidak ditemukan");
+      return;
+    }
+
+    const payload = {
+      product_id: product.id,
+      variant_id: variant?.id ?? 0,
+      qty: Number(qty) || 1,
+      attributes: [],
+      is_buy_now: false,
+    };
+
+    const res = await axios.post("/cart", payload);
+    toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+  } catch (error) {
+    console.error("Gagal menambah ke keranjang", error);
+    const isUnauthorized = error?.response?.status === 401;
+    const msg = isUnauthorized
+      ? "Sesi kamu habis. Silakan login ulang."
+      : error?.response?.data?.message ||
+        "Terjadi kesalahan saat menambah ke keranjang";
+    toast(msg);
+
+    if (isUnauthorized && typeof window !== "undefined") {
+      await logout();
+      router.push("/sign-in");
+    }
+  }
+};
 
 const canUseStorage = () =>
   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -519,23 +571,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             )
           )}
 
-          <div
-            className={`absolute top-4 right-4 z-10 transition-all duration-200
-              ${
-                isWishlisted
-                  ? "scale-100"
-                  : "opacity-100 scale-95 group-hover:pointer-events-auto"
-              }`}
-          >
-            <BtnIconToggle
-              active={isWishlisted}
-              onClick={toggleWishlist}
-              variant="tertiary"
-              size="md"
-              disabled={wishlistDisabled}
-            />
-          </div>
-
           <div className="image w-full">
             <img
               src={item.image}
@@ -549,17 +584,22 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         </div>
 
         <div className="content-wrapper flex flex-col w-full space-y-2 p-4">
-          <div className="text-md category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
-            <p className="text-primary-700">
-              {item.brand || "—"}
-            </p>
+          <div className="text-md justify-between category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
+            <p className="text-primary-700">{item.brand || "—"}</p>
+            <BtnIconToggle
+                active={isWishlisted}
+                onClick={toggleWishlist}
+                variant="tertiary"
+                size="sm"
+                disabled={wishlistDisabled}
+              />
           </div>
 
           <div className="text-sm font-medium text-neutral-950 line-clamp-2">
             {item.name}
           </div>
 
-          <div className="price flex items-center space-x-2">
+          <div className="price flex flex-col md:flex-row md:items-center lg:flex-row lg:items-center gap-2">
             {hasSale ? (
               <>
                 <div className="text-sm font-bold text-primary-700">
@@ -576,7 +616,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             )}
           </div>
 
-          <div className="rating flex space-x-2 items-center">
+          <div className="rating flex gap-1 items-center">
             {averageRating === 0 ? (
               <span className="text-xs text-primary-700 font-light">
                 No rating
@@ -587,9 +627,29 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
                 <FaStar className="h-3 w-3 text-warning-300" />
               </div>
             )}
-            <div className="w-1 h-1 rounded-full bg-neutral-400" />
+            <div className="block items-center w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
               ({reviewCount} reviews)
+            </div>
+          </div>
+          <div className="opacity-0 absolute bg-white -bottom-4 flex flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
+            <div className="button flex space-x-2">
+              <Button
+                iconName="CartPlus"
+                variant="primary"
+                size="sm"
+                className="w-full"
+                onClick={handleAddToCart}
+              >
+                Tambah ke keranjang
+              </Button>
+            </div>
+            <div
+              className={`z-10 transition-all duration-200
+              ${
+                isWishlisted ? "scale-100" : "group-hover:pointer-events-auto"
+              }`}
+            >
             </div>
           </div>
         </div>
