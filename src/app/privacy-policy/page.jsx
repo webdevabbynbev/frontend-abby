@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get("/privacy-policy");
+        const res = await api.get("api/privacy-policy");
         setHtml(res?.data?.serve?.value || "");
       } catch (e) {
         setErr(e?.response?.data?.message || e?.message || "Gagal load privacy policy");

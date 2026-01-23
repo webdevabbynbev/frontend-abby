@@ -183,17 +183,8 @@ export function LoginRegisModalForm() {
 
   // ✅ FIX UTAMA: nama fungsi SESUAI dengan pemanggilan di UI
 
-
-    const handleGoogleLogin = async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  });
-};
-
   const handleGoogleOAuth = async (mode = "login") => {
+    if (loading) return;
     if (mode === "register" && !acceptPrivacy) {
       setMessage("Centang Privacy Policy dulu untuk daftar dengan Google.");
       return;
@@ -212,7 +203,8 @@ export function LoginRegisModalForm() {
 
       // ✅ Redirect URI harus EXACT match dengan Google Cloud Console & Supabase
       // Jangan tambah query params di sini - Supabase akan handle PKCE flow
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}/OAuth/callback?mode=${mode}`;
+
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
