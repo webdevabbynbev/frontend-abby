@@ -5,11 +5,7 @@ export function normalizeProduct(raw) {
 
   const item = raw.product || raw;
   const productId =
-    raw?.product?.id ??
-    raw?.productId ??
-    raw?.product_id ??
-    item?.id ??
-    null;
+    raw?.product?.id ?? raw?.productId ?? raw?.product_id ?? item?.id ?? null;
 
   // ✅ penting: pastikan extraDiscount kebawa (list biasanya raw.product.extraDiscount)
   const extraDiscount =
@@ -46,10 +42,7 @@ export function normalizeProduct(raw) {
       url: media?.url,
       slot: media?.slot,
       variantId:
-        media?.variantId ??
-        media?.variant_id ??
-        media?.variant?.id ??
-        null,
+        media?.variantId ?? media?.variant_id ?? media?.variant?.id ?? null,
       updatedAt: media?.updatedAt ?? media?.updated_at,
     }))
     .filter((media) => typeof media.url === "string");
@@ -80,8 +73,7 @@ export function normalizeProduct(raw) {
     item.brandname ??
     "";
 
-  const brandSlug =
-    item.brand?.slug ?? item.brand_slug ?? item.brandSlug ?? "";
+  const brandSlug = item.brand?.slug ?? item.brand_slug ?? item.brandSlug ?? "";
 
   const variantPrices = sortedVariants
     .map((variant) => Number(variant?.price))
@@ -95,9 +87,7 @@ export function normalizeProduct(raw) {
     .map((variant) => {
       if (!variant) return null;
 
-      const attrs = Array.isArray(variant.attributes)
-        ? variant.attributes
-        : [];
+      const attrs = Array.isArray(variant.attributes) ? variant.attributes : [];
 
       const attrLabel = attrs
         .map(
@@ -179,6 +169,15 @@ export function normalizeSaleProduct(raw) {
 
   const normalPrice = Number(raw?.price ?? base.price ?? 0);
   const salePrice = Number(raw?.salePrice ?? raw?.sale_price ?? 0);
+  const saleVariantId = Number(
+    raw?.variant_id ??
+      raw?.variantId ??
+      raw?.variant?.id ??
+      raw?.variant?.variant_id ??
+      raw?.pivot?.variant_id ??
+      raw?.meta?.variant_id ??
+      NaN,
+  );
 
   const isSale =
     Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
@@ -190,6 +189,10 @@ export function normalizeSaleProduct(raw) {
     sale: isSale,
     salePrice: isSale ? salePrice : 0,
     stock: Number(raw?.stock ?? 0),
+    saleVariantId:
+      Number.isFinite(saleVariantId) && saleVariantId > 0
+        ? saleVariantId
+        : null,
   };
 }
 

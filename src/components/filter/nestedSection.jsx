@@ -31,28 +31,21 @@ function NestedSectionComponent({ title, items = [], outerClassName }) {
         <AccordionContent>
           <Accordion
             type="single"
-            className="w-auto px-2 transition-all justify-between rounded-r-[12px] space-y-4"
+            className="w-auto px-4 transition-all justify-between rounded-r-[12px] space-y-4"
             collapsible
           >
-            {safeItems.map(
-              ({ value, label, leftBar = true, hideheader = false, render }) =>
-                hideheader ? (
-                  <div key={value} className="py-2">
-                    {render?.()}
-                  </div>
-                ) : (
-                  <AccordionItem key={value} value={value}>
-                    <AccordionTrigger className="relative">
-                      {leftBar && (
-                        <div className="absolute -left-4 h-full w-1 bg-primary-700 mr-10" />
-                      )}
-                      <span className="text-xs">{label}</span>
-                      <FaChevronDown className="h-3 w-3 after:rotate-180 group-data-[state=open]:hidden text-neutral-400" />
-                    </AccordionTrigger>
-                    <AccordionContent>{render?.()}</AccordionContent>
-                  </AccordionItem>
-                ),
-            )}
+            {safeItems.map(({ value, label, leftBar = true, render }) => (
+              <AccordionItem key={value} value={value}>
+                <AccordionTrigger className="relative">
+                  {leftBar && (
+                    <div className="absolute -left-4 h-full w-1 bg-primary-700 mr-10" />
+                  )}
+                  <span className="text-xs">{label}</span>
+                  <FaChevronDown className="h-3 w-3 after:rotate-180 group-data-[state=open]:hidden text-neutral-400" />
+                </AccordionTrigger>
+                <AccordionContent>{render?.()}</AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </AccordionContent>
       </AccordionItem>
