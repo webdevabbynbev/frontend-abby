@@ -462,11 +462,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       } catch (err) {
         setIsWishlisted(!next);
         updateLocal(!next);
-        
+
         // Handle 401 Unauthorized error
         const statusCode = err?.response?.status;
         const errorMessage = err?.response?.data?.message || err?.message;
-        
+
         if (statusCode === 401 || errorMessage?.includes("Unauthorized")) {
           console.warn("User session expired, showing login modal");
           openLoginModal();
@@ -523,8 +523,8 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             className={`absolute top-4 right-4 z-10 transition-all duration-200
               ${
                 isWishlisted
-                  ? "opacity-100 scale-100 pointer-events-auto"
-                  : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+                  ? "scale-100"
+                  : "opacity-100 scale-95 group-hover:pointer-events-auto"
               }`}
           >
             <BtnIconToggle
@@ -532,7 +532,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               onClick={toggleWishlist}
               variant="tertiary"
               size="md"
-              disabled={wishlistDisabled} // kalau BtnIconToggle support
+              disabled={wishlistDisabled}
             />
           </div>
 
@@ -548,16 +548,16 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           </div>
         </div>
 
-        <div className="content-wrapper w-full space-y-2 p-4">
-          <div className="text-sm font-bold text-neutral-950 line-clamp-2">
-            {item.name}
+        <div className="content-wrapper flex flex-col w-full space-y-2 p-4">
+          <div className="text-md category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
+            <p className="text-primary-700">
+              {item.brand || "—"}
+            </p>
           </div>
 
-          {showDiscountBadge && item.discountBadge ? (
-            <div className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
-              {item.discountBadge}
-            </div>
-          ) : null}
+          <div className="text-sm font-medium text-neutral-950 line-clamp-2">
+            {item.name}
+          </div>
 
           <div className="price flex items-center space-x-2">
             {hasSale ? (
@@ -591,15 +591,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             <div className="text-xs font-light text-neutral-300">
               ({reviewCount} reviews)
             </div>
-          </div>
-
-          <div className="text-xs category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
-            <p className="text-neutral-400 transition-transform duration-300 group-hover:-translate-y-6">
-              {item.brand || "—"}
-            </p>
-            <p className="text-neutral-400 absolute top-0 left-0 translate-y-6 transition-transform duration-300 group-hover:translate-y-0">
-              {item.category || "—"}
-            </p>
           </div>
         </div>
       </Link>
