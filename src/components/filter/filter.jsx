@@ -164,7 +164,7 @@ export function Filter({
     });
   }, [categoryTypes, selectedFilters]);
   return (
-    <div className={`flex-row space-y-6 h-full max-w-60 ${className}`}>
+    <div className={`flex-row space-y-6 h-full max-w-75 ${className}`}>
       {showBrandFilter && (
         <NestedSection
           title="Shop by brand"
@@ -172,7 +172,6 @@ export function Filter({
             {
               value: "brand-list",
               label: "Brand",
-              hideheader: true,
               leftBar: false,
               render: () => (
                 <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">
@@ -230,7 +229,6 @@ export function Filter({
           {
             value: "category-list",
             label: "Category",
-            hideheader: true,
             leftBar: false,
             render: () => (
               <div className="TitleCat-1 flex-row w-full space-y-4">
@@ -270,7 +268,6 @@ export function Filter({
           {
             value: "price-range",
             label: "Price range",
-            hideheader: true,
             leftBar: false,
             render: () => (
               <div className="TitleCat-2 flex-row w-full space-y-4">
@@ -352,7 +349,6 @@ export function Filter({
           {
             value: "rating-list",
             label: "Rating",
-            hideheader : true,
             leftBar: false,
             render: () => (
               <div className="TitleCat-5 flex-row w-full space-x-4 justify-between items-center">

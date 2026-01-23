@@ -22,7 +22,7 @@ export default function BrandDetailClient({ brandData, categories = [] }) {
   const totalPages = Math.ceil(allItems.length / itemsPerPage);
   const currentItems = allItems.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   return (
@@ -68,14 +68,16 @@ export default function BrandDetailClient({ brandData, categories = [] }) {
 
           <div className="flex flex-col space-y-3 w-full">
             <h1 className="text-lg font-bold">{brandData.name}</h1>
-            <h2 className="text-sm">{brandData.description || "Brand ini belum punya deskripsi"}</h2>
+            <h2 className="text-sm">
+              {brandData.description || "Brand ini belum punya deskripsi"}
+            </h2>
           </div>
         </div>
 
         <div className="flex w-full justify-between">
           {/* Sidebar filter */}
           <div className="w-100 pr-5 py-6">
-           <Filter
+            <Filter
               categories={categories}
               showBrandFilter={false}
               className="w-full py-24"

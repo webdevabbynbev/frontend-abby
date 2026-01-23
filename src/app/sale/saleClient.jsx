@@ -120,6 +120,7 @@ export default function SaleClient({
   const buildSaleHrefQuery = (product) => {
     const salePrice = Number(product?.price ?? 0);
     const realPrice = Number(product?.realprice ?? 0);
+    const saleVariantId = Number(product?.saleVariantId ?? 0);
     const params = {};
 
     if (Number.isFinite(salePrice) && salePrice > 0) {
@@ -128,6 +129,9 @@ export default function SaleClient({
 
     if (Number.isFinite(realPrice) && realPrice > 0) {
       params.realPrice = realPrice;
+    }
+    if (Number.isFinite(saleVariantId) && saleVariantId > 0) {
+      params.saleVariantId = saleVariantId;
     }
 
     return Object.keys(params).length ? params : undefined;
@@ -196,8 +200,8 @@ export default function SaleClient({
   const statusLabel = loading
     ? "Sedang memuat promo terbaik..."
     : totalProducts === 0
-    ? "Belum ada sale aktif saat ini."
-    : `${visibleProducts} produk siap diburu.`;
+      ? "Belum ada sale aktif saat ini."
+      : `${visibleProducts} produk siap diburu.`;
 
   // reset visible count saat search/products berubah
   useEffect(() => {
@@ -219,11 +223,11 @@ export default function SaleClient({
         const entry = entries[0];
         if (entry?.isIntersecting) {
           setVisibleSaleCount((prev) =>
-            Math.min(prev + SALE_STEP, filtered.length)
+            Math.min(prev + SALE_STEP, filtered.length),
           );
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "200px" },
     );
 
     observer.observe(target);
@@ -240,11 +244,11 @@ export default function SaleClient({
         const entry = entries[0];
         if (entry?.isIntersecting) {
           setVisibleFlashCount((prev) =>
-            Math.min(prev + FLASH_STEP, normalizedFlashSaleItems.length)
+            Math.min(prev + FLASH_STEP, normalizedFlashSaleItems.length),
           );
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "200px" },
     );
 
     observer.observe(target);
