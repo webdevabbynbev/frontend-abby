@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { FaStar } from "react-icons/fa6";
-import { BtnIconToggle, Button } from "..";
+import { BtnIconToggle, Button, BtnIconn, BtnIcon } from "..";
 import {
   formatToRupiah,
   slugify,
@@ -17,7 +17,6 @@ import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
-
 
 const handleAddToCart = async () => {
   try {
@@ -554,12 +553,12 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const href = queryString ? `${slugHref}?${queryString}` : slugHref;
 
   return (
-    <div className="group relative flex h-full w-full flex-col rounded-lg bg-white transition-all overflow-hidden">
+    <div className="group relative flex h-full w-full flex-col rounded-3xl bg-white transition-all overflow-hidden">
       <Link href={href}>
-        <div className="image flex w-full items-center justify-center">
+        <div className="image flex w-full items-center justify-center rounded-3xl">
           {/* Show a text badge if extraDiscount provides one */}
           {item.discountBadge ? (
-            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] rounded-md font-bold py-1 px-2">
+            <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] rounded-3xl font-bold py-1 px-2">
               {item.discountBadge}
             </div>
           ) : (
@@ -584,29 +583,22 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           </div>
         </div>
 
-        <div className="content-wrapper flex flex-col w-full space-y-2 p-4">
-          <div className="text-md justify-between category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
+        <div className="content-wrapper flex flex-col w-full gap-2 p-4">
+          <div className="brand-product-title flex flex-col gap-1">
             <p className="text-neutral-900 font-bold">{item.brand || "—"}</p>
-            <BtnIconToggle
-              active={isWishlisted}
-              onClick={toggleWishlist}
-              variant="tertiary"
-              size="sm"
-              disabled={wishlistDisabled}
-            />
+
+            <div className="text-xs font-normal text-neutral-950 w-full line-clamp-1">
+              {item.name}
+            </div>
           </div>
 
-          <div className="text-xs font-normal text-neutral-950 line-clamp-2">
-            {item.name}
-          </div>
-
-          <div className="price flex flex-row gap-1">
+          <div className="price flex flex-col lg:flex-row gap-1">
             {hasSale ? (
               <>
                 <div className="text-sm font-bold text-primary-700">
                   {formatToRupiah(item.price)}
                 </div>
-                <div className="text-[10px] font-medium text-neutral-400 line-through">
+                <div className="text-[11px] font-medium text-neutral-400 line-through">
                   {formatToRupiah(item.compareAt)}
                 </div>
               </>
@@ -633,7 +625,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               ({reviewCount})
             </div>
           </div>
-          <div className="hidden lg:block opacity-0 absolute left-0 bg-white -bottom-4 flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
+          <div className="hidden opacity-0 absolute left-0 bg-white -bottom-4 flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
             <div className="button w-full flex space-x-2">
               <Button
                 iconName="CartPlus"
@@ -652,17 +644,28 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               }`}
             ></div>
           </div>
-          <div className="block lg:hidden button w-full space-x-2">
+          <div className="flex flex-row w-full gap-2">
+            <div className="button-cart w-full">
               <Button
                 iconName="CartPlus"
-                variant="primary"
-                size="sm"
+                variant="secondary"
+                size="md"
                 className="w-full"
                 onClick={handleAddToCart}
               >
-                Add to cart
+                <p className="text-sm">Add to cart</p>
               </Button>
             </div>
+            <div className="button-wishlist hidden lg:block">
+              <BtnIconToggle
+                active={isWishlisted}
+                onClick={toggleWishlist}
+                variant="secondary"
+                size="sm"
+                disabled={wishlistDisabled}
+              />
+            </div>
+          </div>
         </div>
       </Link>
     </div>
