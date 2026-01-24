@@ -33,7 +33,7 @@ export function Button({
   };
 
   const sizes = {
-    sm: "h-9 px-3 text-xs", // ~36px tinggi
+    sm: "h-8 px-2 text-xs", // ~36px tinggi
     md: "h-10 px-4 text-sm", // ~40px tinggi
     lg: "h-12 px-4 text-base", // ~52px tinggi
   };
@@ -68,6 +68,7 @@ export function Button({
         <CurrentIcon
           // kunci ukuran & cegah ikon “menggelembung” tinggi baris
           className={clsx("shrink-0", iconColors[variant], {
+            "text-[12px]": size === "sm",
             "text-[12px]": size === "sm",
             "text-[14px]": size === "md",
             "text-[16px]": size === "lg",
