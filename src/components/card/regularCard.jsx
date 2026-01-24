@@ -15,60 +15,9 @@ import { DataReview } from "@/data";
 import { useAuth } from "@/context/AuthContext";
 import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
+import { Toast } from "radix-ui";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
-
-const handleAddToCart = async () => {
-  try {
-    if (!user) {
-      toast.error("Silakan login dulu untuk menambahkan ke keranjang.", {
-        action: {
-          label: "Login",
-          onClick: () => router.push("/sign-in"),
-        },
-      });
-      return;
-    }
-
-    if (!product?.id) {
-      toast("Product id tidak ditemukan");
-      return;
-    }
-
-    const variantItems = product?.variantItems ?? [];
-    let variant =
-      selectedVariantObj ?? (variantItems.length ? variantItems[0] : null);
-
-    if (!variant) {
-      toast("Varian produk tidak ditemukan");
-      return;
-    }
-
-    const payload = {
-      product_id: product.id,
-      variant_id: variant?.id ?? 0,
-      qty: Number(qty) || 1,
-      attributes: [],
-      is_buy_now: false,
-    };
-
-    const res = await axios.post("/cart", payload);
-    toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
-  } catch (error) {
-    console.error("Gagal menambah ke keranjang", error);
-    const isUnauthorized = error?.response?.status === 401;
-    const msg = isUnauthorized
-      ? "Sesi kamu habis. Silakan login ulang."
-      : error?.response?.data?.message ||
-        "Terjadi kesalahan saat menambah ke keranjang";
-    toast(msg);
-
-    if (isUnauthorized && typeof window !== "undefined") {
-      await logout();
-      router.push("/sign-in");
-    }
-  }
-};
 
 const canUseStorage = () =>
   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -278,10 +227,57 @@ const REVIEW_STATS = (() => {
 export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { openLoginModal } = useLoginModal();
 
   if (!product) return null;
+
+  const handleAddToCart = useCallback(
+    async (event) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+
+      try {
+        if (!product?.id) {
+          toast("Product id tidak ditemukan");
+          return;
+        }
+
+        const variantItems = product?.variantItems ?? [];
+        const variant =
+          variantItems?.[0] ?? product?.variant ?? product?.variants?.[0] ?? null;
+
+        if (!variant && variantItems.length) {
+          toast("Varian produk tidak ditemukan");
+          return;
+        }
+
+        const payload = {
+          product_id: product.id,
+          variant_id: variant?.id ?? 0,
+          qty: 1,
+          attributes: [],
+          is_buy_now: false,
+        };
+
+        const res = await axios.post("/cart", payload);
+        toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+      } catch (error) {
+        console.error("Gagal menambah ke keranjang", error);
+        const isUnauthorized = error?.response?.status === 401;
+        const msg = isUnauthorized
+          ? "Sesi kamu habis. Silakan login ulang."
+          : error?.response?.data?.message ||
+            "Terjadi kesalahan saat menambah ke keranjang";
+        toast(msg);
+
+        if (isUnauthorized && user && typeof window !== "undefined") {
+          await logout();
+        }
+      }
+    },
+    [logout, product, user],
+  );
 
   const item = useMemo(() => {
     const raw = product;
