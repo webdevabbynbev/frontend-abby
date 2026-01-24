@@ -18,6 +18,7 @@ import axios from "@/lib/axios.js";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
+
 const handleAddToCart = async () => {
   try {
     if (!user) {
@@ -553,9 +554,9 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const href = queryString ? `${slugHref}?${queryString}` : slugHref;
 
   return (
-    <div className="group relative flex h-full w-full flex-col rounded-lg bg-white space-y-4 transition-all overflow-hidden">
+    <div className="group relative flex h-full w-full flex-col rounded-lg bg-white transition-all overflow-hidden">
       <Link href={href}>
-        <div className="image flex w-full items-center justify-center relative">
+        <div className="image flex w-full items-center justify-center">
           {/* Show a text badge if extraDiscount provides one */}
           {item.discountBadge ? (
             <div className="absolute top-2 left-2 z-10 bg-primary-700 text-white text-[10px] rounded-md font-bold py-1 px-2">
@@ -585,32 +586,32 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         <div className="content-wrapper flex flex-col w-full space-y-2 p-4">
           <div className="text-md justify-between category-brand flex flex-row relative items-center space-x-1.5 overflow-hidden h-6">
-            <p className="text-primary-700">{item.brand || "—"}</p>
+            <p className="text-neutral-900 font-bold">{item.brand || "—"}</p>
             <BtnIconToggle
-                active={isWishlisted}
-                onClick={toggleWishlist}
-                variant="tertiary"
-                size="sm"
-                disabled={wishlistDisabled}
-              />
+              active={isWishlisted}
+              onClick={toggleWishlist}
+              variant="tertiary"
+              size="sm"
+              disabled={wishlistDisabled}
+            />
           </div>
 
-          <div className="text-sm font-medium text-neutral-950 line-clamp-2">
+          <div className="text-xs font-normal text-neutral-950 line-clamp-2">
             {item.name}
           </div>
 
-          <div className="price flex flex-col md:flex-row md:items-center lg:flex-row lg:items-center gap-2">
+          <div className="price flex flex-row gap-1">
             {hasSale ? (
               <>
                 <div className="text-sm font-bold text-primary-700">
                   {formatToRupiah(item.price)}
                 </div>
-                <div className="text-xs font-medium text-neutral-400 line-through">
+                <div className="text-[10px] font-medium text-neutral-400 line-through">
                   {formatToRupiah(item.compareAt)}
                 </div>
               </>
             ) : (
-              <div className="text-base font-bold text-primary-700">
+              <div className="text-sm font-bold text-primary-700">
                 {formatToRupiah(item.price)}
               </div>
             )}
@@ -629,11 +630,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             )}
             <div className="block items-center w-1 h-1 rounded-full bg-neutral-400" />
             <div className="text-xs font-light text-neutral-300">
-              ({reviewCount} reviews)
+              ({reviewCount})
             </div>
           </div>
-          <div className="opacity-0 absolute bg-white -bottom-4 flex flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
-            <div className="button flex space-x-2">
+          <div className="hidden lg:block opacity-0 absolute left-0 bg-white -bottom-4 flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
+            <div className="button w-full flex space-x-2">
               <Button
                 iconName="CartPlus"
                 variant="primary"
@@ -641,7 +642,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
                 className="w-full"
                 onClick={handleAddToCart}
               >
-                Tambah ke keranjang
+                Add to cart
               </Button>
             </div>
             <div
@@ -649,9 +650,19 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
               ${
                 isWishlisted ? "scale-100" : "group-hover:pointer-events-auto"
               }`}
-            >
-            </div>
+            ></div>
           </div>
+          <div className="block lg:hidden button w-full space-x-2">
+              <Button
+                iconName="CartPlus"
+                variant="primary"
+                size="sm"
+                className="w-full"
+                onClick={handleAddToCart}
+              >
+                Add to cart
+              </Button>
+            </div>
         </div>
       </Link>
     </div>
