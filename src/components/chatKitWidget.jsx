@@ -131,7 +131,7 @@ export function ChatkitWidget() {
   const sessionId = useMemo(() => getSessionId(), []);
   const apiUrl = useMemo(() => {
     const base =
-      process.env.NEXT_PUBLIC_CHATKIT_API_BASE || "http://localhost:3333";
+      process.env.NEXT_PUBLIC_CHATKIT_API_BASE || "https://abby-api-collections-stagging.up.railway.app/";
     return `${base.replace(/\/+$/, "")}/api/v1/chatkit`;
   }, []);
   const [isOpen, setIsOpen] = useState(false);
