@@ -25,14 +25,9 @@ export async function GET(req) {
     const allCategories = await getCategories().catch(() => []);
 
     const brandMatcher =
-      len <= 3
-        ? (name) => name.startsWith(needle)
-        : (name) => name.includes(needle);
-
+      len <= 3 ? (name) => name.startsWith(needle) : (name) => name.includes(needle);
     const categoryMatcher =
-      len <= 3
-        ? (name) => name.startsWith(needle)
-        : (name) => name.includes(needle);
+      len <= 3 ? (name) => name.startsWith(needle) : (name) => name.includes(needle);
 
     const matchedBrands = (Array.isArray(allBrands) ? allBrands : [])
       .filter((b) => brandMatcher(String(b?.brandname || "").toLowerCase()))
@@ -44,9 +39,7 @@ export async function GET(req) {
       allCategories?.data ??
       allCategories ??
       [];
-    const matchedCategories = (
-      Array.isArray(rawCategories) ? rawCategories : []
-    )
+    const matchedCategories = (Array.isArray(rawCategories) ? rawCategories : [])
       .filter((c) => {
         const categoryName = String(c?.name || c?.categoryname || "");
         const lowered = categoryName.toLowerCase();
@@ -61,11 +54,20 @@ export async function GET(req) {
         slug: c.slug,
       }))
       .filter((c) => c.name);
+
     const primaryBrand =
       matchedBrands.find((b) => b.name.toLowerCase() === needle) ||
       matchedBrands.find((b) => b.name.toLowerCase().startsWith(needle)) ||
       matchedBrands[0] ||
       null;
+    const primaryBrandNormalized = primaryBrand
+      ? normalizeSearchText(primaryBrand.name)
+      : "";
+    const isBrandQuery =
+      Boolean(primaryBrandNormalized) &&
+      len >= 3 &&
+      (needleNormalized === primaryBrandNormalized ||
+        primaryBrandNormalized.startsWith(needleNormalized));
 
     const getProductBrandName = (product) =>
       String(
@@ -74,9 +76,22 @@ export async function GET(req) {
           product?.brand_name ||
           product?.brandName ||
           product?.brand ||
-          "",
+          ""
       ).toLowerCase();
-
+    const getProductBrandSlug = (product) =>
+      String(
+        product?.brand?.slug ||
+          product?.brand_slug ||
+          product?.brandSlug ||
+          ""
+      ).toLowerCase();
+    const getProductBrandId = (product) =>
+      String(
+        product?.brand_id ||
+          product?.brandId ||
+          product?.brand?.id ||
+          ""
+      );
     const getProductCategoryName = (product) =>
       String(
         product?.category?.name ||
@@ -85,16 +100,16 @@ export async function GET(req) {
           product?.category_name ||
           product?.category ||
           product?.categoryname ||
-          "",
+          ""
       ).toLowerCase();
+    const getProductName = (product) => String(product?.name || "").toLowerCase();
 
     const matchesKeyword = (product) => {
-      const name = String(product?.name || "").toLowerCase();
+      const name = getProductName(product);
       const sku = String(product?.sku || "").toLowerCase();
       const brand = getProductBrandName(product);
       const category = getProductCategoryName(product);
-      const matcher =
-        len <= 4 ? (v) => v.startsWith(needle) : (v) => v.includes(needle);
+      const matcher = len <= 4 ? (v) => v.startsWith(needle) : (v) => v.includes(needle);
       if (matcher(name) || matcher(sku) || matcher(brand) || matcher(category)) return true;
       if (!needleNormalized) return false;
       const normalizedFields = [
@@ -105,21 +120,57 @@ export async function GET(req) {
       ];
       return normalizedFields.some((value) => value.includes(needleNormalized));
     };
+    const matchesBrand = (product) => {
+      if (!primaryBrand) return false;
+      const productBrandName = normalizeSearchText(getProductBrandName(product));
+      const productBrandSlug = normalizeSearchText(getProductBrandSlug(product));
+      const productBrandId = getProductBrandId(product);
+      if (primaryBrand.id && productBrandId) {
+        if (String(primaryBrand.id) === String(productBrandId)) return true;
+      }
+      const primaryBrandSlug = primaryBrand.slug
+        ? normalizeSearchText(primaryBrand.slug)
+        : "";
+      if (primaryBrandSlug && productBrandSlug) {
+        if (primaryBrandSlug === productBrandSlug) return true;
+      }
+      if (primaryBrandNormalized && productBrandName) {
+        return (
+          primaryBrandNormalized === productBrandName ||
+          productBrandName.includes(primaryBrandNormalized) ||
+          primaryBrandNormalized.includes(productBrandName)
+        );
+      }
+      const productName = normalizeSearchText(getProductName(product));
+      if (primaryBrandNormalized && productName) {
+        return productName.includes(primaryBrandNormalized);
+      }
+      return false;
+    };
 
     let products = [];
 
     if (primaryBrand?.id) {
-      const res = await getProducts({
-        page: 1,
-        per_page: 100,
-        brand_id: primaryBrand.id,
-      });
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-          ? res
-          : [];
-      products = list.filter(matchesKeyword);
+      const res = await getProducts({ page: 1, per_page: 500, brand_id: primaryBrand.id });
+      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      const brandMatches = list.filter(matchesBrand);
+      products = isBrandQuery ? brandMatches : list.filter(matchesKeyword);
+    }
+
+    if (products.length === 0) {
+      if (isBrandQuery && primaryBrand) {
+        const brandRes = await searchProductsServer({
+          q,
+          page: 1,
+          per_page: 100,
+          fetch_size: 500,
+          brand: primaryBrand.id ?? primaryBrand.slug ?? primaryBrand.name,
+        });
+        const brandList = Array.isArray(brandRes?.data) ? brandRes.data : [];
+        if (brandList.length > 0) {
+          products = brandList.filter(matchesBrand);
+        }
+      }
     }
 
     if (products.length === 0) {
@@ -141,13 +192,8 @@ export async function GET(req) {
   } catch (err) {
     console.error("[suggest]", err);
     return NextResponse.json(
-      {
-        brands: [],
-        data: [],
-        categories: [],
-        error: err?.message || String(err),
-      },
-      { status: 500 },
+      { brands: [], categories: [], data: [], error: err?.message || String(err) },
+      { status: 500 }
     );
   }
 }

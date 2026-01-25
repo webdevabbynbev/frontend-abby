@@ -104,7 +104,7 @@ export function SearchBar({
         iconLeftName="MagnifyingGlass"
         variant="outline"
         size="md"
-        className="w-full min-w-75"
+        className="w-full min-w-0 sm:min-w-75"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
@@ -120,7 +120,9 @@ export function SearchBar({
           </div>
 
           {loading ? (
-            <div className="p-3 text-sm w-full justify-center"><Bouncy size="30" speed="1.2" color="#AE2D68" /></div>
+            <div className="p-3 text-sm w-full justify-center">
+              <Bouncy size="30" speed="1.2" color="#AE2D68" />
+            </div>
           ) : items.length === 0 && brands.length === 0 ? (
             <div className="p-3 text-sm">Tidak ada suggestion.</div>
           ) : (
@@ -179,14 +181,16 @@ export function SearchBar({
                       <div className="text-sm font-medium truncate">
                         {p.name}
                       </div>
-                      <div className="text-xs text-neutral-500 truncate">
-                        {p.price ? formatToRupiah(p.price) : ""}
+                      <div className="flex flex-row gap-2 items-center text-xs text-neutral-500 truncate">
+                        {p.price ? formatToRupiah(p.price) : ""}{" "}
+                        <div className="block items-center w-1 h-1 rounded-full bg-neutral-400" />
+                        {p.category}
                       </div>
                     </div>
                   </button>
                 </li>
               ))}
-            
+
               <li className="border-t">
                 <button
                   type="button"

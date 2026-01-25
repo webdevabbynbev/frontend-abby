@@ -4,7 +4,17 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { Bouncy } from "ldrs/react";
 import "ldrs/react/Bouncy.css";
 import { FaSprayCanSparkles } from "react-icons/fa6";
-import { BtnIcon, Button, RegularCard, TxtField } from ".";
+import {
+  BtnIcon,
+  Button,
+  RegularCard,
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  TxtField,
+} from ".";
 
 // ==============================
 // Storage keys
@@ -102,8 +112,7 @@ const parseStructuredOutput = (text = "") => {
       }
     }
 
-    result.fallbackText +=
-      (result.fallbackText ? "\n" : "") + line;
+    result.fallbackText += (result.fallbackText ? "\n" : "") + line;
   }
 
   return result;
@@ -112,7 +121,7 @@ const parseStructuredOutput = (text = "") => {
 // ==============================
 // Component
 // ==============================
-export function ChatkitWidget() {
+export function ChatkitWidget({ variant = "floating", onClose }) {
   const sessionId = useMemo(() => getOrCreateSessionId(), []);
 
   const apiUrl = useMemo(() => {
@@ -136,6 +145,14 @@ export function ChatkitWidget() {
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    if (variant !== "floating") return undefined;
+    const handleOpen = () => setIsOpen(true);
+    if (typeof window === "undefined") return undefined;
+    window.addEventListener("chatkit:open", handleOpen);
+    return () => window.removeEventListener("chatkit:open", handleOpen);
+  }, [variant]);
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -188,71 +205,85 @@ export function ChatkitWidget() {
     }
   };
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50">
-      {isOpen ? (
-        <div className="w-96 bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="px-4 py-3 bg-black text-white flex justify-between">
-            <div>
-              <p className="text-sm font-semibold">Abby n Bev AI</p>
-              <p className="text-xs opacity-70">Beauty Assistant</p>
+  const messagesContainerRef = useRef(null);
+
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+
+    requestAnimationFrame(() => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }, [messages]);
+
+  const room = (
+    <div className="w-full h-full flex flex-col overflow-hidden bg-primary-200">
+      {/* Messages */}
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-3"
+      >
+        <div className="min-h-full flex flex-col gap-4">
+          {/* spacer */}
+          <div className="flex-1" />
+
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`rounded-xl px-3 py-2 text-sm max-w-[85%] ${
+                m.role === "user"
+                  ? "bg-primary-700 text-white ml-auto"
+                  : "bg-slate-100 text-slate-800"
+              }`}
+            >
+              {m.text && <p className="whitespace-pre-line">{m.text}</p>}
             </div>
-            <button onClick={() => setIsOpen(false)}>Close</button>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 px-4 py-3 space-y-4 overflow-y-auto max-h-96">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`rounded-xl px-3 py-2 text-sm ${
-                  m.role === "user"
-                    ? "bg-black text-white ml-auto"
-                    : "bg-slate-100 text-slate-800"
-                }`}
-              >
-                {m.text && (
-                  <p className="whitespace-pre-line">{m.text}</p>
-                )}
-
-                {Array.isArray(m.products) &&
-                  m.products.map((p) => (
-                    <div key={p.id} className="mt-2">
-                      <RegularCard product={p} />
-                    </div>
-                  ))}
-              </div>
-            ))}
-
-            {isSending && (
-              <div className="flex justify-center">
-                <Bouncy size="40" color="#AE2D68" />
-              </div>
-            )}
-          </div>
-
-          {/* Input */}
-          <div className="border-t px-3 py-2 flex gap-2">
-            <TxtField
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Tulis pertanyaan kamu..."
-              className="flex-1"
-            />
-            <BtnIcon onClick={sendMessage} disabled={isSending} />
-          </div>
+          ))}
         </div>
-      ) : (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="rounded-full px-5 py-3"
+      </div>
+
+      {/* Input */}
+      <div className="border-t px-3 py-2 flex gap-2 shrink-0 bg-white">
+        <TxtField
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="Tulis pertanyaan kamu..."
+          className="flex-1"
+        />
+        <BtnIcon iconName="ArrowUp" variant="primary" size="md" onClick={sendMessage} disabled={isSending} />
+      </div>
+    </div>
+  );
+
+  if (variant === "sheet") {
+    return room;
+  }
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <Button className="rounded-full px-5 py-3 shadow-lg">
+            <FaSprayCanSparkles className="mr-2" />
+            Your Beauty Assistant
+          </Button>
+        </SheetTrigger>
+        <SheetContent
+          side="right"
+          className="w-full max-w-md p-0 flex flex-col h-full"
         >
-          <FaSprayCanSparkles className="mr-2" />
-          Your Beauty Assistant
-        </Button>
-      )}
+          <SheetHeader className="px-4 pt-4 shrink-0">
+            <SheetTitle className="text-primary-700">
+              Chat dengan Abby
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden">{room}</div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
