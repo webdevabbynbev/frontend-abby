@@ -13,6 +13,8 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    const api = process.env.NEXT_PUBLIC_API_URL;
+    if (!api) return [];
     return [
       // AUTH
       { source: "/api/auth/:path*", destination: `${api}/api/auth/:path*` },
