@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  output: "standalone",
   images: {
     domains: ["d2ntedlnuwws1k.cloudfront.net", "localhost", "127.0.0.1"],
     remotePatterns: [
