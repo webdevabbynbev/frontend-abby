@@ -275,15 +275,6 @@ export default function ProductDetailClient({ product }) {
 
   const handleAddToCart = async () => {
     try {
-      if (!user) {
-        toast.error("Silakan login dulu untuk menambahkan ke keranjang.", {
-          action: {
-            label: "Login",
-            onClick: () => router.push("/sign-in"),
-          },
-        });
-        return;
-      }
 
       if (!product?.id) {
         toast("Product id tidak ditemukan");
@@ -318,9 +309,8 @@ export default function ProductDetailClient({ product }) {
           "Terjadi kesalahan saat menambah ke keranjang";
       toast(msg);
 
-      if (isUnauthorized && typeof window !== "undefined") {
+      if (isUnauthorized && user && typeof window !== "undefined") {
         await logout();
-        router.push("/sign-in");
       }
     }
   };

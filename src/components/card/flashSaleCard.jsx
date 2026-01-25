@@ -72,7 +72,7 @@ export function FlashSaleCard({ product, item, hrefQuery }) {
   const progress = Math.round((flashStockLeft / flashStock) * 100);
 
   return (
-    <div className="group relative flex h-full w-full flex-col rounded-lg bg-white space-y-4 overflow-hidden">
+    <div className="group relative flex h-full w-full flex-col rounded-3xl bg-white space-y-4 overflow-hidden">
       <Link href={href}>
         <div className="relative">
           <img

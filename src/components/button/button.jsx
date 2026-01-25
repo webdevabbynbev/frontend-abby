@@ -5,6 +5,7 @@ import * as FaIcons from "react-icons/fa";
 export function Button({
   type,
   accept,
+  label,
   iconName,
   children,
   variant = "primary",
@@ -33,8 +34,8 @@ export function Button({
   };
 
   const sizes = {
-    sm: "h-8 px-2 text-xs", // ~36px tinggi
-    md: "h-10 px-4 text-sm", // ~40px tinggi
+    sm: "h-6 px-2 text-xs", // ~36px tinggi
+    md: "h-8 px-4 text-sm", // ~40px tinggi
     lg: "h-12 px-4 text-base", // ~52px tinggi
   };
 
@@ -53,6 +54,7 @@ export function Button({
   return (
     <button
       type={type}
+      aria-label={label}
       accept={accept}
       className={clsx(
         baseStyles,
