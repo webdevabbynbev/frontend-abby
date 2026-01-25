@@ -181,6 +181,11 @@ export function ChatkitWidget() {
     );
   };
 
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   const sendMessage = async () => {
     const trimmed = input.trim();
     if (!trimmed || isSending) return;
@@ -188,23 +193,24 @@ export function ChatkitWidget() {
     setIsSending(true);
     setInput("");
 
-    // simpan dulu pesan user ke state
+    // 1) append user message dulu
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
 
     try {
-      // buat history dari state SEBELUM response assistant ditambah
-      // ambil 12 pesan terakhir yang punya text
-      const history = messages
-        .filter((m) => m?.text)
+      // 2) build history dari state TERKINI + user message barusan
+      // penting: jangan pakai `messages` yang stale; ambil dari local variable via snapshot:
+      const snapshot = [
+        ...messagesRef.current,
+        { role: "user", text: trimmed },
+      ];
+
+      const history = snapshot
+        .filter((m) => typeof m?.text === "string" && m.text.trim())
         .slice(-12)
         .map((m) => ({
           role: m.role === "assistant" ? "assistant" : "user",
-          content: String(m.text || "").trim(),
-        }))
-        .filter((m) => m.content);
-
-      // tambahkan pesan terbaru user (karena state messages belum sempat update)
-      history.push({ role: "user", content: trimmed });
+          content: m.text.trim(),
+        }));
 
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -212,23 +218,27 @@ export function ChatkitWidget() {
         body: JSON.stringify({
           message: trimmed,
           session_id: sessionId,
-          history, // ✅ ini yang bikin context nyambung
+          history, // ✅ ini yang bikin percakapan lanjut
         }),
       });
 
       if (!res.ok) {
-        let errorMessage = "Gagal kirim pesan.";
+        let errorMessage = `HTTP ${res.status}`;
         try {
-          const errorPayload = await res.json();
-          if (errorPayload?.error) errorMessage = errorPayload.error;
-          if (errorPayload?.message) errorMessage = errorPayload.message;
-        } catch {}
+          const err = await res.json();
+          errorMessage =
+            (typeof err?.message === "string" && err.message) ||
+            (typeof err?.error === "string" && err.error) ||
+            JSON.stringify(err);
+        } catch {
+          errorMessage = await res.text().catch(() => errorMessage);
+        }
         throw new Error(errorMessage);
       }
 
       const data = await res.json();
-
       const outputText = data?.output_text || "Maaf bestie, coba lagi ya.";
+
       const assistantMessages = await buildAssistantMessages(outputText);
 
       setMessages((prev) => [...prev, ...assistantMessages]);
