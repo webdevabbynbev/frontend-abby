@@ -18,6 +18,8 @@ export async function getApi(path, options = {}) {
   const cleanPath = String(path).replace(/^\/+/, "");
   const url = path.startsWith("http") ? path : new URL(cleanPath, BASE).toString();
 
+  console.log("[getApi] url =", url);
+
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -26,7 +28,10 @@ export async function getApi(path, options = {}) {
       ...(options.headers || {}),
     },
     ...(typeof window === "undefined" ? { credentials: "include" } : {}),
+    
   });
+
+
 
   // ✅ Baca body sekali (pakai text), lalu parse jika JSON
   const contentType = res.headers.get("content-type") || "";
