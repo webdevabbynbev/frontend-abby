@@ -188,15 +188,31 @@ export function ChatkitWidget() {
     setIsSending(true);
     setInput("");
 
+    // simpan dulu pesan user ke state
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
 
     try {
+      // buat history dari state SEBELUM response assistant ditambah
+      // ambil 12 pesan terakhir yang punya text
+      const history = messages
+        .filter((m) => m?.text)
+        .slice(-12)
+        .map((m) => ({
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: String(m.text || "").trim(),
+        }))
+        .filter((m) => m.content);
+
+      // tambahkan pesan terbaru user (karena state messages belum sempat update)
+      history.push({ role: "user", content: trimmed });
+
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: trimmed,
           session_id: sessionId,
+          history, // ✅ ini yang bikin context nyambung
         }),
       });
 
@@ -204,12 +220,9 @@ export function ChatkitWidget() {
         let errorMessage = "Gagal kirim pesan.";
         try {
           const errorPayload = await res.json();
-          if (errorPayload?.error) {
-            errorMessage = errorPayload.error;
-          }
-        } catch {
-          // ignore json parsing errors
-        }
+          if (errorPayload?.error) errorMessage = errorPayload.error;
+          if (errorPayload?.message) errorMessage = errorPayload.message;
+        } catch {}
         throw new Error(errorMessage);
       }
 
