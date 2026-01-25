@@ -11,15 +11,6 @@ const nextConfig = {
       { protocol: "https", hostname: "blog.abbynbev.com", pathname: "/**" },
     ],
   },
-  async rewrites() {
-    const api = process.env.NEXT_PUBLIC_API_URL;
-    if (!api) return [];
-    return [
-      // AUTH
-      { source: "/api/auth/:path*", destination: `${api}/api/v1/auth/:path*` },
-      { source: "/api/:path*", destination: `${api}/api/v1/:path*` },
-    ];
-  },
 };
 
 module.exports = nextConfig;
