@@ -64,7 +64,7 @@ const parseRecommendations = (text = "") => {
 
   lines.forEach((line) => {
     const match = line.match(
-      /^\s*\d+\.\s*(?:\*\*|__)?(.+?)(?:\*\*|__)?\s*(?:-|–|:)\s*(.*)$/
+      /^\s*\d+\.\s*(?:\*\*|__)?(.+?)(?:\*\*|__)?\s*(?:-|–|:)\s*(.*)$/,
     );
 
     if (match) {
@@ -108,7 +108,7 @@ const parseRecommendations = (text = "") => {
 const fetchProductByName = async (name) => {
   try {
     const res = await fetch(
-      `/api/products/search?q=${encodeURIComponent(name)}&limit=1`
+      `/api/products/search?q=${encodeURIComponent(name)}&limit=1`,
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -130,8 +130,8 @@ const getSessionId = () => {
 export function ChatkitWidget() {
   const sessionId = useMemo(() => getSessionId(), []);
   const apiUrl = useMemo(() => {
-    const base =
-      process.env.NEXT_PUBLIC_CHATKIT_API_BASE || "https://abby-api-collections-stagging.up.railway.app/";
+    const base = process.env.NEXT_PUBLIC_CHATKIT_API_BASE;
+    if (!base) throw new Error("NEXT_PUBLIC_CHATKIT_API_BASE is not set");
     return `${base.replace(/\/+$/, "")}/api/v1/chatkit`;
   }, []);
   const [isOpen, setIsOpen] = useState(false);
@@ -150,10 +150,10 @@ export function ChatkitWidget() {
       sections.map(async (section) => {
         if (section.type === "advisor") {
           const { introText, trailingText, items } = parseRecommendations(
-            section.body
+            section.body,
           );
           const products = await Promise.all(
-            items.map((item) => fetchProductByName(item.name))
+            items.map((item) => fetchProductByName(item.name)),
           );
           const recommendations = items.map((item, index) => ({
             ...item,
@@ -173,11 +173,11 @@ export function ChatkitWidget() {
           title: section.title,
           text: section.body || "",
         };
-      })
+      }),
     );
 
     return messagesWithCards.filter(
-      (message) => message.text || (message.recommendations || []).length > 0
+      (message) => message.text || (message.recommendations || []).length > 0,
     );
   };
 
