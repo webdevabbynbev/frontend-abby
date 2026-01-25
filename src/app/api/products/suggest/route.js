@@ -11,27 +11,16 @@ export async function GET(req) {
     const len = needle.length;
     const limit = Number(searchParams.get("limit") || 10);
 
-    if (!q) {
-      return NextResponse.json({ brands: [], data: [] });
-    }
+    if (!q) return NextResponse.json({ brands: [], data: [] });
 
-    /* ===============================
-     * 1️⃣ BRAND MATCH MODE
-     * =============================== */
     const allBrands = await getBrands();
 
     const brandMatcher =
-      len <= 3
-        ? (name) => name.startsWith(needle)
-        : (name) => name.includes(needle);
+      len <= 3 ? (name) => name.startsWith(needle) : (name) => name.includes(needle);
 
-    const matchedBrands = allBrands
-      .filter((b) => brandMatcher(b.brandname.toLowerCase()))
-      .map((b) => ({
-        id: b.id,
-        name: b.brandname,
-        slug: b.slug,
-      }));
+    const matchedBrands = (Array.isArray(allBrands) ? allBrands : [])
+      .filter((b) => brandMatcher(String(b?.brandname || "").toLowerCase()))
+      .map((b) => ({ id: b.id, name: b.brandname, slug: b.slug }));
 
     const primaryBrand =
       matchedBrands.find((b) => b.name.toLowerCase() === needle) ||
@@ -39,78 +28,32 @@ export async function GET(req) {
       matchedBrands[0] ||
       null;
 
-    /* ===============================
-     * 2️⃣ PRODUK DARI BRAND
-     * =============================== */
-    /* ===============================
-     * 2️⃣ PRODUK DARI BRAND (FINAL & BENAR)
-     * =============================== */
+    const getProductBrandName = (product) =>
+      String(
+        product?.brand?.name ||
+          product?.brand?.brandname ||
+          product?.brand_name ||
+          product?.brandName ||
+          product?.brand ||
+          ""
+      ).toLowerCase();
+
+    const matchesKeyword = (product) => {
+      const name = String(product?.name || "").toLowerCase();
+      const sku = String(product?.sku || "").toLowerCase();
+      const brand = getProductBrandName(product);
+      const matcher = len <= 4 ? (v) => v.startsWith(needle) : (v) => v.includes(needle);
+      return matcher(name) || matcher(sku) || matcher(brand);
+    };
+
     let products = [];
 
-    const getProductBrandId = (product) =>
-      product?.brand_id ??
-      product?.brandId ??
-      product?.brand?.id ??
-      null;
-
-    const getProductBrandName = (product) =>
-      String(
-        product?.brand?.name ||
-          product?.brand?.brandname ||
-          product?.brand_name ||
-          product?.brandName ||
-          product?.brand ||
-          "",
-      ).toLowerCase();
-
-    const matchesKeyword = (product) => {
-      const name = (product?.name || "").toLowerCase();
-      const sku = (product?.sku || "").toLowerCase();
-      const brand = getProductBrandName(product);
-      const matcher = len <= 4
-        ? (value) => value.startsWith(needle)
-        : (value) => value.includes(needle);
-      return matcher(name) || matcher(sku) || matcher(brand);
-    };
-
     if (primaryBrand?.id) {
-      const res = await getProducts({
-        page: 1,
-        per_page: 100,
-        brand_id: primaryBrand.id,
-      });
-
-      const getProductBrandId = (product) =>
-      product?.brand_id ??
-      product?.brandId ??
-      product?.brand?.id ??
-      null;
-
-    const getProductBrandName = (product) =>
-      String(
-        product?.brand?.name ||
-          product?.brand?.brandname ||
-          product?.brand_name ||
-          product?.brandName ||
-          product?.brand ||
-          "",
-      ).toLowerCase();
-
-    const matchesKeyword = (product) => {
-      const name = (product?.name || "").toLowerCase();
-      const sku = (product?.sku || "").toLowerCase();
-      const brand = getProductBrandName(product);
-      const matcher = len <= 4
-        ? (value) => value.startsWith(needle)
-        : (value) => value.includes(needle);
-      return matcher(name) || matcher(sku) || matcher(brand);
-    };
-      products = products.filter((product) => matchesKeyword(product));
+      const res = await getProducts({ page: 1, per_page: 100, brand_id: primaryBrand.id });
+      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      products = list.filter(matchesKeyword);
     }
 
-    /* ===============================
-     * 3️⃣ FALLBACK PRODUCT SEARCH
-     * =============================== */
     if (products.length === 0) {
       const textRes = await searchProductsServer({
         q,
@@ -118,10 +61,8 @@ export async function GET(req) {
         per_page: 100,
         fetch_size: 500,
       });
-
-      products = (Array.isArray(textRes?.data) ? textRes.data : []).filter(
-        (p) => matchesKeyword(p),
-      );
+      const list = Array.isArray(textRes?.data) ? textRes.data : [];
+      products = list.filter(matchesKeyword);
     }
 
     return NextResponse.json({
@@ -131,8 +72,8 @@ export async function GET(req) {
   } catch (err) {
     console.error("[suggest]", err);
     return NextResponse.json(
-      { brands: [], data: [], error: err.message },
-      { status: 500 },
+      { brands: [], data: [], error: err?.message || String(err) },
+      { status: 500 }
     );
   }
 }
