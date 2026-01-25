@@ -70,6 +70,19 @@ export default function ProductDetailClient({ product }) {
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
 
+  const hasPromoData = useMemo(() => {
+    return variants.some((variant) => {
+      const promoValue = Number(
+        variant?.promoPrice ??
+          variant?.promo_price ??
+          variant?.flashPrice ??
+          variant?.salePrice ??
+          0,
+      );
+      return Number.isFinite(promoValue) && promoValue > 0;
+    });
+  }, [variants]);
+
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (
       hasSaleVariantParam &&
@@ -88,24 +101,45 @@ export default function ProductDetailClient({ product }) {
     );
   }, [variants, selectedVariantId]);
 
-  // kalau selectedVariantId kosong tapi variants ada, set default
+  const variantBasePriceValue = Number(selectedVariantObj?.price ?? NaN);
+  const variantBasePrice =
+    Number.isFinite(variantBasePriceValue) && variantBasePriceValue > 0
+      ? variantBasePriceValue
+      : undefined;
+
+  const variantPromoPriceValue = Number(
+    selectedVariantObj?.promoPrice ??
+      selectedVariantObj?.promo_price ??
+      selectedVariantObj?.flashPrice ??
+      selectedVariantObj?.salePrice ??
+      NaN,
+  );
+  const variantPromoPrice =
+    Number.isFinite(variantPromoPriceValue) && variantPromoPriceValue > 0
+      ? variantPromoPriceValue
+      : undefined;
+
+  // kalau selectedVariantId kosong/tidak valid tapi variants ada, set default sekali
   useEffect(() => {
-    if (
-      hasSaleVariantParam &&
-      variants.some(
-        (variant) => Number(variant.id) === Number(saleVariantParam),
-      ) &&
-      Number(selectedVariantId) !== Number(saleVariantParam)
-    ) {
+    if (!variants.length) return;
+
+    const isCurrentValid = variants.some(
+      (variant) => Number(variant.id) === Number(selectedVariantId),
+    );
+    if (isCurrentValid) return;
+
+    const hasSaleVariant = hasSaleVariantParam
+      ? variants.some(
+          (variant) => Number(variant.id) === Number(saleVariantParam),
+        )
+      : false;
+
+    if (hasSaleVariant) {
       setSelectedVariantId(Number(saleVariantParam));
       return;
     }
-    if (
-      (selectedVariantId === null || selectedVariantId === undefined) &&
-      variants.length > 0
-    ) {
-      setSelectedVariantId(Number(variants[0].id));
-    }
+
+    setSelectedVariantId(Number(variants[0].id));
   }, [hasSaleVariantParam, saleVariantParam, selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
@@ -140,11 +174,28 @@ export default function ProductDetailClient({ product }) {
     ? true
     : Number(selectedVariantId) === Number(saleVariantParam);
 
-  const priceOverride =
+  const allowQueryOverride = !hasPromoData;
+
+  const queryPriceOverride =
+    allowQueryOverride &&
     saleAppliesToVariant &&
     Number.isFinite(salePriceParam) &&
     salePriceParam > 0
       ? salePriceParam
+      : undefined;
+
+  const queryRealPriceOverride =
+    allowQueryOverride &&
+    saleAppliesToVariant &&
+    Number.isFinite(realPriceParam) &&
+    realPriceParam > 0
+      ? realPriceParam
+      : undefined;
+
+  const promoOverride =
+    variantPromoPrice !== undefined &&
+    (variantBasePrice === undefined || variantPromoPrice < variantBasePrice)
+      ? variantPromoPrice
       : undefined;
 
   // ====== BASE PRICE (sebelum extraDiscount ditempel) ======
@@ -159,23 +210,29 @@ export default function ProductDetailClient({ product }) {
     0;
 
   const baseFinalPrice =
-    priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
+    promoOverride ??
+    queryPriceOverride ??
+    variantBasePrice ??
+    baseProductPrice;
 
-  const realPriceOverride =
-    saleAppliesToVariant &&
-    Number.isFinite(realPriceParam) &&
-    realPriceParam > 0
-      ? realPriceParam
+  const compareFromVariant =
+    variantBasePrice !== undefined &&
+    (promoOverride !== undefined || queryPriceOverride !== undefined)
+      ? variantBasePrice
       : undefined;
 
-  const baseCompareAt = realPriceOverride ?? baseRealPrice ?? baseFinalPrice;
+  const baseCompareAt =
+    queryRealPriceOverride ?? compareFromVariant ?? baseRealPrice ?? baseFinalPrice;
+
+  const appliedOverride = promoOverride ?? queryPriceOverride;
 
   const saleOverrideActive =
-    priceOverride !== undefined &&
+    appliedOverride !== undefined &&
     Number.isFinite(baseCompareAt) &&
-    priceOverride < baseCompareAt;
+    appliedOverride < baseCompareAt;
 
-  const isSale = (product?.sale && saleAppliesToVariant) || saleOverrideActive;
+  const isSale =
+    saleOverrideActive || (product?.sale && saleAppliesToVariant);
 
   // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
