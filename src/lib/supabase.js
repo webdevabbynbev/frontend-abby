@@ -7,10 +7,6 @@ if (!rawSupabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
 
-console.log("SB_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log("SB_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "SET" : "MISSING");
-
-
 const supabaseUrl = rawSupabaseUrl
   .replace(/\/auth\/v1\/?$/, "")
   .replace(/\/$/, "");
