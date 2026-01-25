@@ -49,7 +49,7 @@ export default function HomeClient({
     if (!loading && (!items || items.length === 0)) return null;
 
     return (
-      <div className="xl:max-w-7xl lg:max-w-240 mx-auto p-6 space-y-6">
+      <div className="max-w-6xl xl:max-w-7xl mx-auto p-6 space-y-6">
         <h1 className="sr-only">
           Situs Belanja Online Makeup dan Skincare Terbaik Di Indonesia
         </h1>
@@ -117,21 +117,10 @@ export default function HomeClient({
     );
 
     return (
-      <div className="w-full xl:max-w-7xl lg:max-w-240 mx-auto px-6 py-6">
+      <div className="w-full max-w-6xl xl:max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           {/* ================= LEFT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Banner kiri */}
-            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
-              <img
-                src={bannerSrc}
-                alt="Left Banner"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = getImageUrl();
-                }}
-              />
-            </div>
 
             {/* Carousel kiri */}
             <div className="space-y-2">
@@ -167,18 +156,6 @@ export default function HomeClient({
 
           {/* ================= RIGHT ================= */}
           <div className="flex flex-col space-y-4">
-            {/* Banner kanan */}
-            <div className="w-full aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-sm">
-              <img
-                src={bannerSrc}
-                alt="Right Banner"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = getImageUrl();
-                }}
-              />
-            </div>
-
             {/* Carousel kanan */}
             <div className="space-y-2">
               <h4 className="font-damion text-2xl text-primary-700">
@@ -225,13 +202,13 @@ export default function HomeClient({
       <h1 className="sr-only">
         Situs Belanja Online Makeup dan Skincare Terbaik di Indonesia
       </h1>
-      <div className="Hero-wrapper w-full flex flex-row py-0 lg:py-6 justify-between h-full mx-auto xl:max-w-7xl lg:max-w-240">
+      <div className="Hero-wrapper w-full flex flex-row py-0 lg:py-6 justify-between h-full mx-auto max-w-6xl xl:max-w-7xl">
         <div className="h-auto w-full px-0 lg:px-6 items-center">
           <HeroCarousel banners={banners} />
         </div>
       </div>
 
-      {/* <div className="ContainerCategory p-6 space-y-4 mx-auto w-full xl:max-w-7xl lg:max-w-240 overflow-hidden">
+      {/* <div className="ContainerCategory p-6 space-y-4 mx-auto w-full max-w-6xl xl:max-w-7xl overflow-hidden">
         <h3 className="text-primary-700 text-lg font-bold">Kategori</h3>
         <div className="w-full">
           <div
@@ -261,7 +238,7 @@ export default function HomeClient({
       {/* ----------------------------------------- */}
 
       <div className="ContainerFlashSale w-full flex-col bg-primary-100 items-center justify-center bg-[url('/Logo_SVG_AB.svg')] bg-no-repeat bg-center">
-        <div className="Wrapper p-6 flex flex-col xl:max-w-7xl lg:max-w-240 mx-auto">
+        <div className="Wrapper p-6 flex flex-col max-w-6xl xl:max-w-7xl mx-auto">
           <div className="leftWrapper justify-between flex flex-row w-full space-y-6">
             <div className="texts flex-row">
               <h3 className="font-damion text-3xl text-primary-700">
@@ -284,7 +261,7 @@ export default function HomeClient({
         </div>
       </div>
 
-      <div className="ContainerAbbyBev py-10 space-y-16 w-full">
+      <div className="ContainerAbbyBev py-10 w-full">
         <PickSection
           title="Abby's Pick"
           subtitle="Your Makeup Matchmaker"
@@ -305,7 +282,7 @@ export default function HomeClient({
       </div>
 
       <div className="Brand-Container flex px-10 py-10 bg-primary-100 items-center justify-center space-x-6 bg-[url('/Logo_SVG_AB.svg')] bg-no-repeat bg-center">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:max-w-7xl lg:max-w-240 mx-auto gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 max-w-6xl xl:max-w-7xl mx-auto gap-6">
           <div className="Wrapper flex-row w-full space-y-6">
             <h3 className="font-damion text-3xl text-primary-700">
               Shop by brands

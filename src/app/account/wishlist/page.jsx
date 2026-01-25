@@ -63,7 +63,7 @@ export default function WishlistPage() {
     setErrorMsg("");
 
     try {
-      const res = await axios.get(`/wishlists`);
+      const res = await axios.get("/api/wishlists");
       const json = res?.data ?? {};
 
       const serve = json?.serve ?? {};

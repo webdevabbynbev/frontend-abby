@@ -70,17 +70,30 @@ export function LoginRegisModalForm() {
     setMessage("");
     try {
       const data = await loginUser(loginId, loginPassword);
-      const user = data?.serve?.data;
+      
+      // Extract user dari berbagai format response
+      let user = null;
+      if (data?.serve) {
+        user = typeof data.serve === 'object' && data.serve.data 
+          ? data.serve.data 
+          : data.serve;
+      } else if (data?.user) {
+        user = data.user;
+      } else if (data?.data) {
+        user = data.data;
+      }
 
-      if (user) {
+      if (user && typeof user === 'object') {
         login({ user });
+        closeLoginModal();
         router.push("/");
         return;
       }
 
-      setMessage(data?.message || "Login gagal.");
+      setMessage(data?.message || "Login gagal - user data tidak valid.");
     } catch (err) {
-      setMessage(err?.message || "Login gagal.");
+      console.error("Login error:", err);
+      setMessage(err?.message || "Login gagal. Periksa email/phone dan password.");
     } finally {
       setLoading(false);
     }
@@ -140,24 +153,38 @@ export function LoginRegisModalForm() {
         acceptPrivacy,
       );
 
-      const user = data?.serve?.data;
+      // Extract user dari berbagai format response
+      let user = null;
+      if (data?.serve) {
+        user = typeof data.serve === 'object' && data.serve.data 
+          ? data.serve.data 
+          : data.serve;
+      } else if (data?.user) {
+        user = data.user;
+      } else if (data?.data) {
+        user = data.data;
+      }
 
-      if (user) {
+      if (user && typeof user === 'object') {
         login({ user });
+        closeLoginModal();
         router.push("/account/profile");
         return;
       }
 
-      setMessage(data?.message || "OTP salah / register gagal.");
+      setMessage(data?.message || "OTP salah atau register gagal.");
     } catch (err) {
-      setMessage(err?.message || "OTP salah / register gagal.");
+      console.error("OTP register error:", err);
+      setMessage(err?.message || "OTP salah atau register gagal.");
     } finally {
       setLoading(false);
     }
   };
 
   // ✅ FIX UTAMA: nama fungsi SESUAI dengan pemanggilan di UI
+
   const handleGoogleOAuth = async (mode = "login") => {
+    if (loading) return;
     if (mode === "register" && !acceptPrivacy) {
       setMessage("Centang Privacy Policy dulu untuk daftar dengan Google.");
       return;
@@ -174,7 +201,11 @@ export function LoginRegisModalForm() {
         );
       }
 
-      const redirectTo = `${window.location.origin}/auth/callback?mode=${mode}`;
+      // ✅ Redirect URI harus EXACT match dengan Google Cloud Console & Supabase
+      // Jangan tambah query params di sini - Supabase akan handle PKCE flow
+      const redirectTo = `${window.location.origin}/OAuth/callback?mode=${mode}`;
+
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -183,12 +214,16 @@ export function LoginRegisModalForm() {
             access_type: "offline",
             prompt: "consent",
           },
+          scopes: "profile email openid",
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || "Supabase OAuth error");
+      }
     } catch (err) {
-      setMessage(err?.message || "Login Google gagal.");
+      console.error("Google OAuth error:", err);
+      setMessage(err?.message || "Login Google gagal. Coba lagi.");
       setLoading(false);
     }
   };
