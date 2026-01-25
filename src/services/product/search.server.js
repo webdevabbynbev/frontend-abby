@@ -4,13 +4,12 @@ function normLower(v) {
   return (v ?? "").toString().toLowerCase();
 }
 
+function normalizeSearchText(v) {
+  return normLower(v).replace(/[^a-z0-9]/g, "");
+}
+
 function getBrandId(p) {
-  return (
-    p?.brand_id ??
-    p?.brandId ??
-    p?.brand?.id ??
-    null
-  );
+  return p?.brand_id ?? p?.brandId ?? p?.brand?.id ?? null;
 }
 
 /**
@@ -27,15 +26,20 @@ export async function searchProductsServer({
   brand = null,
 } = {}) {
   const keyword = (q || "").trim();
-  if (!keyword) return { data: [], meta: { page, per_page, total: 0, total_pages: 1 } };
+  if (!keyword)
+    return { data: [], meta: { page, per_page, total: 0, total_pages: 1 } };
 
   const needle = keyword.toLowerCase();
+  const needleNormalized = normalizeSearchText(keyword);
 
   // normalize brand filter (support comma separated)
   const brandListRaw = Array.isArray(brand)
     ? brand
     : typeof brand === "string"
-      ? brand.split(",").map((s) => s.trim()).filter(Boolean)
+      ? brand
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
   const brandSet = new Set(brandListRaw.map((b) => b.toString()));
 
@@ -47,36 +51,58 @@ export async function searchProductsServer({
 
   const rows = Array.isArray(res?.data) ? res.data : [];
 
-  const filtered = rows
-    .filter((p) => {
-      // keyword filter
-      const name = normLower(p?.name);
-      const brandName = normLower(p?.brand ?? p?.brand?.name ?? p?.brand?.brandname);
-      const brandSlug = normLower(p?.brand?.slug ?? p?.brand_slug);
-      const sku = normLower(p?.sku);
+  const filtered = rows.filter((p) => {
+    // keyword filter
+    const name = normLower(p?.name);
+    const brandName = normLower(
+      p?.brand ?? p?.brand?.name ?? p?.brand?.brandname,
+    );
+    const brandSlug = normLower(p?.brand?.slug ?? p?.brand_slug);
+    const category = normLower(
+      p?.category ??
+        p?.category?.name ??
+        p?.category?.categoryname ??
+        p?.categoryName ??
+        p?.category_name ??
+        p?.categoryname,
+    );
+    const sku = normLower(p?.sku);
 
-      const okKeyword =
-        name.includes(needle) ||
-        brandName.includes(needle) ||
-        brandSlug.includes(needle) ||
-        sku.includes(needle);
+    const nameNormalized = normalizeSearchText(name);
+    const brandNameNormalized = normalizeSearchText(brandName);
+    const brandSlugNormalized = normalizeSearchText(brandSlug);
+    const categoryNormalized = normalizeSearchText(category);
+    const skuNormalized = normalizeSearchText(sku);
 
-      if (!okKeyword) return false;
+    const okKeyword =
+      name.includes(needle) ||
+      brandName.includes(needle) ||
+      brandSlug.includes(needle) ||
+      category.includes(needle) ||
+      sku.includes(needle) ||
+      (needleNormalized &&
+        (nameNormalized.includes(needleNormalized) ||
+          brandNameNormalized.includes(needleNormalized) ||
+          brandSlugNormalized.includes(needleNormalized) ||
+          categoryNormalized.includes(needleNormalized) ||
+          skuNormalized.includes(needleNormalized)));
 
-      // brand filter (kalau ada)
-      if (brandSet.size === 0) return true;
+    if (!okKeyword) return false;
 
-      const bid = getBrandId(p);
-      const bslug = p?.brand?.slug ?? p?.brand_slug ?? null;
-      const bname = p?.brand ?? p?.brand?.name ?? null;
+    // brand filter (kalau ada)
+    if (brandSet.size === 0) return true;
 
-      // cocokkan ke beberapa kemungkinan field
-      return (
-        (bid != null && brandSet.has(bid.toString())) ||
-        (bslug && brandSet.has(bslug.toString())) ||
-        (bname && brandSet.has(bname.toString()))
-      );
-    });
+    const bid = getBrandId(p);
+    const bslug = p?.brand?.slug ?? p?.brand_slug ?? null;
+    const bname = p?.brand ?? p?.brand?.name ?? null;
+
+    // cocokkan ke beberapa kemungkinan field
+    return (
+      (bid != null && brandSet.has(bid.toString())) ||
+      (bslug && brandSet.has(bslug.toString())) ||
+      (bname && brandSet.has(bname.toString()))
+    );
+  });
 
   // paging dari hasil filtered
   const start = (page - 1) * per_page;
