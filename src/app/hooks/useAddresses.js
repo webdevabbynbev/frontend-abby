@@ -4,12 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchAddresses, setMainAddress } from "@/services/checkout/address";
 import { n } from "@/utils/number";
 
-export function useAddresses() {
+export function useAddresses({ enabled = true } = {}) {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [loadingAddr, setLoadingAddr] = useState(true);
 
   async function reloadAddresses(preferId = null) {
+    if (!enabled) {
+      setAddresses([]);
+      setSelectedAddressId(null);
+      setLoadingAddr(false);
+      return;
+    }
     setLoadingAddr(true);
     try {
       const arr = await fetchAddresses();
@@ -30,10 +36,17 @@ export function useAddresses() {
   }
 
   useEffect(() => {
+    if (!enabled) {
+      setAddresses([]);
+      setSelectedAddressId(null);
+      setLoadingAddr(false);
+      return;
+    }
     reloadAddresses();
-  }, []);
+  }, [enabled]);
 
   async function selectAsMain(id) {
+    if (!enabled) return;
     setSelectedAddressId(id);
     try {
       await setMainAddress(id);

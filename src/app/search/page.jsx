@@ -1,6 +1,7 @@
 import SearchResultsClient from "./searchResultClient";
 import { searchProductsServer } from "@/services/product/search.server";
 import { getBrands } from "@/services/api/brands.services";
+import { getCategories } from "@/services/api/category.services";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,25 @@ export default async function SearchPage({ searchParams }) {
   const page = Number(sp?.page || 1);
   const limit = Number(sp?.limit || 24);
 
-  const resBrands = await getBrands();
-  const brands = resBrands?.data || [];
+  const [resBrands, resCategories] = await Promise.all([
+    getBrands(),
+    getCategories(),
+  ]);
+  
+  const brands = Array.isArray(resBrands)
+    ? resBrands
+    : Array.isArray(resBrands?.serve)
+      ? resBrands.serve
+      : Array.isArray(resBrands?.data)
+        ? resBrands.data
+        : [];
+  const categories = Array.isArray(resCategories?.serve)
+    ? resCategories.serve
+    : Array.isArray(resCategories?.data)
+      ? resCategories.data
+      : Array.isArray(resCategories)
+        ? resCategories
+        : [];
 
   if (!q) {
     // tetap render layout + filter, tapi tanpa hasil
@@ -25,6 +43,7 @@ export default async function SearchPage({ searchParams }) {
         initialProducts={[]}
         initialMeta={{}}
         brands={brands}
+        categories={categories}
         itemsPerPage={24}
       />
     );
@@ -44,6 +63,7 @@ export default async function SearchPage({ searchParams }) {
       initialProducts={initialProducts}
       initialMeta={initialMeta}
       brands={brands}
+      categories={categories}
       itemsPerPage={24}
     />
   );

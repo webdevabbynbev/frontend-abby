@@ -1,17 +1,17 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser, regis, OtpRegis, LoginGoogle, getUser } from "@/services/auth";
-import { GoogleLogin } from "@react-oauth/google";
+import { loginUser, regis, OtpRegis } from "@/services/auth"; // ✅ getUser dihapus
 import { useAuth } from "@/context/AuthContext";
+import { useLoginModal } from "@/context/LoginModalContext";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   Button,
   TxtField,
   Select,
@@ -31,6 +31,7 @@ const pickValue = (e) => e?.target?.value ?? e ?? "";
 
 export function LoginRegisModalForm() {
   const { login } = useAuth();
+  const { isOpen, setIsOpen, closeLoginModal } = useLoginModal();
   const router = useRouter();
 
   const [tab, setTab] = useState("signin");
@@ -42,17 +43,16 @@ export function LoginRegisModalForm() {
   const [loginPassword, setLoginPassword] = useState("");
 
   // ===== SIGN UP =====
-  const [signupStep, setSignupStep] = useState("regis"); // regis | otpregis
+  const [signupStep, setSignupStep] = useState("regis");
   const [email, setEmail] = useState("");
   const [phone_number, setPhoneNumber] = useState("");
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
-  const [gender, setGender] = useState(""); // "1" | "2"
+  const [gender, setGender] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [confirm_password, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [pwError, setPwError] = useState("");
-  
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
   function validateRegisterPassword(pw, cpw) {
@@ -70,18 +70,30 @@ export function LoginRegisModalForm() {
     setMessage("");
     try {
       const data = await loginUser(loginId, loginPassword);
+      
+      // Extract user dari berbagai format response
+      let user = null;
+      if (data?.serve) {
+        user = typeof data.serve === 'object' && data.serve.data 
+          ? data.serve.data 
+          : data.serve;
+      } else if (data?.user) {
+        user = data.user;
+      } else if (data?.data) {
+        user = data.data;
+      }
 
-      const user = data?.serve?.data;
-
-      if (user) {
+      if (user && typeof user === 'object') {
         login({ user });
+        closeLoginModal();
         router.push("/");
         return;
       }
 
-      setMessage(data?.message || "Login gagal.");
+      setMessage(data?.message || "Login gagal - user data tidak valid.");
     } catch (err) {
-      setMessage(err?.message || "Login gagal.");
+      console.error("Login error:", err);
+      setMessage(err?.message || "Login gagal. Periksa email/phone dan password.");
     } finally {
       setLoading(false);
     }
@@ -104,7 +116,7 @@ export function LoginRegisModalForm() {
         gender,
         regPassword,
         "whatsapp",
-        acceptPrivacy
+        acceptPrivacy,
       );
 
       if (data?.serve) {
@@ -138,27 +150,41 @@ export function LoginRegisModalForm() {
         gender,
         regPassword,
         otp,
-        acceptPrivacy
+        acceptPrivacy,
       );
 
-      const user = data?.serve?.data;
+      // Extract user dari berbagai format response
+      let user = null;
+      if (data?.serve) {
+        user = typeof data.serve === 'object' && data.serve.data 
+          ? data.serve.data 
+          : data.serve;
+      } else if (data?.user) {
+        user = data.user;
+      } else if (data?.data) {
+        user = data.data;
+      }
 
-      if (user) {
+      if (user && typeof user === 'object') {
         login({ user });
+        closeLoginModal();
         router.push("/account/profile");
         return;
       }
 
-      setMessage(data?.message || "OTP salah / register gagal.");
+      setMessage(data?.message || "OTP salah atau register gagal.");
     } catch (err) {
-      setMessage(err?.message || "OTP salah / register gagal.");
+      console.error("OTP register error:", err);
+      setMessage(err?.message || "OTP salah atau register gagal.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSuccessGoogle = async (credentialResponse, mode = "login") => {
+  // ✅ FIX UTAMA: nama fungsi SESUAI dengan pemanggilan di UI
 
+  const handleGoogleOAuth = async (mode = "login") => {
+    if (loading) return;
     if (mode === "register" && !acceptPrivacy) {
       setMessage("Centang Privacy Policy dulu untuk daftar dengan Google.");
       return;
@@ -167,44 +193,44 @@ export function LoginRegisModalForm() {
     setLoading(true);
     setMessage("");
     try {
-      const credentialToken = credentialResponse?.credential;
-      if (!credentialToken) {
-        setMessage("Login Google gagal (token kosong).");
-        return;
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("google_oauth_mode", mode);
+        sessionStorage.setItem(
+          "google_oauth_accept_privacy",
+          acceptPrivacy ? "1" : "0",
+        );
       }
 
-      const data = await LoginGoogle(credentialToken, mode, acceptPrivacy);
+      // ✅ Redirect URI harus EXACT match dengan Google Cloud Console & Supabase
+      // Jangan tambah query params di sini - Supabase akan handle PKCE flow
+      const redirectTo = `${window.location.origin}/OAuth/callback?mode=${mode}`;
 
-      const isNewUser = !!data?.serve?.is_new_user;
-      const needsProfile = !!data?.serve?.needs_profile_completion;
-      const { user } = await getUser();
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          scopes: "profile email openid",
+        },
+      });
 
-      if (user) {
-        login({ user });
-
-        if (isNewUser || needsProfile) router.push("/account/profile");
-        else router.push("/");
-
-        return;
+      if (error) {
+        throw new Error(error.message || "Supabase OAuth error");
       }
-
-      setMessage(data?.message || "Login Google gagal.");
     } catch (err) {
-      setMessage(err?.message || "Login Google gagal.");
-    } finally {
+      console.error("Google OAuth error:", err);
+      setMessage(err?.message || "Login Google gagal. Coba lagi.");
       setLoading(false);
     }
   };
 
   return (
-    <Dialog className="Form-Sign-in">
-      <DialogTrigger asChild>
-        <Button variant="primary" size="sm">
-          Masuk
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} className="Form-Sign-in">
+      <DialogContent onInteractOutside={closeLoginModal}>
         <DialogHeader>
           <DialogTitle></DialogTitle>
           <DialogDescription></DialogDescription>
@@ -223,7 +249,7 @@ export function LoginRegisModalForm() {
               setSignupStep("regis");
               setOtp("");
               setPwError("");
-              setAcceptPrivacy(false); 
+              setAcceptPrivacy(false);
             }
           }}
         >
@@ -313,11 +339,16 @@ export function LoginRegisModalForm() {
 
                 {/* ✅ Google LOGIN (existing only) */}
                 <div className="flex flex-col gap-4">
-                  <GoogleLogin
-                    text="signin_with"
-                    onSuccess={(cred) => handleSuccessGoogle(cred, "login")}
-                    onError={() => setMessage("Login Google gagal")}
-                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleGoogleOAuth("login")}
+                    disabled={loading}
+                  >
+                    Continue with Google
+                  </Button>
                 </div>
               </div>
 
@@ -446,27 +477,27 @@ export function LoginRegisModalForm() {
 
                   {/* ✅ Privacy Policy checkbox */}
                   <div className="flex items-start gap-2 pt-1">
-                  <input
-                    id="accept_privacy_policy"
-                    type="checkbox"
-                    className="mt-1 h-4 w-4"
-                    checked={acceptPrivacy}
-                    onChange={(e) => setAcceptPrivacy(e.target.checked)}
-                  />
-                  <label
-                    htmlFor="accept_privacy_policy"
-                    className="text-xs text-neutral-600 leading-5"
-                  >
-                    Saya setuju{" "}
-                    <Link
-                      href="/privacy-policy"
-                      target="_blank"
-                      className="text-xs font-normal text-neutral-600 underline underline-offset-2"
+                    <input
+                      id="accept_privacy_policy"
+                      type="checkbox"
+                      className="mt-1 h-4 w-4"
+                      checked={acceptPrivacy}
+                      onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                    />
+                    <label
+                      htmlFor="accept_privacy_policy"
+                      className="text-xs text-neutral-600 leading-5"
                     >
-                      Privacy Policy
-                    </Link>
-                  </label>
-                </div>
+                      Saya setuju{" "}
+                      <Link
+                        href="/privacy-policy"
+                        target="_blank"
+                        className="text-xs font-normal text-neutral-600 underline underline-offset-2"
+                      >
+                        Privacy Policy
+                      </Link>
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -497,8 +528,8 @@ export function LoginRegisModalForm() {
                   {loading
                     ? "Loading..."
                     : signupStep === "regis"
-                    ? "Sign Up"
-                    : "Verify OTP"}
+                      ? "Sign Up"
+                      : "Verify OTP"}
                 </Button>
 
                 {/* ✅ Google REGISTER di bawah form */}
@@ -519,13 +550,16 @@ export function LoginRegisModalForm() {
                           : "flex flex-col gap-4 opacity-50 pointer-events-none"
                       }
                     >
-                      <GoogleLogin
-                        text="signup_with"
-                        onSuccess={(cred) =>
-                          handleSuccessGoogle(cred, "register")
-                        }
-                        onError={() => setMessage("Login Google gagal")}
-                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleGoogleOAuth("register")}
+                        disabled={loading || !acceptPrivacy}
+                      >
+                        Continue with Google
+                      </Button>
                     </div>
                   </>
                 )}

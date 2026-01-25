@@ -5,27 +5,24 @@ import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/context/AuthContext";
 
+import { NavbarGuest, NavbarLoggedIn } from ".";
 
-import { NavbarGuest, NavbarLoggedIn  } from "."
-
-export function Navbar() {
+export function Navbar({ categories = [] }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  
   const { user, token, logout } = useAuth();
   const isAuthed = !!token || !!user;
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-
   useEffect(() => {
     if (!isAuthed) setOpen(false);
   }, [isAuthed]);
 
   const handleLogout = async () => {
-    await logout(); 
+    await logout();
     router.replace("/");
   };
 
@@ -36,7 +33,6 @@ export function Navbar() {
   };
 
   const links = [
-    { href: "/", label: "Home" },
     // { href: "/best-seller", label: "Best seller" },
     // { href: "/sale", label: "Sale" },
     // { href: "/new-arrival", label: "New arrival" },
@@ -72,6 +68,7 @@ export function Navbar() {
             open={open}
             setOpen={setOpen}
             onLogout={handleLogout}
+            categories={categories}
           />
         ) : (
           <NavbarGuest
@@ -81,6 +78,7 @@ export function Navbar() {
             search={search}
             setSearch={setSearch}
             onSearch={handleSearch}
+            categories={categories}
           />
         )}
       </div>

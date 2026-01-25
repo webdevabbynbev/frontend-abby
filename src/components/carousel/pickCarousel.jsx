@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Carousel,
   CarouselContent,
@@ -11,35 +11,8 @@ import {
 } from "@/components";
 import { getProducts } from "@/services/api/product.services";
 
-export function PickCarousel() {
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchFlashSale = async () => {
-      try {
-        setLoading(true);
-
-        const res = await getProducts();
-        setProducts(res.data || []);
-      } catch (error) {
-        console.error("Gagal memuat Flash Sale:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFlashSale();
-  }, []);
-
-  if (loading) {
-    return <p className="text-center py-10">Loading Flash Sale...</p>;
-  }
-
-  if (products.length === 0) {
-    return null;
-  }
+export function PickCarousel({ products = [] }) {
+  if (products.length === 0) return null;
 
   return (
     <Carousel className="w-full" opts={{ align: "start" }}>

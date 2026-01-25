@@ -1,16 +1,9 @@
-import { cookies } from "next/headers";
 import { getApi } from "./client";
-
-function getAuthToken() {
-  console.log(cookies().get("auth_token")?.value);
-  return cookies().get("auth_token")?.value;
-}
 
 /**
  * GET Wishlist
  */
-export async function getWishlist() {
-  const token = getAuthToken();
+export async function getWishlist(token) {
   if (!token) throw new Error("Unauthorized");
 
   return getApi("/wishlist", {
@@ -24,8 +17,7 @@ export async function getWishlist() {
  * ADD Wishlist
  * payload: { product_id: "1" }
  */
-export async function addWishlist(payload) {
-  const token = getAuthToken();
+export async function addWishlist(token, payload) {
   if (!token) throw new Error("Unauthorized");
   if (!payload?.product_id) throw new Error("product_id is required");
 
@@ -41,8 +33,7 @@ export async function addWishlist(payload) {
 }
 
 // kalau backend kamu pakai DELETE dengan body (paling aman)
-export async function removeWishlist(payload) {
-  const token = getAuthToken();
+export async function removeWishlist(token, payload) {
   if (!token) throw new Error("Unauthorized");
   if (!payload?.product_id) throw new Error("product_id is required");
 

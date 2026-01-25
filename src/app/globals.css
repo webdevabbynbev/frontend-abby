@@ -22,100 +22,113 @@ html {
 
 @custom-variant dark (&:is(.dark *));
 
-.font-damion { font-family: var(--font-damion), cursive; } 
+.font-damion {
+  font-family: var(--font-damion), cursive;
+}
 
 @theme {
-  
   @keyframes accordion-down {
-    from { height: 0 }
-    to   { height: var(--radix-accordion-content-height) }
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
   }
   @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height) }
-    to   { height: 0 }
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
   }
 
   --animate-accordion-down: accordion-down 0.25s ease-out;
-  --animate-accordion-up:   accordion-up   0.2s  ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 
-  --color-main: #f8f9FA;
+  --color-main: #f8f9fa;
 
-  --color-neutral-50:  #F6F6F6;
-  --color-neutral-100: #E7E7E7;
-  --color-neutral-200: #D1D1D1;
-  --color-neutral-300: #B0B0B0;
+  --color-neutral-50: #f6f6f6;
+  --color-neutral-100: #e7e7e7;
+  --color-neutral-200: #d1d1d1;
+  --color-neutral-300: #b0b0b0;
   --color-neutral-400: #888888;
-  --color-neutral-500: #6D6D6D;
-  --color-neutral-600: #5D5D5D;
-  --color-neutral-700: #4F4F4F;
+  --color-neutral-500: #6d6d6d;
+  --color-neutral-600: #5d5d5d;
+  --color-neutral-700: #4f4f4f;
   --color-neutral-800: #454545;
-  --color-neutral-900: #3D3D3D;
-  --color-neutral-950: #1E1E1E;
+  --color-neutral-900: #3d3d3d;
+  --color-neutral-950: #1e1e1e;
 
-  --color-primary-50:  #FCF3F8;
-  --color-primary-100: #F9EAF4;
-  --color-primary-200: #F6D4E8;
-  --color-primary-300: #EFB2D6;
-  --color-primary-400: #E482B9;
-  --color-primary-500: #D85C9E;
-  --color-primary-600: #C53D7F;
-  --color-primary-700: #AE2D68;
-  --color-primary-800: #8D2754;
+  --color-primary-50: #fcf3f8;
+  --color-primary-100: #f9eaf4;
+  --color-primary-200: #f6d4e8;
+  --color-primary-300: #efb2d6;
+  --color-primary-400: #e482b9;
+  --color-primary-500: #d85c9e;
+  --color-primary-600: #c53d7f;
+  --color-primary-700: #ae2d68;
+  --color-primary-800: #8d2754;
   --color-primary-900: #762549;
   --color-primary-950: #471028;
 
-  --color-secondary-50:  #FEF1F6;
-  --color-secondary-100: #FEE5EE;
-  --color-secondary-200: #FECCDF;
-  --color-secondary-300: #FFAFCC;
-  --color-secondary-400: #FE689B;
-  --color-secondary-500: #F83C77;
-  --color-secondary-600: #E81A51;
-  --color-secondary-700: #CA0C39;
-  --color-secondary-800: #A70D2F;
-  --color-secondary-900: #8B102B;
+  --color-secondary-50: #fef1f6;
+  --color-secondary-100: #fee5ee;
+  --color-secondary-200: #feccdf;
+  --color-secondary-300: #ffafcc;
+  --color-secondary-400: #fe689b;
+  --color-secondary-500: #f83c77;
+  --color-secondary-600: #e81a51;
+  --color-secondary-700: #ca0c39;
+  --color-secondary-800: #a70d2f;
+  --color-secondary-900: #8b102b;
   --color-secondary-950: #550214;
 
-  --color-warning-50:  #FEFBEC;
-  --color-warning-100: #FCF1C9;
-  --color-warning-200: #F9E28E;
-  --color-warning-300: #F8D56E;
-  --color-warning-400: #F4B82B;
-  --color-warning-500: #EE9812;
-  --color-warning-600: #D3730C;
-  --color-warning-700: #AF510E;
-  --color-warning-800: #8E3F12;
+  --color-warning-50: #fefbec;
+  --color-warning-100: #fcf1c9;
+  --color-warning-200: #f9e28e;
+  --color-warning-300: #f8d56e;
+  --color-warning-400: #f4b82b;
+  --color-warning-500: #ee9812;
+  --color-warning-600: #d3730c;
+  --color-warning-700: #af510e;
+  --color-warning-800: #8e3f12;
   --color-warning-900: #753412;
-  --color-warning-950: #431A05;
+  --color-warning-950: #431a05;
 
-  --color-error-50:  #FFF1F1;
-  --color-error-100: #FFDFDF;
-  --color-error-200: #FF9D9D;
-  --color-error-300: #FF9D9D;
-  --color-error-400: #FF6565;
-  --color-error-500: #FF3434;
-  --color-error-600: #ED1515;
-  --color-error-700: #DB0F0F;
-  --color-error-800: #A50F0F;
+  --color-error-50: #fff1f1;
+  --color-error-100: #ffdfdf;
+  --color-error-200: #ff9d9d;
+  --color-error-300: #ff9d9d;
+  --color-error-400: #ff6565;
+  --color-error-500: #ff3434;
+  --color-error-600: #ed1515;
+  --color-error-700: #db0f0f;
+  --color-error-800: #a50f0f;
   --color-error-900: #881414;
-  --color-error-950: #4A0505;
+  --color-error-950: #4a0505;
 
-  --color-success-50:  #F4FCF1;
-  --color-success-100: #E2FADE;
-  --color-success-200: #C8F3BF;
-  --color-success-300: #83E272;
-  --color-success-400: #67D454;
-  --color-success-500: #41BA2D;
+  --color-success-50: #f4fcf1;
+  --color-success-100: #e2fade;
+  --color-success-200: #c8f3bf;
+  --color-success-300: #83e272;
+  --color-success-400: #67d454;
+  --color-success-500: #41ba2d;
   --color-success-600: #319920;
-  --color-success-700: #2A781D;
-  --color-success-800: #255F1C;
-  --color-success-900: #1E4F18;
-  --color-success-950: #0C2B08;
+  --color-success-700: #2a781d;
+  --color-success-800: #255f1c;
+  --color-success-900: #1e4f18;
+  --color-success-950: #0c2b08;
 }
 
-
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @layer utilities {
   .no-spinner::-webkit-inner-spin-button,
@@ -133,41 +146,35 @@ html {
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
     @apply font-sans antialiased;
-
   }
 
   :link {
-    @apply 
-    text-neutral-400
+    @apply text-neutral-400
     font-semibold
     hover:text-primary-700
     transition-all
     duration-100
-    text-sm
-
+    text-sm;
   }
 
   a:hover {
-   @apply text-primary-700
+    @apply text-primary-700;
   }
 
   a:visited {
-  @apply text-neutral-400; 
-}
+    @apply text-neutral-400;
+  }
 
   li {
-    @apply 
-    text-neutral-400
+    @apply text-neutral-400
     font-semibold
     transition-all
     duration-100
-    text-sm
-    ;
+    text-sm;
   }
 }
 
 @theme inline {
-
   --radius-sm: calc(var(--radius) - 4px);
 
   --radius-md: calc(var(--radius) - 2px);
@@ -240,7 +247,6 @@ html {
 }
 
 :root {
-
   --radius: 0.625rem;
 
   --background: oklch(1 0 0);
@@ -307,7 +313,6 @@ html {
 }
 
 .dark {
-
   --background: oklch(0.141 0.005 285.823);
 
   --foreground: oklch(0.985 0 0);
