@@ -1,24 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: false,
   output: "standalone",
-  turbopack: {
-    root: __dirname,
-  },
   images: {
-    domains: ["localhost", "127.0.0.1"],
+    domains: ["d2ntedlnuwws1k.cloudfront.net", "localhost", "127.0.0.1"],
     remotePatterns: [
       { protocol: "http", hostname: "localhost", pathname: "/uploads/**" },
       { protocol: "http", hostname: "127.0.0.1", pathname: "/uploads/**" },
       { protocol: "https", hostname: "ibyteimg.com", pathname: "/**" },
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
-      { protocol: "https", hostname: "blog.abbynbev.com",},
+      { protocol: "https", hostname: "blog.abbynbev.com", pathname: "/**" },
     ],
   },
   async rewrites() {
     return [
+      // AUTH
       {
-        source: "/auth/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/auth/:path*`,
+        source: "/api/auth/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/:path*`,
+      },
+      {
+        source: "/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`,
       },
     ];
   },

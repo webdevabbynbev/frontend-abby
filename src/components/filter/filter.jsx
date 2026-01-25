@@ -1,7 +1,6 @@
 "use client";
 import { useDebounce } from "@/app/hooks/useDebounce";
-import React, { useMemo, useState, useEffect } from "react";
-import axios from "@/lib/axios"; // ambil dari backend (NEXT_PUBLIC_API_URL)
+import React, { useMemo, useState } from "react";
 
 import {
   Button,
@@ -11,10 +10,14 @@ import {
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
 } from "@/components";
 import { NestedSection } from "./nestedSection";
 import { SubList } from "..";
-import { FaStar } from "react-icons/fa6";
+import { FaChevronDown, FaStar } from "react-icons/fa6";
 
 import { formatToRupiah } from "@/utils";
 
@@ -24,10 +27,15 @@ import {
   DataBodyConcern,
   DataHairConcern,
   DataRating,
-  DataBrand,
 } from "@/data";
 
-export function Filter() {
+export function Filter({
+  brands = [],
+  categories = [],
+  categoriesLoading = false,
+  showBrandFilter = true,
+  className = "",
+}) {
   // state pilihan filter
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [minPrice, setMinPrice] = useState("");
@@ -36,11 +44,10 @@ export function Filter() {
   const [showTooltipMax, setShowTooltipMax] = useState(false);
 
   // category dari DB
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [catLoading, setCatLoading] = useState(false);
+  const categoryTypes = Array.isArray(categories) ? categories : [];
+  const catLoading = Boolean(categoriesLoading);
 
   // brand (opsional)
-  const [showBrandFilter, setShowBrandFilter] = useState(true);
   const [brandSearch, setBrandSearch] = useState("");
   const debouncedSearch = useDebounce(brandSearch, 250);
 
@@ -53,16 +60,18 @@ export function Filter() {
       .replace(/\s+/g, " ")
       .trim();
 
+  const brandOptions = Array.isArray(brands) && brands.length > 0 ? brands : [];
+
   const filteredBrands = useMemo(() => {
     const q = norm(debouncedSearch);
-    if (!q) return DataBrand;
-    return DataBrand.filter((b) => norm(b.brandname).includes(q));
-  }, [debouncedSearch]);
+    if (!q) return brandOptions;
+    return brandOptions.filter((b) => norm(b.brandname || b.name).includes(q));
+  }, [brandOptions, debouncedSearch]);
 
   const handleSelect = (prefix, id) => {
     const key = `${prefix}-${id}`;
     setSelectedFilters((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
 
@@ -81,29 +90,6 @@ export function Filter() {
     const isNum = /^\d*$/.test(e.target.value);
     type === "min" ? setShowTooltipMin(!isNum) : setShowTooltipMax(!isNum);
   };
-
-  // fetch category dari DB
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setCatLoading(true);
-        const res = await axios.get("/category-types");
-        const arr = Array.isArray(res?.data?.serve) ? res.data.serve : [];
-        if (alive) setCategoryTypes(arr);
-      } catch (err) {
-        console.error("Failed to load category-types:", err);
-        if (alive) setCategoryTypes([]); // tanpa fallback dummy
-      } finally {
-        if (alive) setCatLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // concern sections (tetap sama)
   const concern_sections = useMemo(
@@ -151,10 +137,9 @@ export function Filter() {
         ],
       },
     ],
-    [selectedFilters]
+    [selectedFilters],
   );
 
-  // ✅ Sections category hanya dari DB (tanpa fallback)
   const sections = useMemo(() => {
     const roots = Array.isArray(categoryTypes) ? categoryTypes : [];
     if (roots.length === 0) return [];
@@ -162,194 +147,232 @@ export function Filter() {
     return roots.map((root) => {
       const children = Array.isArray(root?.children) ? root.children : [];
 
-      const itemsLevel2 = (children.length ? children : [root]).map((child) => {
+      const source = children.length ? children : [root];
+      const list = source.flatMap((child) => {
         const grand = Array.isArray(child?.children) ? child.children : [];
 
-        const list = grand.length
+        return grand.length
           ? grand.map((g) => ({ id: g.id, label: g.name }))
           : [{ id: child.id, label: child.name }];
-
-        return {
-          value: `cat-${child.id}`,
-          label: child?.name || "Category",
-          leftBar: true,
-          render: () => (
-            <SubList
-              data={list}
-              prefix="category_type"
-              selectedFilters={selectedFilters}
-              onSelect={handleSelect}
-            />
-          ),
-        };
       });
 
       return {
         key: `cat-root-${root.id}`,
         title: root?.name || "Category",
-        items: itemsLevel2,
+        list,
       };
     });
   }, [categoryTypes, selectedFilters]);
-
   return (
-    <div className="flex-row space-y-10 h-full max-w-75">
-      {/* Brand (opsional) */}
+    <div className={`flex-row space-y-6 h-full max-w-75 ${className}`}>
       {showBrandFilter && (
-        <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">
-          <h3 className="w-auto font-medium text-base">Brand</h3>
-          <hr className="w-full border-t border-primary-700 my-4" />
-          <TxtField
-            placeholder="Search brand here..."
-            iconLeftName="MagnifyingGlass"
-            variant="outline"
-            className="w-full"
-            value={brandSearch ?? ""}
-            onChange={(e) => setBrandSearch(e.target.value)}
-          />
+        <NestedSection
+          title="Shop by brand"
+          items={[
+            {
+              value: "brand-list",
+              label: "Brand",
+              leftBar: false,
+              render: () => (
+                <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">
+                  <TxtField
+                    placeholder="Search brand here..."
+                    iconLeftName="MagnifyingGlass"
+                    variant="outline"
+                    className="w-full"
+                    value={brandSearch ?? ""}
+                    onChange={(e) => setBrandSearch(e.target.value)}
+                  />
 
-          <div>
-            {brandSearch && (
-              <Button
-                variant="tertiary"
-                size="sm"
-                onClick={() => setBrandSearch("")}
-              >
-                Clear
-              </Button>
-            )}
-          </div>
+                  <div>
+                    {brandSearch && (
+                      <Button
+                        variant="tertiary"
+                        size="sm"
+                        onClick={() => setBrandSearch("")}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
 
-          <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
-            {filteredBrands.length === 0 ? (
-              <div>brand tidak ditemukan</div>
-            ) : (
-              filteredBrands.map((item) => {
-                const uniqueId = `brand-${item.id}`;
-                const isActive = selectedFilters.includes(uniqueId);
-                return (
-                  <Chip
-                    key={item.id}
-                    label={item.brandname}
-                    onClick={() => handleSelect("brand", item.id)}
-                    isActive={isActive}
-                  >
-                    {item.brandname}
-                  </Chip>
-                );
-              })
-            )}
-          </div>
-        </div>
+                  <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
+                    {filteredBrands.length === 0 ? (
+                      <div>brand tidak ditemukan</div>
+                    ) : (
+                      filteredBrands.map((item) => {
+                        const uniqueId = `brand-${item.id}`;
+                        const isActive = selectedFilters.includes(uniqueId);
+                        return (
+                          <Chip
+                            key={item.id}
+                            label={item.brandname || item.name}
+                            onClick={() => handleSelect("brand", item.id)}
+                            isActive={isActive}
+                          >
+                            {item.brandname || item.name}
+                          </Chip>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
 
-      {/* Category */}
-      <div className="TitleCat-1 flex-row w-full space-y-4">
-        <h3 className="font-medium text-sm">
-          Category {catLoading ? "(loading...)" : ""}
-        </h3>
-        <hr className="w-full border-t border-primary-700 py-2" />
+      <NestedSection
+        title={`Shop by category${catLoading ? " (loading...)" : ""}`}
+        items={[
+          {
+            value: "category-list",
+            label: "Category",
+            leftBar: false,
+            render: () => (
+              <div className="TitleCat-1 flex-row w-full space-y-4">
+                {catLoading ? null : sections.length === 0 ? (
+                  <div className="text-sm text-gray-500">
+                    No categories found
+                  </div>
+                ) : (
+                  <Accordion type="single" collapsible className="space-y-2">
+                    {sections.map((section) => (
+                      <AccordionItem key={section.key} value={section.key}>
+                        <AccordionTrigger className="text-xs font-medium">
+                          <span>{section.title}</span>
+                          <FaChevronDown className="h-3 w-3 text-neutral-400" />
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <SubList
+                            data={section.list || []}
+                            prefix="category_type"
+                            selectedFilters={selectedFilters}
+                            onSelect={handleSelect}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                )}
+              </div>
+            ),
+          },
+        ]}
+      />
 
-        {catLoading ? null : sections.length === 0 ? (
-          <div className="text-sm text-gray-500">No categories found</div>
-        ) : (
-          sections.map((s) => (
-            <NestedSection
-              key={s.key}
-              title={s.title}
-              items={s.items}
-              outerClassName={`Accordion${s.title}`}
-            />
-          ))
-        )}
-      </div>
+      <NestedSection
+        title="By price"
+        items={[
+          {
+            value: "price-range",
+            label: "Price range",
+            leftBar: false,
+            render: () => (
+              <div className="TitleCat-2 flex-row w-full space-y-4">
+                <div className="Price flex-row w-full space-y-2 items-center">
+                  <div className="textfieldmin w-full">
+                    <TooltipProvider>
+                      <Tooltip open={showTooltipMin}>
+                        <TooltipTrigger asChild>
+                          <TxtField
+                            label="minimum price"
+                            value={formatToRupiah(minPrice)}
+                            onChange={(e) => handleChangePrice(e, "min")}
+                            placeholder="Rp.0"
+                            variant="outline"
+                            className="w-full"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>You can only enter a number</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
 
-      {/* Price Range */}
-      <div className="TitleCat-2 flex-row w-full space-y-4">
-        <h3 className="w-36.5 font-medium text-base">Price range</h3>
-        <hr className="w-full border-t border-primary-700 my-4" />
-        <div className="Price flex-row w-full space-y-2 items-center">
-          <div className="textfieldmin w-full">
-            <TooltipProvider>
-              <Tooltip open={showTooltipMin}>
-                <TooltipTrigger asChild>
-                  <TxtField
-                    label="minimum price"
-                    value={formatToRupiah(minPrice)}
-                    onChange={(e) => handleChangePrice(e, "min")}
-                    placeholder="Rp.0"
-                    variant="outline"
-                    className="w-full"
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>You can only enter a number</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+                  <div className="textfieldmax w-full">
+                    <TooltipProvider>
+                      <Tooltip open={showTooltipMax}>
+                        <TooltipTrigger asChild>
+                          <TxtField
+                            label="maximum price"
+                            value={formatToRupiah(maxPrice)}
+                            onChange={(e) => handleChangePrice(e, "max")}
+                            placeholder="Rp.0"
+                            variant="outline"
+                            className="w-full"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>You can only enter a number</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
 
-          <div className="textfieldmax w-full">
-            <TooltipProvider>
-              <Tooltip open={showTooltipMax}>
-                <TooltipTrigger asChild>
-                  <TxtField
-                    label="maximum price"
-                    value={formatToRupiah(maxPrice)}
-                    onChange={(e) => handleChangePrice(e, "max")}
-                    placeholder="Rp.0"
-                    variant="outline"
-                    className="w-full"
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>You can only enter a number</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
-
-      {/* By concern */}
       <div className="TitleCat-3 flex-row w-full space-y-2">
         <h3 className="w-36.5 font-medium text-base">By concern</h3>
-        <hr className="w-full border-t border-primary-700 my-4" />
-        {concern_sections.map((s) => (
-          <NestedSection
-            key={s.key}
-            title={s.title}
-            items={s.items}
-            outerClassName={`Accordion${s.title}`}
-          />
-        ))}
-      </div>
-
-      {/* Rating */}
-      <div className="TitleCat-5 flex-row w-full space-x-4 justify-between items-center">
-        <div className="items-center flex space-x-2">
-          <h3 className="w-auto font-medium text-base">Rating</h3>
-          <FaStar className="text-warning-300 h-5 w-5" />
-        </div>
-        <hr className="w-full border-t border-primary-700 my-4" />
-        <div className="flex flex-wrap gap-4 w-full py-2 px-1">
-          {DataRating.map((item) => {
-            const uniqueId = `rating-${item.id}`;
-            const isActive = selectedFilters.includes(uniqueId);
+        <Accordion type="single" collapsible className="space-y-2">
+          {concern_sections.map((section) => {
+            const entry = section.items?.[0];
             return (
-              <Chip
-                key={item.id}
-                label={item.star}
-                onClick={() => handleSelect("rating", item.id)}
-                isActive={isActive}
-              >
-                {item.star}
-              </Chip>
+              <AccordionItem key={section.key} value={section.key}>
+                <AccordionTrigger className="text-xs font-medium">
+                  <span>{section.title}</span>
+                  <FaChevronDown className="h-3 w-3 text-neutral-400" />
+                </AccordionTrigger>
+                <AccordionContent>
+                  <SubList
+                    data={entry?.list || []}
+                    prefix={entry?.prefix}
+                    selectedFilters={selectedFilters}
+                    onSelect={handleSelect}
+                  />
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       </div>
 
+      <NestedSection
+        title="By rating"
+        items={[
+          {
+            value: "rating-list",
+            label: "Rating",
+            leftBar: false,
+            render: () => (
+              <div className="TitleCat-5 flex-row w-full space-x-4 justify-between items-center">
+                <div className="flex flex-wrap gap-4 w-full py-2 px-1">
+                  {DataRating.map((item) => {
+                    const uniqueId = `rating-${item.id}`;
+                    const isActive = selectedFilters.includes(uniqueId);
+                    return (
+                      <Chip
+                        key={item.id}
+                        label={item.star}
+                        onClick={() => handleSelect("rating", item.id)}
+                        isActive={isActive}
+                      >
+                        {item.star}
+                      </Chip>
+                    );
+                  })}
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
       {/* Reset */}
       <div className="w-auto flex justify-between space-x-4">
         <Button

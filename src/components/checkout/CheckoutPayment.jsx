@@ -50,6 +50,8 @@ export default function CheckoutPayment({
 
   selectedVoucher,
   setSelectedVoucher,
+  referralCode,
+  setReferralCode,
 
   onPayNow,
 }) {
@@ -213,6 +215,34 @@ export default function CheckoutPayment({
         ) : (
           <div className="mt-2 text-xs text-gray-500 italic">Belum pakai voucher</div>
         )}
+      </div>
+
+      {/* REFERRAL CODE */}
+      <div className="mt-6">
+        <div className="text-sm font-semibold">Kode Referral</div>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            value={referralCode ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value || "";
+              const cleaned = raw.replace(/\s+/g, "").toUpperCase();
+              setReferralCode(cleaned);
+            }}
+            placeholder="Masukkan kode referral"
+            className="flex-1 rounded-full border px-4 py-2 text-sm"
+            disabled={loadingPay}
+          />
+          <button
+            onClick={() => setReferralCode("")}
+            disabled={loadingPay || !referralCode}
+            className="px-3 py-2 rounded-full border text-sm disabled:opacity-50"
+          >
+            Hapus
+          </button>
+        </div>
+        <div className="mt-2 text-xs text-gray-500 italic">
+          Opsional, akan diverifikasi saat pembayaran.
+        </div>
       </div>
 
       <hr className="my-6" />

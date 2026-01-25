@@ -4,9 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 
 import {
   BtnIcon,
@@ -64,47 +62,14 @@ export function NavbarLoggedIn({
   open,
   setOpen,
   onLogout,
+  categories = [],
+  categoriesLoading = false,
 }) {
   const router = useRouter();
 
   // category dari DB
-  const [categoryTypes, setCategoryTypes] = useState([]);
-  const [catLoading, setCatLoading] = useState(false);
-
-  // fetch category dari DB
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setCatLoading(true);
-
-        // ✅ pakai Next API route biar gak 404 di /category-types
-        const res = await axios.get("http://localhost:3000/category-types");
-
-        // ✅ fleksibel: support beberapa bentuk response
-        const raw = res?.data;
-        const arr = Array.isArray(raw?.serve)
-          ? raw.serve
-          : Array.isArray(raw?.data)
-          ? raw.data
-          : Array.isArray(raw)
-          ? raw
-          : [];
-
-        if (alive) setCategoryTypes(arr);
-      } catch (err) {
-        console.error("Failed to load category-types:", err);
-        if (alive) setCategoryTypes([]);
-      } finally {
-        if (alive) setCatLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const categoryTypes = Array.isArray(categories) ? categories : [];
+  const catLoading = Boolean(categoriesLoading);
 
   return (
     <>
@@ -134,9 +99,14 @@ export function NavbarLoggedIn({
       <div className="hidden lg:flex items-center justify-between gap-6">
         {/* LEFT SIDE */}
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <Image src="/Logoabby-text.svg" alt="Logo" width={160} height={80} />
-          </div>
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/Logoabby-text.svg"
+              alt="Logo"
+              width={160}
+              height={80}
+            />
+          </Link>
 
           {/* STATIC LINKS */}
           {links.map((link) => {
@@ -146,7 +116,9 @@ export function NavbarLoggedIn({
 
             const className = clsx(
               "whitespace-nowrap text-sm font-medium transition-colors",
-              active ? "text-primary-700" : "text-gray-700 hover:text-primary-500"
+              active
+                ? "text-primary-700"
+                : "text-gray-700 hover:text-primary-500",
             );
 
             if (isExternal) {
@@ -203,56 +175,85 @@ export function NavbarLoggedIn({
               <BtnIcon as="span" iconName="User" variant="tertiary" size="sm" />
             </SheetTrigger>
 
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <img
-                    src="/Logoabby-text.svg"
-                    alt="abbynbev"
-                    className="w-37.5 h-auto"
-                  />
-                </SheetTitle>
-                <SheetDescription className="py-1">Account menu</SheetDescription>
-              </SheetHeader>
-
-              <nav className="py-4 space-y-1">
-                {linksidebar.map((linkside) => {
-                  const Icon = FaIcons[linkside.icon];
-                  const isActive =
-                    pathname === linkside.href ||
-                    (linkside.href === "/account/order-history" &&
-                      pathname.startsWith("/account/order-history"));
-
-                  return (
-                    <Link
-                      key={linkside.href}
-                      href={linkside.href}
-                      onClick={() => setOpen(false)}
-                      className={clsx(
-                        "rounded-md px-4 py-2 flex items-center justify-between transition-colors",
-                        isActive
-                          ? "text-neutral-950 bg-neutral-100"
-                          : "hover:bg-neutral-100"
-                      )}
-                    >
-                      <span>{linkside.label}</span>
-                      {Icon && <Icon className="font-bold w-3.5 h-3.5 shrink-0" />}
-                    </Link>
-                  );
-                })}
-
-                <div className="pt-4">
+            {/* ✅ Hide account menu untuk Google login users */}
+            {user?.photoProfile?.includes("googleusercontent") ? (
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Account</SheetTitle>
+                  <SheetDescription>
+                    Google login users tidak dapat akses profile management di sini. 
+                    Gunakan <Link href="/account/profile" className="text-primary-700 underline">profile page</Link> untuk mengelola akun.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4">
                   <Button
-                    onClick={onLogout}
-                    variant="tertiary"
+                    variant="error"
                     size="sm"
+                    onClick={onLogout}
                     className="w-full"
                   >
-                    Sign out
+                    Log out
                   </Button>
                 </div>
-              </nav>
-            </SheetContent>
+              </SheetContent>
+            ) : (
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <img
+                      src={
+                        user?.photoProfile
+                          ? user.photoProfile
+                          : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                      }
+                      alt="user"
+                      className="h-8 w-8 rounded-full"
+                    />
+                    <div className="text-sm">
+                      {user?.firstName
+                        ? `${user?.firstName} ${user?.lastName}`
+                        : "User"}
+                    </div>
+                  </SheetTitle>
+                  <SheetDescription className="py-1">Account menu</SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-4 space-y-4">
+                  {linksidebar.map((item) => {
+                    const Icon = FaIcons[item.icon] || null;
+
+                    return (
+                      <button
+                        key={item.href}
+                        className={clsx(
+                          "flex items-center gap-2 text-sm",
+                          pathname === item.href
+                            ? "text-primary-700"
+                            : "text-neutral-600 hover:text-primary-700",
+                        )}
+                        onClick={() => router.push(item.href)}
+                      >
+                        {Icon && <Icon />}
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+
+                  <div className="border-t pt-4">
+                    <Button
+                      variant="error"
+                      size="sm"
+                      onClick={onLogout}
+                      className="w-full"
+                    >
+                      Log out
+                    </Button>
+                  </div>
+                </div>
+
+                <SheetDescription />
+              </SheetContent>
+            )}
           </Sheet>
         </div>
       </div>

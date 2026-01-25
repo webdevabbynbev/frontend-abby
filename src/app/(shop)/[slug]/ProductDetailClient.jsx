@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { FaStar } from "react-icons/fa";
-import { formatToRupiah, getDiscountPercent } from "@/utils";
+import {
+  formatToRupiah,
+  getDiscountPercent,
+  applyExtraDiscount,
+} from "@/utils";
 import { toast } from "sonner";
-import axios from "@/lib/axios";
+import axios from "@/lib/axios.js";
 import { useAuth } from "@/context/AuthContext";
 
 import {
@@ -51,26 +54,93 @@ export default function ProductDetailClient({ product }) {
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
 
+  const salePriceParam = parseNumericParam(searchParams?.get("salePrice"));
+  const realPriceParam = parseNumericParam(searchParams?.get("realPrice"));
+  const saleVariantParam = parseNumericParam(
+    searchParams?.get("saleVariantId"),
+  );
+
+  const hasSaleVariantParam =
+    Number.isFinite(saleVariantParam) && saleVariantParam > 0;
+
   // Prevent hydration mismatch for relative time
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
-  const [selectedVariant, setSelectedVariant] = useState(
-    variants.length ? variants[0].label : null
-  );
+
+  const hasPromoData = useMemo(() => {
+    return variants.some((variant) => {
+      const promoValue = Number(
+        variant?.promoPrice ??
+          variant?.promo_price ??
+          variant?.flashPrice ??
+          variant?.salePrice ??
+          0,
+      );
+      return Number.isFinite(promoValue) && promoValue > 0;
+    });
+  }, [variants]);
+
+  const [selectedVariantId, setSelectedVariantId] = useState(() => {
+    if (
+      hasSaleVariantParam &&
+      variants.some(
+        (variant) => Number(variant.id) === Number(saleVariantParam),
+      )
+    ) {
+      return Number(saleVariantParam);
+    }
+    return variants.length ? Number(variants[0].id) : null;
+  });
 
   const selectedVariantObj = useMemo(() => {
-    return variants.find((v) => v.label === selectedVariant) || null;
-  }, [variants, selectedVariant]);
+    return (
+      variants.find((v) => Number(v.id) === Number(selectedVariantId)) || null
+    );
+  }, [variants, selectedVariantId]);
 
-  // kalau selectedVariant kosong tapi variants ada, set default
+  const variantBasePriceValue = Number(selectedVariantObj?.price ?? NaN);
+  const variantBasePrice =
+    Number.isFinite(variantBasePriceValue) && variantBasePriceValue > 0
+      ? variantBasePriceValue
+      : undefined;
+
+  const variantPromoPriceValue = Number(
+    selectedVariantObj?.promoPrice ??
+      selectedVariantObj?.promo_price ??
+      selectedVariantObj?.flashPrice ??
+      selectedVariantObj?.salePrice ??
+      NaN,
+  );
+  const variantPromoPrice =
+    Number.isFinite(variantPromoPriceValue) && variantPromoPriceValue > 0
+      ? variantPromoPriceValue
+      : undefined;
+
+  // kalau selectedVariantId kosong/tidak valid tapi variants ada, set default sekali
   useEffect(() => {
-    if (!selectedVariant && variants.length > 0) {
-      setSelectedVariant(variants[0].label);
+    if (!variants.length) return;
+
+    const isCurrentValid = variants.some(
+      (variant) => Number(variant.id) === Number(selectedVariantId),
+    );
+    if (isCurrentValid) return;
+
+    const hasSaleVariant = hasSaleVariantParam
+      ? variants.some(
+          (variant) => Number(variant.id) === Number(saleVariantParam),
+        )
+      : false;
+
+    if (hasSaleVariant) {
+      setSelectedVariantId(Number(saleVariantParam));
+      return;
     }
-  }, [selectedVariant, variants]);
+
+    setSelectedVariantId(Number(variants[0].id));
+  }, [hasSaleVariantParam, saleVariantParam, selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
   // fallback: product.images, lalu product.image
@@ -78,10 +148,10 @@ export default function ProductDetailClient({ product }) {
     const imgs = selectedVariantObj?.images?.length
       ? selectedVariantObj.images
       : Array.isArray(product?.images) && product.images.length
-      ? product.images
-      : product?.image
-      ? [product.image]
-      : [];
+        ? product.images
+        : product?.image
+          ? [product.image]
+          : [];
 
     return imgs.filter(Boolean);
   }, [selectedVariantObj, product?.images, product?.image]);
@@ -89,55 +159,174 @@ export default function ProductDetailClient({ product }) {
   // activeImage untuk gambar utama + sidebar
   const [activeImage, setActiveImage] = useState("");
 
-  // etiap variant berubah, set gambar pertama jadi active
+  // setiap variant berubah, set gambar pertama jadi active
   useEffect(() => {
     setActiveImage(variantImages[0] || "");
   }, [variantImages]);
 
   const [qty, setQty] = useState(1);
 
-  const salePriceParam = parseNumericParam(searchParams?.get("salePrice"));
-  const realPriceParam = parseNumericParam(searchParams?.get("realPrice"));
+  const saleVariantExists =
+    hasSaleVariantParam &&
+    variants.some((variant) => Number(variant.id) === Number(saleVariantParam));
 
-  const priceOverride =
-    Number.isFinite(salePriceParam) && salePriceParam > 0
+  const saleAppliesToVariant = !saleVariantExists
+    ? true
+    : Number(selectedVariantId) === Number(saleVariantParam);
+
+  const allowQueryOverride = !hasPromoData;
+
+  const queryPriceOverride =
+    allowQueryOverride &&
+    saleAppliesToVariant &&
+    Number.isFinite(salePriceParam) &&
+    salePriceParam > 0
       ? salePriceParam
       : undefined;
 
+  const queryRealPriceOverride =
+    allowQueryOverride &&
+    saleAppliesToVariant &&
+    Number.isFinite(realPriceParam) &&
+    realPriceParam > 0
+      ? realPriceParam
+      : undefined;
+
+  const promoOverride =
+    variantPromoPrice !== undefined &&
+    (variantBasePrice === undefined || variantPromoPrice < variantBasePrice)
+      ? variantPromoPrice
+      : undefined;
+
+  // ====== BASE PRICE (sebelum extraDiscount ditempel) ======
   const baseProductPrice =
     product?.price ?? product?.base_price ?? product?.basePrice ?? 0;
 
   const baseRealPrice =
-    product?.realprice ?? product?.price ?? product?.base_price ?? product?.basePrice ?? 0;
+    product?.realprice ??
+    product?.price ??
+    product?.base_price ??
+    product?.basePrice ??
+    0;
 
-  const finalPrice =
-    priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
+  const baseFinalPrice =
+    promoOverride ??
+    queryPriceOverride ??
+    variantBasePrice ??
+    baseProductPrice;
 
-  const realPriceOverride =
-    Number.isFinite(realPriceParam) && realPriceParam > 0
-      ? realPriceParam
+  const compareFromVariant =
+    variantBasePrice !== undefined &&
+    (promoOverride !== undefined || queryPriceOverride !== undefined)
+      ? variantBasePrice
       : undefined;
 
-  const realPrice =
-    realPriceOverride ?? baseRealPrice ?? finalPrice;
+  const baseCompareAt =
+    queryRealPriceOverride ?? compareFromVariant ?? baseRealPrice ?? baseFinalPrice;
+
+  const appliedOverride = promoOverride ?? queryPriceOverride;
 
   const saleOverrideActive =
-    priceOverride !== undefined &&
-    Number.isFinite(realPrice) &&
-    priceOverride < realPrice;
+    appliedOverride !== undefined &&
+    Number.isFinite(baseCompareAt) &&
+    appliedOverride < baseCompareAt;
 
-  const isSale = product?.sale || saleOverrideActive;
+  const isSale =
+    saleOverrideActive || (product?.sale && saleAppliesToVariant);
 
-  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
-  const subtotal = finalPrice * qty;
+  // ====== EXTRA DISCOUNT ======
+  const extra = product?.extraDiscount ?? null;
+  const extraLabel = extra?.label ? String(extra.label).trim() : "";
+  const extraAppliesTo = Number(extra?.appliesTo ?? NaN);
 
-  const discount =
-    isSale && realPrice
-      ? getDiscountPercent(realPrice, finalPrice)
+  const eligibleVariantIds = useMemo(() => {
+    const raw = extra?.eligibleVariantIds ?? extra?.eligible_variant_ids ?? [];
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+  }, [extra]);
+
+  const eligibleVariantCount = Number(
+    extra?.eligibleVariantCount ?? extra?.eligible_variant_count ?? 0,
+  );
+
+  const isVariantEligible =
+    extraAppliesTo === 3 &&
+    selectedVariantId !== null &&
+    selectedVariantId !== undefined &&
+    eligibleVariantIds.includes(Number(selectedVariantId));
+
+  const hasEligibleVariant =
+    extraAppliesTo === 3
+      ? eligibleVariantIds.length > 0 || eligibleVariantCount > 0
+      : true;
+
+  const showExtraLabel =
+    Boolean(extraLabel) && (extraAppliesTo !== 3 || hasEligibleVariant);
+
+  // ====== DISPLAY PRICE (setelah extraDiscount storewide / per-variant) ======
+  let displayFinalPrice = Number(baseFinalPrice || 0);
+  let displayCompareAt =
+    isSale &&
+    Number.isFinite(baseCompareAt) &&
+    baseCompareAt > displayFinalPrice
+      ? Number(baseCompareAt)
       : null;
 
-  const handleSelect = (label) => {
-    setSelectedVariant((prev) => (prev === label ? null : label));
+  const shouldApplyExtraDiscount =
+    !!extra &&
+    (extraAppliesTo === 0 ||
+      extraAppliesTo === 1 ||
+      extraAppliesTo === 2 ||
+      extraAppliesTo === 4 ||
+      extraAppliesTo === 5 ||
+      (extraAppliesTo === 3 && isVariantEligible));
+
+  if (shouldApplyExtraDiscount) {
+    // ✅ PASS selectedVariantId agar diskon bisa beda-beda per variant (rulesByVariantId)
+    const after = applyExtraDiscount(
+      extra,
+      displayFinalPrice,
+      selectedVariantId,
+    );
+
+    if (Number.isFinite(after) && after > 0 && after < displayFinalPrice) {
+      // kalau sebelumnya belum ada compareAt, coret harga sebelum diskon
+      if (!displayCompareAt || displayCompareAt <= displayFinalPrice) {
+        displayCompareAt = displayFinalPrice;
+      }
+      displayFinalPrice = after;
+    }
+  }
+
+  const showDiscount =
+    Number.isFinite(displayCompareAt) && displayCompareAt > displayFinalPrice;
+
+  const discount = showDiscount
+    ? getDiscountPercent(displayCompareAt, displayFinalPrice)
+    : null;
+
+  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const subtotal = displayFinalPrice * qty;
+
+  // ✅ jangan toggle jadi null, biar state variant konsisten & diskon tidak “hilang”
+  const handleSelect = (id) => {
+    setSelectedVariantId(Number(id));
+  };
+
+  const getVariantDisplayName = (variant) => {
+    if (!variant) return "";
+    const attributes = variant.attribute_values || variant.attributeValues;
+    if (attributes && Array.isArray(attributes) && attributes.length > 0) {
+      const displayValues = attributes
+        .map((av) => av.value || av.name)
+        .filter(Boolean);
+      if (displayValues.length > 0) {
+        return displayValues.join(" / ");
+      }
+    }
+    return variant.label;
   };
 
   const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
@@ -160,15 +349,6 @@ export default function ProductDetailClient({ product }) {
 
   const handleAddToCart = async () => {
     try {
-      if (!user) {
-        toast.error("Silakan login dulu untuk menambahkan ke keranjang.", {
-          action: {
-            label: "Login",
-            onClick: () => router.push("/sign-in"),
-          },
-        });
-        return;
-      }
 
       if (!product?.id) {
         toast("Product id tidak ditemukan");
@@ -203,21 +383,11 @@ export default function ProductDetailClient({ product }) {
           "Terjadi kesalahan saat menambah ke keranjang";
       toast(msg);
 
-      if (isUnauthorized && typeof window !== "undefined") {
+      if (isUnauthorized && user && typeof window !== "undefined") {
         await logout();
-        router.push("/sign-in");
       }
     }
   };
-
-  // debug
-  // useEffect(() => {
-  //   console.log("[ProductDetail] product:", product);
-  //   console.log("[ProductDetail] variantItems:", product?.variantItems);
-  //   console.log("[ProductDetail] selectedVariant:", selectedVariant);
-  //   console.log("[ProductDetail] selectedVariantObj:", selectedVariantObj);
-  //   console.log("[ProductDetail] variantImages:", variantImages);
-  // }, [product, selectedVariant, selectedVariantObj, variantImages]);
 
   // SEO JsonData
   const productJsonLd = useMemo(() => {
@@ -236,7 +406,8 @@ export default function ProductDetailClient({ product }) {
       offers: {
         "@type": "Offer",
         priceCurrency: "IDR",
-        price: finalPrice,
+        // ✅ gunakan harga yang ditampilkan (setelah extraDiscount)
+        price: displayFinalPrice,
         availability:
           stock > 0
             ? "https://schema.org/InStock"
@@ -246,7 +417,7 @@ export default function ProductDetailClient({ product }) {
         reviews.length > 0
           ? {
               "@type": "AggregateRating",
-              ratingValue: averageRating.toFixed(1),
+              ratingValue: Number(averageRating || 0).toFixed(1),
               reviewCount: reviews.length,
             }
           : undefined,
@@ -254,7 +425,7 @@ export default function ProductDetailClient({ product }) {
   }, [
     product,
     variantImages,
-    finalPrice,
+    displayFinalPrice,
     stock,
     reviews,
     averageRating,
@@ -308,10 +479,11 @@ export default function ProductDetailClient({ product }) {
               {/* Product Image */}
               <div className="Image-container">
                 <div className="h-auto w-full relative overflow-hidden rounded-lg">
-                  {isSale && (
+                  {/* ✅ tampilkan tag sale kalau ada discount apa pun */}
+                  {showDiscount && (
                     <img
                       src="/sale-tag.svg"
-                      alt="Sale"
+                      alt="Discount"
                       className="absolute top-0 left-0 z-10 w-10 h-auto"
                     />
                   )}
@@ -320,9 +492,11 @@ export default function ProductDetailClient({ product }) {
                     <img
                       src={activeImage || product?.image}
                       alt={`${product?.name} ${
-                        selectedVariant ? `- ${selectedVariant}` : ""
+                        selectedVariantObj
+                          ? `- ${getVariantDisplayName(selectedVariantObj)}`
+                          : ""
                       }`}
-                      className="w-full h-auto  object-cover border border-neutral-400 lg:max-w-75 lg:max-h-75"
+                      className="w-full h-auto object-cover border border-neutral-400 lg:max-w-75 lg:max-h-75"
                     />
                   </div>
                 </div>
@@ -353,17 +527,26 @@ export default function ProductDetailClient({ product }) {
 
                 {/* Price */}
                 <div className="price space-y-2">
-                  {isSale ? (
+                  {/* ✅ badge dari backend */}
+                  {showExtraLabel ? (
+                    <div>
+                      <span className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+                        {extraLabel}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {showDiscount ? (
                     <>
                       <div className="finalPrice">
                         <span className="text-primary-700 text-2xl font-bold">
-                          {formatToRupiah(finalPrice)}
+                          {formatToRupiah(displayFinalPrice)}
                         </span>
                       </div>
 
                       <div className="reapPrice-container flex space-x-2 items-center">
                         <span className="text-base font-medium text-neutral-400 line-through">
-                          {formatToRupiah(realPrice)}
+                          {formatToRupiah(displayCompareAt)}
                         </span>
 
                         {discount > 0 && (
@@ -376,7 +559,7 @@ export default function ProductDetailClient({ product }) {
                   ) : (
                     <div className="finalPrice">
                       <span className="text-primary-700 text-2xl font-bold">
-                        {formatToRupiah(finalPrice)}
+                        {formatToRupiah(displayFinalPrice)}
                       </span>
                     </div>
                   )}
@@ -401,21 +584,24 @@ export default function ProductDetailClient({ product }) {
                       const variantThumb = Array.isArray(v?.images)
                         ? v.images[0]
                         : null;
+
+                      const variantDisplayName = getVariantDisplayName(v);
+
                       return (
                         <Chip
                           key={v.id}
-                          onClick={() => handleSelect(v.label)}
-                          isActive={selectedVariant === v.label}
+                          onClick={() => handleSelect(v.id)}
+                          isActive={Number(selectedVariantId) === Number(v.id)}
                         >
                           <span className="flex items-center gap-2">
                             {variantThumb ? (
                               <img
                                 src={variantThumb}
-                                alt={v.label}
+                                alt={variantDisplayName}
                                 className="h-5 w-5 rounded-xs object-cover"
                               />
                             ) : null}
-                            <span>{v.label}</span>
+                            <span>{variantDisplayName}</span>
                           </span>
                         </Chip>
                       );
@@ -504,9 +690,7 @@ export default function ProductDetailClient({ product }) {
                           r.updatedAt;
 
                         const who = r.user?.firstName
-                          ? `${r.user.firstName} ${
-                              r.user.lastName ?? ""
-                            }`.trim()
+                          ? `${r.user.firstName} ${r.user.lastName ?? ""}`.trim()
                           : "Guest";
 
                         return (
@@ -556,9 +740,11 @@ export default function ProductDetailClient({ product }) {
             </div>
           </div>
         </div>
+
         {/* Sticky Sidebar */}
         <div className="hidden sticky top-25.75 p-6 space-y-4 outline-1 outline-neutral-100 rounded-3xl bottom-32 items-start w-full max-w-75 h-fit bg-white lg:block">
           <div className="text-xl font-medium">Quantity</div>
+
           <div className="flex flex-row gap-4">
             <div className="ContainerImage flex h-auto w-full items-start">
               <div className="imageOnly">
@@ -569,16 +755,9 @@ export default function ProductDetailClient({ product }) {
                 />
               </div>
 
-              <div className="flex-row space-y-1">
-                {isSale && (
-                  <img
-                    src="/sale-tag-square.svg"
-                    alt="Sale"
-                    className="w-8 h-8"
-                  />
-                )}
-              </div>
+              <div className="flex-row space-y-1" />
             </div>
+
             <div className="flex flex-col space-y-2">
               <div className="text-sm font-normal line-clamp-2">
                 {product?.name}
@@ -587,22 +766,32 @@ export default function ProductDetailClient({ product }) {
               <div className="flex space-x-1 items-center">
                 <div className="text-xs text-neutral-600">Variant:</div>
                 <div className="text-xs font-bold text-primary-700">
-                  {selectedVariant ? selectedVariant : "-"}
+                  {selectedVariantObj
+                    ? getVariantDisplayName(selectedVariantObj)
+                    : "-"}
                 </div>
               </div>
+
+              {showExtraLabel ? (
+                <div>
+                  <span className="text-[10px] py-1 px-2 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
+                    {extraLabel}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
 
           <div className="flex w-full items-center gap-6">
             <QuantityInput min={1} max={stock} value={qty} onChange={setQty} />
             <div className="text-sm font-normal text-neutral-600">
-              Stock :
+              Stock :{" "}
               <span className="font-medium text-neutral-950">{stock}</span>
             </div>
           </div>
 
           <div className="price space-y-2 w-full flex-row justify-end">
-            {isSale ? (
+            {showDiscount ? (
               <>
                 <div className="reapPrice-container w-full flex space-x-2 items-center justify-end">
                   {discount > 0 && (
@@ -611,7 +800,7 @@ export default function ProductDetailClient({ product }) {
                     </span>
                   )}
                   <span className="text-sm font-medium text-neutral-400 line-through">
-                    {formatToRupiah(realPrice)}
+                    {formatToRupiah(displayCompareAt)}
                   </span>
                 </div>
 
@@ -661,6 +850,7 @@ export default function ProductDetailClient({ product }) {
             <BtnIconToggle iconName="Heart" variant="tertiary" size="sm" />
           </div>
         </div>
+
         <MobileProductActionBar
           stock={stock}
           onQtyChange={setQty}

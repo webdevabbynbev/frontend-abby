@@ -3,12 +3,15 @@ import Script from "next/script";
 import "./globals.css";
 
 import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
-import GoogleProvider from "@/components/googleProvider/googleProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
+import { getCategories } from "@/services/api/category.services";
 import { Toaster } from "sonner";
 import GAListener from "@/components/GAListener";
+
+export const dynamic = "force-dynamic";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,6 +28,10 @@ const damion = Damion({
 /* ✅ GLOBAL SEO (DEFAULT) */
 export const metadata = {
   metadataBase: new URL("https://abbynbev.com"),
+
+  icons: {
+    icon: '/favicon.svg',
+  },
 
   title: {
     default:
@@ -53,7 +60,22 @@ export const metadata = {
   ],
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  let categories = [];
+
+  try {
+    const res = await getCategories();
+    categories = Array.isArray(res?.serve)
+      ? res.serve
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+  } catch (error) {
+    console.error("Failed to load categories for navbar:", error);
+  }
+
   return (
     <html
       lang="id"
@@ -80,23 +102,23 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <GAListener />
-        <GoogleProvider>
           <AuthProvider>
-            <WishlistProvider>
-              <NavbarClientGate />
+            <LoginModalProvider>
+              <WishlistProvider>
+                <NavbarClientGate categories={categories} />
 
-              <main className="flex-1">
-                {children}
-                <div className="lg:hidden h-24" />
-              </main>
+                <main className="flex-1">
+                  {children}
+                  <div className="lg:hidden h-24" />
+                </main>
 
-              <Toaster position="top-center" />
-              <MobileBottomNav />
-              <ChatkitWidget/>
-              <Footer />
-            </WishlistProvider>
+                <Toaster position="top-center" />
+                <MobileBottomNav />
+                <ChatkitWidget/>
+                <Footer />
+              </WishlistProvider>
+            </LoginModalProvider>
           </AuthProvider>
-        </GoogleProvider>
       </body>
     </html>
   );

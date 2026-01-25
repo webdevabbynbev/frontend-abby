@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -8,60 +8,47 @@ import {
   CarouselPrevious,
   CarouselItem,
   FlashSaleCard,
-  RegularCardSkeleton,
 } from "@/components";
-import { getProducts } from "@/services/api/product.services";
+import { normalizeFlashSaleItem } from "@/services/api/normalizers/product";
 
-export function FlashSaleCarousel() {
-  const SKELETON_COUNT = 10;
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
+export function FlashSaleCarousel({ rawItems = [] }) {
+  const products = useMemo(() => {
+    return rawItems.map(normalizeFlashSaleItem).filter(Boolean);
+  }, [rawItems]);
 
-  useEffect(() => {
-    const fetchFlashSale = async () => {
-      try {
-        setLoading(true);
-        const res = await getProducts({ is_flash_sale: 1 });
-        setProducts(res.data || []);
-      } catch (error) {
-        console.error("Gagal memuat Flash Sale:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFlashSale();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="w-full overflow-hidden">
-        <div className="flex gap-4">
-          {Array.from({ length: SKELETON_COUNT }).map((_, idx) => (
-            <div
-              key={`skeleton-${idx}`}
-              className="flex-none basis-1/2 md:basis-1/4 lg:basis-1/5"
-            >
-              <RegularCardSkeleton />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const buildKey = (product, index) => {
+    const key =
+      product?.variant_id ??
+      product?.variantId ??
+      product?.variant?.id ??
+      product?.sku ??
+      product?.id;
+    return key ? String(key) : `flash-${index}`;
+  };
 
   if (products.length === 0) return null;
 
   return (
     <Carousel className="w-full" opts={{ align: "start" }}>
       <CarouselContent className="justify-start snap-start gap-0">
-        {products.slice(0, 10).map((product) => (
+        {products.slice(0, 10).map((product, index) => (
           <CarouselItem
-            key={product.id}
+            key={buildKey(product, index)}
             className="flex-none basis-1/2 md:basis-1/4 lg:basis-1/5"
           >
-            <FlashSaleCard item={product} />
+            <div className="relative h-full w-full overflow-hidden rounded-lg">
+              <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[24px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
+                Flash Sale
+              </span>
+              <FlashSaleCard
+                item={product}
+                hrefQuery={{
+                  salePrice: product.flashPrice,
+                  realPrice: product.realprice,
+                  flashSaleId: product.flashSaleId,
+                }}
+              />
+            </div>
           </CarouselItem>
         ))}
         <div className="flex-none w-[0px]" aria-hidden="true" />
