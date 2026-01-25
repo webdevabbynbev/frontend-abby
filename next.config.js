@@ -16,8 +16,8 @@ const nextConfig = {
     if (!api) return [];
     return [
       // AUTH
-      { source: "/api/auth/:path*", destination: `${api}/api/auth/:path*` },
-      { source: "/api/:path*", destination: `${api}/api/:path*` },
+      { source: "/api/auth/:path*", destination: `${api}/api/v1/auth/:path*` },
+      { source: "/api/:path*", destination: `${api}/api/v1/:path*` },
     ];
   },
 };
