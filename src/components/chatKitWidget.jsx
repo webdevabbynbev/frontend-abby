@@ -6,137 +6,167 @@ import "ldrs/react/Bouncy.css";
 import { FaSprayCanSparkles } from "react-icons/fa6";
 import { BtnIcon, Button, RegularCard, TxtField } from ".";
 
-const LABELS = {
-  concierge: "Abby n Bev – Concierge (TEST)",
-  makeup: "Abby Mode – Makeup Advisor (TEST)",
-  skincare: "Bev Mode – Skincare Advisor (TEST)",
-  cs: "CS Mode – Store Assistant (TEST)",
+// ==============================
+// Storage keys
+// ==============================
+const LS_SESSION_KEY = "abby_chat_session_id";
+const LS_PREV_KEY = "abby_chat_previous_response_id";
+
+// ==============================
+// Helpers
+// ==============================
+const getOrCreateSessionId = () => {
+  if (typeof window === "undefined") return `session_${Date.now()}`;
+  const existing = window.localStorage.getItem(LS_SESSION_KEY);
+  if (existing) return existing;
+
+  const id =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `session_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+  window.localStorage.setItem(LS_SESSION_KEY, id);
+  return id;
 };
 
-const parseSections = (outputText = "") => {
-  const chunks = outputText.split(/\n\s*\n/).filter(Boolean);
-  return chunks.map((chunk) => {
-    const [firstLine, ...rest] = chunk.split("\n");
-    const body = rest.length ? rest.join("\n").trim() : "";
-
-    if (firstLine === LABELS.concierge) {
-      return { title: LABELS.concierge, type: "concierge", body };
-    }
-
-    if (firstLine === LABELS.makeup) {
-      return { title: LABELS.makeup, type: "advisor", body };
-    }
-
-    if (firstLine === LABELS.skincare) {
-      return { title: LABELS.skincare, type: "advisor", body };
-    }
-
-    if (firstLine === LABELS.cs) {
-      return { title: LABELS.cs, type: "cs", body };
-    }
-
-    if (firstLine.startsWith("Classify Selected category")) {
-      return { title: firstLine.trim(), type: "meta", body };
-    }
-
-    return { title: null, type: "text", body: chunk.trim() };
-  });
+const getPrevResponseId = () => {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(LS_PREV_KEY) || "";
 };
 
-const parseRecommendations = (text = "") => {
-  const lines = text.split("\n");
-  const items = [];
-  const introLines = [];
-  const trailingLines = [];
-  let current = null;
-  let hasList = false;
-  let inTrailing = false;
+const setPrevResponseId = (id) => {
+  if (typeof window === "undefined") return;
+  if (id) window.localStorage.setItem(LS_PREV_KEY, id);
+};
 
-  const flushCurrent = () => {
-    if (!current) return;
-    const description = current.descriptionLines.join("\n").trim();
-    items.push({
-      name: current.name.trim(),
-      description,
-    });
-    current = null;
+const clearChatSession = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(LS_PREV_KEY);
+};
+
+// ==============================
+// Parsing: expected format
+// REKOMENDASI
+// - Nama — Harga — alasan
+//
+// TIPS
+// - ...
+//
+// PERTANYAAN LANJUTAN
+// - ...
+// ==============================
+const parseStructuredOutput = (text = "") => {
+  const out = {
+    rekomendasi: [], // {name, price, reason, rawLine, product}
+    tips: [],
+    questions: [],
+    fallbackText: "",
   };
 
-  lines.forEach((line) => {
-    const match = line.match(
-      /^\s*\d+\.\s*(?:\*\*|__)?(.+?)(?:\*\*|__)?\s*(?:-|–|:)\s*(.*)$/,
-    );
+  const normalized = String(text || "").trim();
+  if (!normalized) return out;
 
-    if (match) {
-      if (current) flushCurrent();
-      hasList = true;
-      inTrailing = false;
-      current = {
-        name: match[1].trim(),
-        descriptionLines: [match[2].trim()],
-      };
-      return;
+  const lines = normalized.split("\n").map((l) => l.trim());
+  let section = "fallback";
+
+  const isHeader = (l) =>
+    /^REKOMENDASI$/i.test(l) ||
+    /^TIPS$/i.test(l) ||
+    /^PERTANYAAN LANJUTAN$/i.test(l);
+
+  const parseRecoLine = (l) => {
+    // Expected: "- Nama — Harga — alasan"
+    // Also tolerate "-" / "•" and "-" dash variants.
+    const s = l.replace(/^[-•]\s*/, "").trim();
+    // split by em dash / en dash / hyphen used as separator
+    const parts = s.split(/\s*(?:—|–|-)\s*/).map((p) => p.trim()).filter(Boolean);
+
+    // Minimal: name only
+    const name = parts[0] || "";
+    const price = parts[1] || "";
+    const reason = parts.slice(2).join(" — ").trim();
+
+    return { name, price, reason, rawLine: l };
+  };
+
+  for (const l of lines) {
+    if (!l) continue;
+
+    if (/^REKOMENDASI$/i.test(l)) {
+      section = "rekomendasi";
+      continue;
+    }
+    if (/^TIPS$/i.test(l)) {
+      section = "tips";
+      continue;
+    }
+    if (/^PERTANYAAN LANJUTAN$/i.test(l)) {
+      section = "questions";
+      continue;
     }
 
-    if (!hasList) {
-      introLines.push(line);
-      return;
-    }
-
-    if (current && !inTrailing) {
-      if (!line.trim()) {
-        flushCurrent();
-        inTrailing = true;
-        return;
+    // Bullet lines
+    if (/^[-•]\s+/.test(l)) {
+      if (section === "rekomendasi") {
+        const item = parseRecoLine(l);
+        if (item.name) out.rekomendasi.push(item);
+        continue;
       }
-      current.descriptionLines.push(line.trim());
-      return;
+      if (section === "tips") {
+        out.tips.push(l.replace(/^[-•]\s*/, "").trim());
+        continue;
+      }
+      if (section === "questions") {
+        out.questions.push(l.replace(/^[-•]\s*/, "").trim());
+        continue;
+      }
     }
 
-    trailingLines.push(line);
-  });
+    // If the model didn't follow structure, keep as fallback
+    // or accumulate non-bullets inside a section.
+    if (section === "fallback") {
+      out.fallbackText += (out.fallbackText ? "\n" : "") + l;
+    } else {
+      // allow non-bullets inside section: append to fallbackText
+      // (optional) you can also attach to the last item; keep simple.
+      if (!isHeader(l)) {
+        out.fallbackText += (out.fallbackText ? "\n" : "") + l;
+      }
+    }
+  }
 
-  flushCurrent();
-
-  return {
-    introText: introLines.join("\n").trim(),
-    trailingText: trailingLines.join("\n").trim(),
-    items,
-  };
+  return out;
 };
 
+// Optional: enrich recommendation items with real product data from your FE API route
 const fetchProductByName = async (name) => {
   try {
     const res = await fetch(
-      `/api/products/search?q=${encodeURIComponent(name)}&limit=1`,
+      `/api/products/search?q=${encodeURIComponent(name)}&limit=1`
     );
     if (!res.ok) return null;
     const json = await res.json();
     return Array.isArray(json?.data) ? json.data[0] : null;
-  } catch (error) {
-    console.error("Chatkit product lookup error:", error);
+  } catch (e) {
+    console.error("Product lookup error:", e);
     return null;
   }
 };
 
-const getSessionId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-
-  return `session_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-};
-
 export function ChatkitWidget() {
-  const sessionId = useMemo(() => getSessionId(), []);
+  const sessionId = useMemo(() => getOrCreateSessionId(), []);
   const apiUrl = useMemo(() => {
     const base = process.env.NEXT_PUBLIC_CHATKIT_API_BASE;
     if (!base) throw new Error("NEXT_PUBLIC_CHATKIT_API_BASE is not set");
     return `${base.replace(/\/+$/, "")}/api/v1/chatkit`;
   }, []);
+
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  // message schema:
+  // { role:"assistant"|"user", text?:string, structured?:{...}, recommendations?:[] }
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -144,43 +174,7 @@ export function ChatkitWidget() {
     },
   ]);
 
-  const buildAssistantMessages = async (outputText) => {
-    const sections = parseSections(outputText);
-    const messagesWithCards = await Promise.all(
-      sections.map(async (section) => {
-        if (section.type === "advisor") {
-          const { introText, trailingText, items } = parseRecommendations(
-            section.body,
-          );
-          const products = await Promise.all(
-            items.map((item) => fetchProductByName(item.name)),
-          );
-          const recommendations = items.map((item, index) => ({
-            ...item,
-            product: products[index] || null,
-          }));
-
-          return {
-            role: "assistant",
-            title: section.title,
-            text: [introText, trailingText].filter(Boolean).join("\n\n"),
-            recommendations,
-          };
-        }
-
-        return {
-          role: "assistant",
-          title: section.title,
-          text: section.body || "",
-        };
-      }),
-    );
-
-    return messagesWithCards.filter(
-      (message) => message.text || (message.recommendations || []).length > 0,
-    );
-  };
-
+  // keep latest messages snapshot (avoid stale closure)
   const messagesRef = useRef(messages);
   useEffect(() => {
     messagesRef.current = messages;
@@ -193,24 +187,11 @@ export function ChatkitWidget() {
     setIsSending(true);
     setInput("");
 
-    // 1) append user message dulu
+    // append user message first
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
 
     try {
-      // 2) build history dari state TERKINI + user message barusan
-      // penting: jangan pakai `messages` yang stale; ambil dari local variable via snapshot:
-      const snapshot = [
-        ...messagesRef.current,
-        { role: "user", text: trimmed },
-      ];
-
-      const history = snapshot
-        .filter((m) => typeof m?.text === "string" && m.text.trim())
-        .slice(-12)
-        .map((m) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.text.trim(),
-        }));
+      const previous_response_id = getPrevResponseId();
 
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -218,7 +199,7 @@ export function ChatkitWidget() {
         body: JSON.stringify({
           message: trimmed,
           session_id: sessionId,
-          history, // ✅ ini yang bikin percakapan lanjut
+          previous_response_id: previous_response_id || undefined,
         }),
       });
 
@@ -237,13 +218,41 @@ export function ChatkitWidget() {
       }
 
       const data = await res.json();
+
+      // IMPORTANT: store the new previous_response_id for next turn
+      if (data?.previous_response_id) setPrevResponseId(data.previous_response_id);
+
       const outputText = data?.output_text || "Maaf bestie, coba lagi ya.";
 
-      const assistantMessages = await buildAssistantMessages(outputText);
+      // Parse the structured text
+      const structured = parseStructuredOutput(outputText);
 
-      setMessages((prev) => [...prev, ...assistantMessages]);
+      // (Optional) attach product cards for rekomendasi items by name
+      let recoWithProducts = structured.rekomendasi;
+      if (Array.isArray(recoWithProducts) && recoWithProducts.length > 0) {
+        const products = await Promise.all(
+          recoWithProducts.map((r) => fetchProductByName(r.name))
+        );
+        recoWithProducts = recoWithProducts.map((r, idx) => ({
+          ...r,
+          product: products[idx] || null,
+        }));
+      }
+
+      // Build assistant message
+      const assistantMsg = {
+        role: "assistant",
+        structured: {
+          ...structured,
+          rekomendasi: recoWithProducts,
+        },
+        // keep raw as fallback display
+        text: structured.fallbackText ? structured.fallbackText : "",
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
-      console.error("Chatkit send error:", error);
+      console.error("Chat send error:", error);
       setMessages((prev) => [
         ...prev,
         {
@@ -267,74 +276,131 @@ export function ChatkitWidget() {
               <p className="text-sm font-semibold">Abby n Bev AI</p>
               <p className="text-xs text-white/70">Beauty Assistant</p>
             </div>
-            <button
-              type="button"
-              className="text-xs uppercase tracking-wide"
-              onClick={() => setIsOpen(false)}
-            >
-              Close
-            </button>
-          </div>
-          <div className="flex-1 px-4 py-3 space-y-3 overflow-y-auto max-h-96">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={`rounded-2xl px-3 py-2 text-sm ${
-                  message.role === "user"
-                    ? "bg-black text-white ml-auto"
-                    : "bg-slate-100 text-slate-800"
-                }`}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="text-xs uppercase tracking-wide"
+                onClick={() => {
+                  clearChatSession(); // reset only previous_response_id
+                  setMessages([
+                    {
+                      role: "assistant",
+                      text: "Hi bestie! Mau tanya makeup, skincare, atau info toko hari ini?",
+                    },
+                  ]);
+                }}
               >
-                {message.title && (
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
-                    {message.title}
-                  </p>
-                )}
-                {message.text && (
-                  <p className="whitespace-pre-line">{message.text}</p>
-                )}
-                {Array.isArray(message.recommendations) &&
-                  message.recommendations.length > 0 && (
-                    <div className="mt-3 space-y-4">
-                      {message.recommendations.map((item, itemIndex) => (
-                        <div
-                          key={`${item.name}-${itemIndex}`}
-                          className="space-y-2"
-                        >
-                          <div>
-                            <p className="font-semibold">
-                              {itemIndex + 1}. {item.name}
+                Reset
+              </button>
+              <button
+                type="button"
+                className="text-xs uppercase tracking-wide"
+                onClick={() => setIsOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 px-4 py-3 space-y-3 overflow-y-auto max-h-96">
+            {messages.map((message, index) => {
+              const structured = message?.structured;
+
+              return (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`rounded-2xl px-3 py-2 text-sm ${
+                    message.role === "user"
+                      ? "bg-black text-white ml-auto"
+                      : "bg-slate-100 text-slate-800"
+                  }`}
+                >
+                  {message.text && (
+                    <p className="whitespace-pre-line">{message.text}</p>
+                  )}
+
+                  {/* Structured renderer */}
+                  {message.role === "assistant" && structured && (
+                    <div className="mt-2 space-y-3">
+                      {/* REKOMENDASI */}
+                      {Array.isArray(structured.rekomendasi) &&
+                        structured.rekomendasi.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Rekomendasi
                             </p>
-                            {item.description && (
-                              <p className="text-xs text-slate-600 whitespace-pre-line">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                          {item.product ? (
-                            <div className="max-w-55">
-                              <RegularCard product={item.product} />
+
+                            <div className="space-y-4">
+                              {structured.rekomendasi.map((item, i) => (
+                                <div key={`${item.name}-${i}`} className="space-y-1">
+                                  <p className="font-semibold">
+                                    {i + 1}. {item.name}
+                                  </p>
+
+                                  {(item.price || item.reason) && (
+                                    <p className="text-xs text-slate-600 whitespace-pre-line">
+                                      {item.price ? `Harga: ${item.price}` : ""}
+                                      {item.price && item.reason ? "\n" : ""}
+                                      {item.reason ? item.reason : ""}
+                                    </p>
+                                  )}
+
+                                  {item.product ? (
+                                    <div className="max-w-55 mt-2">
+                                      <RegularCard product={item.product} />
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ))}
                             </div>
-                          ) : (
-                            <p className="text-xs text-slate-400">
-                              Produk belum tersedia di katalog saat ini.
-                            </p>
-                          )}
+                          </div>
+                        )}
+
+                      {/* TIPS */}
+                      {Array.isArray(structured.tips) && structured.tips.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Tips
+                          </p>
+                          <ul className="list-disc pl-5 text-sm space-y-1">
+                            {structured.tips.map((t, i) => (
+                              <li key={`tip-${i}`}>{t}</li>
+                            ))}
+                          </ul>
                         </div>
-                      ))}
+                      )}
+
+                      {/* PERTANYAAN LANJUTAN */}
+                      {Array.isArray(structured.questions) &&
+                        structured.questions.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              Pertanyaan lanjutan
+                            </p>
+                            <ul className="list-disc pl-5 text-sm space-y-1">
+                              {structured.questions.map((q, i) => (
+                                <li key={`q-${i}`}>{q}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
+
             {isSending && (
               <div className="p-4 mx-auto justify-center items-center">
                 <Bouncy size="40" speed="1.2" color="#AE2D68" />
               </div>
             )}
           </div>
+
           <div className="border-t border-slate-200 px-4 py-3 flex items-center gap-2">
             <TxtField
               variant="outline"
+              value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") sendMessage();
@@ -359,8 +425,7 @@ export function ChatkitWidget() {
           className="bg-black text-white rounded-full px-5 py-3 shadow-lg text-sm font-semibold"
         >
           <div className="flex flex-row items-center gap-2">
-            <FaSprayCanSparkles className="h-5 w-5" /> Your Beauty Assistant
-            here!
+            <FaSprayCanSparkles className="h-5 w-5" /> Your Beauty Assistant here!
           </div>
         </Button>
       )}
