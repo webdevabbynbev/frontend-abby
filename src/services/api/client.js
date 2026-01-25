@@ -7,6 +7,7 @@ const BASE = normalizedBase
   : "";
 
 export async function getApi(path, options = {}) {
+  console.log("API_BASE:", baseUrl);
   if (!BASE) throw new Error("NEXT_PUBLIC_API_URL belum di-set. Cek .env");
 
   const cleanPath = String(path).replace(/^\/+/, "");
