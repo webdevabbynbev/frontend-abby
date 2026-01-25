@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Bouncy } from "ldrs/react";
 import "ldrs/react/Bouncy.css";
 import { FaSprayCanSparkles } from "react-icons/fa6";
