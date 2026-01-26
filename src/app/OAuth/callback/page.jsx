@@ -31,13 +31,15 @@ export default function OAuthCallbackPage() {
         }
 
         // Baca mode dari sessionStorage (register atau login)
-        const mode = typeof window !== "undefined" 
-          ? sessionStorage.getItem("google_oauth_mode") || "login"
-          : "login";
+        const mode =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("google_oauth_mode") || "login"
+            : "login";
 
-        const acceptPrivacy = typeof window !== "undefined"
-          ? sessionStorage.getItem("google_oauth_accept_privacy") === "1"
-          : false;
+        const acceptPrivacy =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("google_oauth_accept_privacy") === "1"
+            : false;
 
         // Kirim ke backend sesuai mode
         if (mode === "register") {
