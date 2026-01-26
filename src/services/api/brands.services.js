@@ -3,13 +3,15 @@ import { normalizeProduct } from "./normalizers/product";
 
 export async function getBrands(params = {}) {
   const json = await getApi(`/brands${toQuery(params)}`);
-  console.log("BRANDS API RAW:", json);
-  return json.serve.flatMap((group) =>
+  const groups = Array.isArray(json?.serve) ? json.serve : [];
+  return groups.flatMap((group) =>
     Array.isArray(group.children)
       ? group.children.map((b) => ({
           id: b.id,
-          brandname: b.name,   // 🔴 NORMALISASI DI SINI
+          brandname: b.name,
           slug: b.slug,
+          logo: b.logo || b.logoPublicId || b.logo_public_id || b.logoUrl || null,
+          isPopular: Boolean(b.isPopular ?? b.popular ?? b.featured),
         }))
       : []
   );

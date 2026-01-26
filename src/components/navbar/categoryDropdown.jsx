@@ -23,7 +23,10 @@ function useCanHover() {
 }
 
 function buildCategoryHref(chain) {
-  const path = chain.map((n) => n.slug).filter(Boolean).join("/");
+  const path = chain
+    .map((n) => n.slug)
+    .filter(Boolean)
+    .join("/");
   return `/category/${encodeURI(path)}`;
 }
 
@@ -35,6 +38,9 @@ function sanitizeCategories(roots = []) {
     if (isPlaceholder(node.name)) return null;
 
     const children = (node.children || []).map(walk).filter(Boolean);
+    const hasChildren = children.length > 0;
+    const isRoot = node.level === 1 || node.level === "1";
+    if (isRoot && !hasChildren) return null;
 
     return {
       id: node.id,
@@ -57,12 +63,14 @@ function pickDefaultActive(roots) {
 
 function filterRootPanel(root, query) {
   // Return root children that match query across lvl2/lvl3
-  if (!query) return root.children || [];
+  if (!query) {
+    return (root.children || []).filter((child) => (child.children || []).length);
+  }
 
   const q = query.toLowerCase().trim();
-  if (!q) return root.children || [];
+  if (!q) return (root.children || []).filter((child) => (child.children || []).length);
 
-  const lvl2 = root.children || [];
+  const lvl2 = (root.children || []).filter((child) => (child.children || []).length);
   const result = [];
 
   for (const c2 of lvl2) {
@@ -111,7 +119,7 @@ export default function ShopByCategoryDropdown({
 
   const activeRoot = useMemo(
     () => roots.find((r) => r.slug === activeSlug) || roots[0],
-    [roots, activeSlug]
+    [roots, activeSlug],
   );
 
   const closeTimer = useRef(null);
@@ -160,8 +168,8 @@ export default function ShopByCategoryDropdown({
         <button
           type="button"
           className={cx(
-            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
-            "text-gray-700 hover:text-primary-700 hover:bg-gray-50",
+            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium",
+            "text-neutral-600 hover:text-neutral-950 transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2"
           )}
           aria-label={`${label} menu`}
@@ -171,7 +179,7 @@ export default function ShopByCategoryDropdown({
           <ChevronRightIcon
             className={cx(
               "h-4 w-4 rotate-90 text-gray-400 transition-transform",
-              open && "-rotate-90"
+              open && "-rotate-90",
             )}
           />
         </button>
@@ -182,7 +190,7 @@ export default function ShopByCategoryDropdown({
           className={cx(
             contentClass,
             // responsive mega width
-            "w-[92vw] max-w-245"
+            "w-[92vw] max-w-245",
           )}
           sideOffset={10}
           align="start"
@@ -239,35 +247,35 @@ export default function ShopByCategoryDropdown({
             {/* Left: lvl1 roots */}
             <div className="max-h-[65vh] overflow-auto p-2">
               <div className="flex flex-col gap-1">
-                  {roots.map((root) => {
-                    const isActive = root.slug === activeSlug;
-                    const href = buildCategoryHref([root]);
-                    const isCurrent = pathname === href;
+                {roots.map((root) => {
+                  const isActive = root.slug === activeSlug;
+                  const href = buildCategoryHref([root]);
+                  const isCurrent = pathname === href;
 
-                    return (
-                      <DropdownMenu.Item key={root.id} asChild>
-                        <button
-                          type="button"
-                          onClick={() => handleCategorySelect(root.slug)}
+                  return (
+                    <DropdownMenu.Item key={root.id} asChild>
+                      <button
+                        type="button"
+                        onClick={() => handleCategorySelect(root.slug)}
+                        className={cx(
+                          "flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm outline-none text-black w-full text-left",
+                          "hover:bg-gray-100 focus:bg-gray-50",
+                          isActive && "bg-gray-50 text-primary-700",
+                        )}
+                        onMouseEnter={() => setActiveSlug(root.slug)}
+                        onFocus={() => setActiveSlug(root.slug)}
+                      >
+                        <span className="truncate">{root.name}</span>
+                        <ChevronRightIcon
                           className={cx(
-                            "flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm outline-none text-black w-full text-left",
-                            "hover:bg-gray-100 focus:bg-gray-50",
-                            isActive && "bg-gray-50 text-primary-700",
+                            "h-4 w-4 text-gray-300 transition",
+                            isActive && "text-gray-400",
                           )}
-                          onMouseEnter={() => setActiveSlug(root.slug)}
-                          onFocus={() => setActiveSlug(root.slug)}
-                        >
-                          <span className="truncate">{root.name}</span>
-                          <ChevronRightIcon
-                            className={cx(
-                              "h-4 w-4 text-gray-300 transition",
-                              isActive && "text-gray-400"
-                            )}
-                          />
-                        </button>
-                      </DropdownMenu.Item>
-                    );
-                  })}
+                        />
+                      </button>
+                    </DropdownMenu.Item>
+                  );
+                })}
               </div>
             </div>
 
@@ -303,10 +311,12 @@ export default function ShopByCategoryDropdown({
                         <DropdownMenu.Item asChild>
                           <button
                             type="button"
-                            onClick={() => handleCategorySelect(activeRoot.slug, lvl2.slug)}
+                            onClick={() =>
+                              handleCategorySelect(activeRoot.slug, lvl2.slug)
+                            }
                             className={cx(
                               "mb-2 block rounded-lg px-2 py-1 text-sm font-semibold text-black w-full text-left",
-                              "hover:bg-gray-50 focus:bg-gray-50 outline-none"
+                              "hover:bg-gray-50 focus:bg-gray-50 outline-none",
                             )}
                           >
                             {lvl2.name}
@@ -327,11 +337,17 @@ export default function ShopByCategoryDropdown({
                                 <DropdownMenu.Item key={lvl3Item.id} asChild>
                                   <button
                                     type="button"
-                                    onClick={() => handleCategorySelect(activeRoot.slug, lvl2.slug)}
+                                    onClick={() =>
+                                      handleCategorySelect(
+                                        activeRoot.slug,
+                                        lvl2.slug,
+                                      )
+                                    }
                                     className={cx(
                                       "rounded-lg px-2 py-1 text-sm text-black outline-none w-full text-left",
                                       "hover:bg-gray-50 focus:bg-gray-50",
-                                      isCurrent && "text-primary-700 font-semibold"
+                                      isCurrent &&
+                                        "text-primary-700 font-semibold",
                                     )}
                                   >
                                     {lvl3Item.name}

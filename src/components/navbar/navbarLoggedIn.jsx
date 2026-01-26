@@ -21,34 +21,8 @@ import {
 import CartButton from "@/components/button/cartButton";
 import ShopByCategoryDropdown from "./categoryDropdown";
 import MegaDropdown from "./megaDropdown";
-
-/* ===================== DROPDOWN DATA ===================== */
-export const shopByConcern = [
-  {
-    label: "Acne",
-    children: [
-      {
-        label: "Oily Skin",
-        children: [{ label: "Acne Cleanser", href: "/concern/acne-cleanser" }],
-      },
-    ],
-  },
-];
-
-export const shopByBrand = [
-  {
-    label: "Local Brand",
-    children: [
-      {
-        label: "Skincare",
-        children: [
-          { label: "Somethinc", href: "/brand/somethinc" },
-          { label: "Avoskin", href: "/brand/avoskin" },
-        ],
-      },
-    ],
-  },
-];
+import BrandDropdown from "./brandDropdown";
+import { buildconcernsItems } from "./utils";
 
 export function NavbarLoggedIn({
   pathname,
@@ -63,6 +37,8 @@ export function NavbarLoggedIn({
   setOpen,
   onLogout,
   categories = [],
+  concerns = [],
+  brands = [],
   categoriesLoading = false,
 }) {
   const router = useRouter();
@@ -70,6 +46,7 @@ export function NavbarLoggedIn({
   // category dari DB
   const categoryTypes = Array.isArray(categories) ? categories : [];
   const catLoading = Boolean(categoriesLoading);
+  const concernsItems = buildconcernsItems(concerns);
 
   return (
     <>
@@ -109,7 +86,29 @@ export function NavbarLoggedIn({
             />
           </Link>
 
-          {/* STATIC LINKS */}
+          {/* DROPDOWN MENUS */}
+          <div className="flex items-center">
+            <ShopByCategoryDropdown
+              label="Shop By Category"
+              categories={categoryTypes}
+              loading={catLoading}
+            />
+
+            <MegaDropdown label="Shop by concerns" items={concernsItems} />
+            <BrandDropdown label="Shop by Brand" brands={brands} />
+          </div>
+        </div>
+
+        {/* RIGHT SIDE */}
+        <div className="flex items-center gap-3">
+          <SearchBar
+            className="max-w-75"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={onSearch}
+          />
+
+          <CartButton />
           {links.map((link) => {
             const isExternal =
               typeof link.href === "string" && link.href.startsWith("http");
@@ -142,30 +141,6 @@ export function NavbarLoggedIn({
               </Link>
             );
           })}
-
-          {/* DROPDOWN MENUS */}
-          <div className="flex items-center">
-            <ShopByCategoryDropdown
-              label="Shop By Category"
-              categories={categoryTypes}
-              loading={catLoading}
-            />
-
-            <MegaDropdown label="Shop by Concern" items={shopByConcern} />
-            <MegaDropdown label="Shop by Brand" items={shopByBrand} />
-          </div>
-        </div>
-
-        {/* RIGHT SIDE */}
-        <div className="flex items-center gap-3">
-          <SearchBar
-            className="max-w-75"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={onSearch}
-          />
-
-          <CartButton />
 
           <Link href="/notification">
             <BtnIcon as="span" iconName="Bell" variant="tertiary" size="sm" />

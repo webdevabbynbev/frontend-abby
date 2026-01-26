@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 
 import { NavbarGuest, NavbarLoggedIn } from ".";
 
-export function Navbar({ categories = [] }) {
+export function Navbar({ categories = [], concerns = [], brands = [] }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -66,9 +66,10 @@ export function Navbar({ categories = [] }) {
             setSearch={setSearch}
             onSearch={handleSearch}
             open={open}
-            setOpen={setOpen}
             onLogout={handleLogout}
             categories={categories}
+            concerns={concerns}
+            brands={brands}
           />
         ) : (
           <NavbarGuest
@@ -79,6 +80,8 @@ export function Navbar({ categories = [] }) {
             setSearch={setSearch}
             onSearch={handleSearch}
             categories={categories}
+            concerns={concerns}
+            brands={brands}
           />
         )}
       </div>

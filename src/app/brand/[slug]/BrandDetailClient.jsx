@@ -24,7 +24,11 @@ export default function BrandDetailClient({ brandData, categories = [] }) {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
-
+  const brandLabel =
+    brandData.name || brandData.brandname || brandData.slug || "";
+  const brandedItems = currentItems.map((product) =>
+    product?.brand ? product : { ...product, brand: brandLabel },
+  );
   return (
     <div className="flex md:flex Container px-10 py-6 w-full">
       <div className="content-wrapper w-full space-y-10">
@@ -102,7 +106,7 @@ export default function BrandDetailClient({ brandData, categories = [] }) {
                   Belum ada produk untuk brand ini.
                 </div>
               ) : (
-                currentItems.map((product) => (
+                brandedItems.map((product) => (
                   <RegularCard key={product.id} product={product} />
                 ))
               )}

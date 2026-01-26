@@ -1,37 +1,119 @@
-import { NextResponse } from "next/server";
-import { searchProductsServer } from "@/services/product/search.server";
+import { getProducts } from "@/services/api/product.services";
 
-export async function GET(req) {
-  try {
-    const { searchParams } = new URL(req.url);
+function normLower(v) {
+  return (v ?? "").toString().toLowerCase();
+}
 
-    const q = (searchParams.get("q") || "").trim();
-    const page = Number(searchParams.get("page") || 1);
-    const per_page = Number(searchParams.get("limit") || 24);
+function normalizeSearchText(v) {
+  return normLower(v).replace(/[^a-z0-9]/g, "");
+}
 
-    // samakan key dengan Filter kamu (aku support beberapa)
-    const brand =
-      searchParams.get("brand") ||
-      searchParams.get("brands") ||
-      searchParams.get("brand_id") ||
-      "";
+function getBrandId(p) {
+  return (
+    p?.brand_id ??
+    p?.brandId ??
+    p?.brand?.id ??
+    null
+  );
+}
 
-    const result = await searchProductsServer({ q, page, per_page, brand });
-    return NextResponse.json(result, {
-      headers: {
-        "Content-Type": "application/json",
-      },
+/**
+ * q: string
+ * page: number
+ * per_page: number
+ * brand: string | string[] | null  (id atau slug; support multi via comma)
+ */
+export async function searchProductsServer({
+  q,
+  page = 1,
+  per_page = 24,
+  fetch_size = 500,
+  brand = null,
+} = {}) {
+  const keyword = (q || "").trim();
+  if (!keyword) return { data: [], meta: { page, per_page, total: 0, total_pages: 1 } };
+
+  const needle = keyword.toLowerCase();
+  const needleNormalized = normalizeSearchText(keyword);
+
+  // normalize brand filter (support comma separated)
+  const brandListRaw = Array.isArray(brand)
+    ? brand
+    : typeof brand === "string"
+      ? brand.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+  const brandSet = new Set(brandListRaw.map((b) => b.toString()));
+
+  const res = await getProducts({
+    page: 1,
+    // ambil banyak lalu filter manual (karena backend sering fallback)
+    per_page: Math.max(per_page, fetch_size),
+  });
+
+  const rows = Array.isArray(res?.data) ? res.data : [];
+
+  const filtered = rows
+    .filter((p) => {
+      // keyword filter
+      const name = normLower(p?.name);
+      const brandName = normLower(p?.brand ?? p?.brand?.name ?? p?.brand?.brandname);
+      const brandSlug = normLower(p?.brand?.slug ?? p?.brand_slug);
+      const category = normLower(
+        p?.category ??
+          p?.category?.name ??
+          p?.category?.categoryname ??
+          p?.categoryName ??
+          p?.category_name ??
+          p?.categoryname,
+      );
+      const sku = normLower(p?.sku);
+      const nameNormalized = normalizeSearchText(name);
+      const brandNameNormalized = normalizeSearchText(brandName);
+      const brandSlugNormalized = normalizeSearchText(brandSlug);
+      const categoryNormalized = normalizeSearchText(category);
+      const skuNormalized = normalizeSearchText(sku);
+
+      const okKeyword =
+        name.includes(needle) ||
+        brandName.includes(needle) ||
+        brandSlug.includes(needle) ||
+        category.includes(needle) ||
+        sku.includes(needle) ||
+        (needleNormalized &&
+          (nameNormalized.includes(needleNormalized) ||
+            brandNameNormalized.includes(needleNormalized) ||
+            brandSlugNormalized.includes(needleNormalized) ||
+            categoryNormalized.includes(needleNormalized) ||
+            skuNormalized.includes(needleNormalized)));
+
+      if (!okKeyword) return false;
+
+      // brand filter (kalau ada)
+      if (brandSet.size === 0) return true;
+
+      const bid = getBrandId(p);
+      const bslug = p?.brand?.slug ?? p?.brand_slug ?? null;
+      const bname = p?.brand ?? p?.brand?.name ?? null;
+
+      // cocokkan ke beberapa kemungkinan field
+      return (
+        (bid != null && brandSet.has(bid.toString())) ||
+        (bslug && brandSet.has(bslug.toString())) ||
+        (bname && brandSet.has(bname.toString()))
+      );
     });
-  } catch (err) {
-    console.error("[/api/products/search] Error:", err.message);
-    return NextResponse.json(
-      { data: [], meta: {}, error: err.message || "Search API error" },
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+
+  // paging dari hasil filtered
+  const start = (page - 1) * per_page;
+  const end = start + per_page;
+
+  return {
+    data: filtered.slice(start, end),
+    meta: {
+      page,
+      per_page,
+      total: filtered.length,
+      total_pages: Math.max(1, Math.ceil(filtered.length / per_page)),
+    },
+  };
 }

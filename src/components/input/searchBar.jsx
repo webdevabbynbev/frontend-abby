@@ -103,7 +103,7 @@ export function SearchBar({
         placeholder={placeholder}
         iconLeftName="MagnifyingGlass"
         variant="outline"
-        size="md"
+        size="sm"
         className="w-full min-w-0 sm:min-w-75"
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -120,7 +120,9 @@ export function SearchBar({
           </div>
 
           {loading ? (
-            <div className="p-3 text-sm w-full justify-center"><Bouncy size="30" speed="1.2" color="#AE2D68" /></div>
+            <div className="p-3 text-sm w-full justify-center">
+              <Bouncy size="30" speed="1.2" color="#AE2D68" />
+            </div>
           ) : items.length === 0 && brands.length === 0 ? (
             <div className="p-3 text-sm">Tidak ada suggestion.</div>
           ) : (
@@ -130,6 +132,7 @@ export function SearchBar({
                   <li className="px-3 py-2 text-xs font-semibold text-neutral-500 bg-neutral-50">
                     Brand
                   </li>
+
                   {brands.map((brand) => (
                     <li key={brand.id || brand.slug || brand.name}>
                       <button
@@ -140,10 +143,23 @@ export function SearchBar({
                           setOpen(false);
                         }}
                       >
-                        <div className="min-w-0 flex flex-row gap-2 items-center">
-                          <div className="w-10 h-10 rounded-md bg-neutral-100 border flex items-center justify-center text-xs text-neutral-500">
-                            BR
-                          </div>
+                        <img
+                          src={getImageUrl(
+                            brand?.logo?.url ||
+                              brand?.logo ||
+                              brand?.image?.url ||
+                              brand?.image,
+                          )}
+                          alt={brand.name}
+                          className="w-10 h-10 rounded-md object-cover border bg-neutral-100"
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              "https://d2ntedlnuwws1k.cloudfront.net/Products/abby-product-placeholder-image.png";
+                          }}
+                        />
+
+                        <div className="min-w-0 flex flex-col justify-center">
                           <div className="text-sm font-medium text-primary-700 truncate">
                             {brand.name}
                           </div>
@@ -173,6 +189,10 @@ export function SearchBar({
                       alt={p.name}
                       className="w-10 h-10 rounded-md object-cover border"
                       crossOrigin="anonymous"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://d2ntedlnuwws1k.cloudfront.net/Products/abby-product-placeholder-image.png";
+                      }}
                     />
 
                     <div className="min-w-0">
@@ -186,7 +206,7 @@ export function SearchBar({
                   </button>
                 </li>
               ))}
-            
+
               <li className="border-t">
                 <button
                   type="button"

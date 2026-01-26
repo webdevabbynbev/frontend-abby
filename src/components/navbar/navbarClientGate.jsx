@@ -4,16 +4,28 @@ import { useEffect, useState } from "react";
 import { Navbar } from ".";
 import { LoginRegisModalForm } from "@/components";
 
-export function NavbarClientGate({ categories = [] }) {
+export function NavbarClientGate({
+  categories = [],
+  concern = [],
+  brands = [],
+}) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (!mounted) return <div className="h-16 sticky top-0" />;
+  if (!mounted) {
+    return <div className="h-16 sticky top-0" />;
+  }
 
   return (
     <>
-      <Navbar categories={categories} />
+      <Navbar
+        categories={categories}
+        concern={concern}
+        brands={brands}
+      />
       <LoginRegisModalForm />
     </>
   );
