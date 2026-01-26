@@ -63,24 +63,13 @@ export function NavbarGuest({
             onSearch={onSearch}
           />
         </div>
-
-        <div className="shrink-0 flex items-center gap-2">
-          <CartButton />
-          <Button
-            label="Masuk"
-            variant="primary"
-            size="md"
-            onClick={openLoginModal}
-          >
-            Masuk
-          </Button>
-        </div>
+       <CartButton />
       </div>
 
       {/* ===================== DESKTOP (>= lg) ===================== */}
-      <div className="hidden items-center justify-between gap-6 lg:flex">
+      <div className="hidden lg:flex items-center justify-between gap-6">
         {/* LEFT SIDE */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-5 shrink-0">
           {/* LOGO */}
           <Link href="/" className="shrink-0">
             <Image
@@ -129,34 +118,25 @@ export function NavbarGuest({
           {/* DROPDOWN MENUS */}
           <div className="flex items-center">
             <ShopByCategoryDropdown
-              label="Shop By Category"
+              label="Category"
               categories={categoryTypes}
               loading={catLoading}
             />
 
-            <MegaDropdown label="Shop by Concern" items={shopByConcern} />
-            <MegaDropdown label="Shop by Brand" items={shopByBrand} />
+            <MegaDropdown label="Concern" items={shopByConcern} />
+            <MegaDropdown label="Brand" items={shopByBrand} />
           </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex flex-1 min-w-0 items-center gap-4 justify-end">
           <SearchBar
             className="max-w-75"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onSearch={onSearch}
           />
-
           <CartButton />
-          <Button
-            label="Masuk"
-            variant="primary"
-            size="md"
-            onClick={openLoginModal}
-          >
-            Masuk
-          </Button>
         </div>
       </div>
     </>

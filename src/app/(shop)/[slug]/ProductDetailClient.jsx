@@ -101,7 +101,7 @@ export default function ProductDetailClient({ product }) {
 
   // SATU sumber images: ambil dari selectedVariantObj.images
   // fallback: product.images, lalu product.image
-  const variantImages = useMemo(() => {
+  const galerryImages = useMemo(() => {
     const imgs = selectedVariantObj?.images?.length
       ? selectedVariantObj.images
       : Array.isArray(product?.images) && product.images.length
@@ -118,8 +118,8 @@ export default function ProductDetailClient({ product }) {
 
   // setiap variant berubah, set gambar pertama jadi active
   useEffect(() => {
-    setActiveImage(variantImages[0] || "");
-  }, [variantImages]);
+    setActiveImage(galerryImages[0] || "");
+  }, [galerryImages]);
 
   const [qty, setQty] = useState(1);
 
@@ -336,7 +336,7 @@ export default function ProductDetailClient({ product }) {
       "@context": "https://schema.org",
       "@type": "Product",
       name: product.name,
-      image: variantImages.length ? variantImages : [product.image],
+      image: galerryImages.length ? galerryImages : [product.image],
       description: product.description,
       brand: {
         "@type": "Brand",
@@ -363,7 +363,7 @@ export default function ProductDetailClient({ product }) {
     };
   }, [
     product,
-    variantImages,
+    galerryImages,
     displayFinalPrice,
     stock,
     reviews,
@@ -440,14 +440,14 @@ export default function ProductDetailClient({ product }) {
                   </div>
                 </div>
 
-                <div className="flex w-full py-2 items-center space-x-4 max-h-64 overflow-x-auto custom-scrollbar">
-                  {variantImages.map((img, i) => (
+                <div className="flex w-full px-1 py-2 items-center space-x-4 max-h-64 overflow-x-auto custom-scrollbar">
+                  {galerryImages.map((img, i) => (
                     <img
                       key={i}
                       src={img}
                       alt={`${product?.name}-${i}`}
                       onClick={() => setActiveImage(img)}
-                      className={`h-20 w-20 border p-2 rounded-md cursor-pointer ${
+                      className={`h-16 w-16 border p-1 rounded-md cursor-pointer ${
                         activeImage === img ? "ring-2 ring-primary-700" : ""
                       }`}
                     />
@@ -457,23 +457,23 @@ export default function ProductDetailClient({ product }) {
 
               {/* Right Content */}
               <div className="Content-right w-full space-y-4 lg:px-10 ">
-                <div className="title-product">
-                  <h2 className="text-sm font-medium text-neutral-500">
+                <div className="title-product" href={brandSlug ? `/brand/${brandSlug}` : "#"}>
+                  <h2 className="text-xl font-bold text-neutral-900">
                     {brandName}
                   </h2>
-                  <h3 className="text-xl font-semibold">{product?.name}</h3>
+                  <h3 className="text-md font-medium text-neutral-900">{product?.name}</h3>
                 </div>
 
                 {/* Price */}
                 <div className="price space-y-2">
                   {/* ✅ badge dari backend */}
-                  {showExtraLabel ? (
+                  {/* {showExtraLabel ? (
                     <div>
                       <span className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                         {extraLabel}
                       </span>
                     </div>
-                  ) : null}
+                  ) : null} */}
 
                   {showDiscount ? (
                     <>
@@ -717,13 +717,13 @@ export default function ProductDetailClient({ product }) {
                 </div>
               </div>
 
-              {showExtraLabel ? (
+              {/* {showExtraLabel ? (
                 <div>
                   <span className="text-[10px] py-1 px-2 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                     {extraLabel}
                   </span>
                 </div>
-              ) : null}
+              ) : null} */}
             </div>
           </div>
 

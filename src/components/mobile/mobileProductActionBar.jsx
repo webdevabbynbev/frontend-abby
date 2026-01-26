@@ -10,7 +10,7 @@ export function MobileProductActionBar({
 }) {
   return (
     <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto w-full max-w-[520px] px-4 pb-4">
+      <div className="mx-auto w-full px-4 pb-4">
         <div className="rounded-2xl border border-primary-500 bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex flex-1 items-center justify-between gap-3">

@@ -88,14 +88,6 @@ export function NavbarLoggedIn({
           <CartButton />
 
           <BtnIcon
-            as="span"
-            iconName="User"
-            variant="tertiary"
-            size="sm"
-            onClick={() => router.push("/account/profile")}
-          />
-
-          <BtnIcon
             iconName="Bell"
             variant="tertiary"
             size="sm"
