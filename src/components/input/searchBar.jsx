@@ -104,7 +104,7 @@ export function SearchBar({
         iconLeftName="MagnifyingGlass"
         variant="outline"
         size="md"
-        className="w-full min-w-75"
+        className="w-full min-w-0 sm:min-w-75"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {

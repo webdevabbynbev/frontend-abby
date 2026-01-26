@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import { BtnIcon, SearchBar } from "@/components";
+import { BtnIcon, Button, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
 import ShopByCategoryDropdown from "./categoryDropdown";
 import CartButton from "@/components/button/cartButton";
@@ -66,12 +66,14 @@ export function NavbarGuest({
 
         <div className="shrink-0 flex items-center gap-2">
           <CartButton />
-          <BtnIcon
-            iconName="RightToBracket"
-            variant="tertiary"
-            size="sm"
+          <Button
+            label="Masuk"
+            variant="primary"
+            size="md"
             onClick={openLoginModal}
-          />
+          >
+            Masuk
+          </Button>
         </div>
       </div>
 
@@ -138,7 +140,7 @@ export function NavbarGuest({
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <SearchBar
             className="max-w-75"
             value={search}
@@ -147,12 +149,14 @@ export function NavbarGuest({
           />
 
           <CartButton />
-          <BtnIcon
-            iconName="RightToBracket"
-            variant="tertiary"
-            size="sm"
+          <Button
+            label="Masuk"
+            variant="primary"
+            size="md"
             onClick={openLoginModal}
-          />
+          >
+            Masuk
+          </Button>
         </div>
       </div>
     </>
