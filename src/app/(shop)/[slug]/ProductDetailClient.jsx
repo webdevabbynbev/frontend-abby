@@ -41,6 +41,17 @@ const parseNumericParam = (value) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
+const normalizePromoStock = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const isPromoStockInactive = (value) => {
+  const stock = normalizePromoStock(value);
+  return stock !== null && stock <= 0;
+};
+
 const RATING_OPTIONS = [
   { id: 1, value: "5", star: "5" },
   { id: 2, value: "4", star: "4" },
@@ -101,6 +112,13 @@ export default function ProductDetailClient({ product }) {
     );
   }, [variants, selectedVariantId]);
 
+  const selectedPromoStockRaw =
+    selectedVariantObj?.promoStock ??
+    selectedVariantObj?.promo_stock ??
+    selectedVariantObj?.promo?.stock ??
+    null;
+  const promoStockInactive = isPromoStockInactive(selectedPromoStockRaw);
+
   const variantBasePriceValue = Number(selectedVariantObj?.price ?? NaN);
   const variantBasePrice =
     Number.isFinite(variantBasePriceValue) && variantBasePriceValue > 0
@@ -115,7 +133,9 @@ export default function ProductDetailClient({ product }) {
       NaN,
   );
   const variantPromoPrice =
-    Number.isFinite(variantPromoPriceValue) && variantPromoPriceValue > 0
+    !promoStockInactive &&
+    Number.isFinite(variantPromoPriceValue) &&
+    variantPromoPriceValue > 0
       ? variantPromoPriceValue
       : undefined;
 
@@ -179,6 +199,7 @@ export default function ProductDetailClient({ product }) {
   const queryPriceOverride =
     allowQueryOverride &&
     saleAppliesToVariant &&
+    !promoStockInactive &&
     Number.isFinite(salePriceParam) &&
     salePriceParam > 0
       ? salePriceParam
@@ -187,6 +208,7 @@ export default function ProductDetailClient({ product }) {
   const queryRealPriceOverride =
     allowQueryOverride &&
     saleAppliesToVariant &&
+    !promoStockInactive &&
     Number.isFinite(realPriceParam) &&
     realPriceParam > 0
       ? realPriceParam
@@ -232,7 +254,8 @@ export default function ProductDetailClient({ product }) {
     appliedOverride < baseCompareAt;
 
   const isSale =
-    saleOverrideActive || (product?.sale && saleAppliesToVariant);
+    !promoStockInactive &&
+    (saleOverrideActive || (product?.sale && saleAppliesToVariant));
 
   // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
@@ -307,7 +330,14 @@ export default function ProductDetailClient({ product }) {
     ? getDiscountPercent(displayCompareAt, displayFinalPrice)
     : null;
 
-  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const baseStockValue = Number(
+    selectedVariantObj?.stock ?? product?.stock ?? 0,
+  );
+  const baseStock = Number.isFinite(baseStockValue) ? baseStockValue : 0;
+  const promoStockValue = normalizePromoStock(selectedPromoStockRaw);
+  const promoStockActive =
+    promoStockValue !== null && promoStockValue > 0 && isSale;
+  const stock = promoStockActive ? promoStockValue : baseStock;
   const subtotal = displayFinalPrice * qty;
 
   // ✅ jangan toggle jadi null, biar state variant konsisten & diskon tidak “hilang”
