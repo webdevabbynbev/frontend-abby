@@ -3,9 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import { LoginButton, LoginRegisModalForm, SearchBar } from "@/components";
+import { BtnIcon, SearchBar } from "@/components";
 import MegaDropdown from "./megaDropdown";
 import ShopByCategoryDropdown from "./categoryDropdown";
+import CartButton from "@/components/button/cartButton";
+import { useLoginModal } from "@/context/LoginModalContext";
 
 /* ===================== DROPDOWN DATA ===================== */
 export const shopByConcern = [
@@ -47,6 +49,7 @@ export function NavbarGuest({
 }) {
   const categoryTypes = Array.isArray(categories) ? categories : [];
   const catLoading = Boolean(categoriesLoading);
+  const { openLoginModal } = useLoginModal();
 
   return (
     <>
@@ -61,8 +64,14 @@ export function NavbarGuest({
           />
         </div>
 
-        <div className="shrink-0">
-          <LoginButton />
+        <div className="shrink-0 flex items-center gap-2">
+          <CartButton />
+          <BtnIcon
+            iconName="RightToBracket"
+            variant="tertiary"
+            size="sm"
+            onClick={openLoginModal}
+          />
         </div>
       </div>
 
@@ -137,7 +146,13 @@ export function NavbarGuest({
             onSearch={onSearch}
           />
 
-          <LoginButton />
+          <CartButton />
+          <BtnIcon
+            iconName="RightToBracket"
+            variant="tertiary"
+            size="sm"
+            onClick={openLoginModal}
+          />
         </div>
       </div>
     </>

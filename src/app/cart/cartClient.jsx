@@ -12,6 +12,7 @@ import {
 } from "@/components";
 import { formatToRupiah } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
+import { readCartCache, updateCartCache } from "@/utils/cartCache";
 
 const STORAGE_KEY = "checkout_selected_ids";
 
@@ -19,7 +20,7 @@ export default function CartClient({ initialCart }) {
   const router = useRouter();
 
   const [cart, setCart] = useState(
-    Array.isArray(initialCart) ? initialCart : []
+    Array.isArray(initialCart) ? initialCart : [],
   );
   const [selectedIds, setSelectedIds] = useState([]);
   const [loadingItemId, setLoadingItemId] = useState(null);
@@ -42,7 +43,7 @@ export default function CartClient({ initialCart }) {
         item?.price ??
         item?.product?.price ??
         0,
-      0
+      0,
     );
 
   const getLineTotal = (item, qty = getQuantity(item)) => {
@@ -69,16 +70,48 @@ export default function CartClient({ initialCart }) {
 
   useEffect(() => {
     const idsInCart = new Set(
-      safeCart.map((x) => Number(x?.id)).filter(Boolean)
+      safeCart.map((x) => Number(x?.id)).filter(Boolean),
     );
     setSelectedIds((prev) =>
-      prev.map(Number).filter((id) => idsInCart.has(id))
+      prev.map(Number).filter((id) => idsInCart.has(id)),
     );
   }, [safeCart]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadCart = async () => {
+      try {
+        const res = await axios.get("/cart");
+        const list = Array.isArray(items) ? items : [];
+        if (active) {
+          if (list.length > 0) {
+            setCart(list);
+            updateCartCache(list);
+          } else {
+            const cached = readCartCache();
+            setCart(cached.length > 0 ? cached : []);
+          }
+        }
+      } catch (err) {
+        console.warn("Error load cart:", err);
+        if (active) {
+          const cached = readCartCache();
+          setCart(cached.length > 0 ? cached : []);
+        }
+      }
+    };
+
+    loadCart();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const allIds = useMemo(
     () => safeCart.map((x) => Number(x?.id)).filter(Boolean),
-    [safeCart]
+    [safeCart],
   );
 
   const selectedCount = selectedIds.length;
@@ -94,7 +127,7 @@ export default function CartClient({ initialCart }) {
 
   const isSelected = useCallback(
     (item) => selectedIds.includes(Number(item?.id)),
-    [selectedIds]
+    [selectedIds],
   );
 
   const toggleSelect = useCallback((itemId, checked) => {
@@ -110,7 +143,7 @@ export default function CartClient({ initialCart }) {
 
   const toggleSelectAll = useCallback(
     (checked) => setSelectedIds(checked ? allIds : []),
-    [allIds]
+    [allIds],
   );
 
   const handleUpdateQty = useCallback(
@@ -122,8 +155,8 @@ export default function CartClient({ initialCart }) {
 
       const prevCart = cart;
 
-      setCart((prev) =>
-        prev.map((x) =>
+      setCart((prev) => {
+        const nextCart = prev.map((x) =>
           Number(x.id) === Number(item.id)
             ? {
                 ...x,
@@ -132,9 +165,11 @@ export default function CartClient({ initialCart }) {
                 qtyCheckout: newQty,
                 amount: getUnitPrice(x) * newQty,
               }
-            : x
-        )
-      );
+            : x,
+        );
+        updateCartCache(nextCart);
+        return nextCart;
+      });
 
       try {
         setLoadingItemId(Number(item.id));
@@ -142,11 +177,13 @@ export default function CartClient({ initialCart }) {
         const updated =
           res?.data?.data?.item || res?.data?.data || res?.data?.serve || null;
         if (updated?.id) {
-          setCart((prev) =>
-            prev.map((x) =>
-              Number(x.id) === Number(updated.id) ? { ...x, ...updated } : x
-            )
-          );
+          setCart((prev) => {
+            const nextCart = prev.map((x) =>
+              Number(x.id) === Number(updated.id) ? { ...x, ...updated } : x,
+            );
+            updateCartCache(nextCart);
+            return nextCart;
+          });
         }
       } catch {
         setCart(prevCart);
@@ -154,7 +191,7 @@ export default function CartClient({ initialCart }) {
         setLoadingItemId(null);
       }
     },
-    [cart]
+    [cart],
   );
 
   const handleDelete = useCallback(
@@ -164,9 +201,13 @@ export default function CartClient({ initialCart }) {
 
       const prevCart = cart;
 
-      setCart((prev) => prev.filter((x) => Number(x?.id) !== Number(item.id)));
+      setCart((prev) => {
+        const nextCart = prev.filter((x) => Number(x?.id) !== Number(item.id));
+        updateCartCache(nextCart);
+        return nextCart;
+      });
       setSelectedIds((prev) =>
-        prev.filter((id) => Number(id) !== Number(item.id))
+        prev.filter((id) => Number(id) !== Number(item.id)),
       );
 
       try {
@@ -178,7 +219,7 @@ export default function CartClient({ initialCart }) {
         setLoadingItemId(null);
       }
     },
-    [cart]
+    [cart],
   );
 
   const handleCheckout = useCallback(async () => {
@@ -219,14 +260,14 @@ export default function CartClient({ initialCart }) {
             const variantImages = Array.isArray(item?.variant?.images)
               ? item.variant.images
               : Array.isArray(item?.variant?.medias)
-              ? item.variant.medias.map((m) => m?.url).filter(Boolean)
-              : [];
+                ? item.variant.medias.map((m) => m?.url).filter(Boolean)
+                : [];
 
             const imageUrl = getImageUrl(
               variantImages[0] ||
                 item?.variant?.media?.url ||
                 product.thumbnail ||
-                product.image
+                product.image,
             );
 
             const quantity = getQuantity(item);
@@ -260,14 +301,10 @@ export default function CartClient({ initialCart }) {
                     />
 
                     <div>
-                      <p className="line-clamp-1">
-                        {product.name || "-"}
-                      </p>
+                      <p className="line-clamp-1">{product.name || "-"}</p>
                       <p className="text-sm text-gray-500">
                         Variant:{" "}
-                        {item?.variant?.name ||
-                          item?.variant?.sku ||
-                          "-"}
+                        {item?.variant?.name || item?.variant?.sku || "-"}
                       </p>
                     </div>
                   </div>
@@ -278,9 +315,7 @@ export default function CartClient({ initialCart }) {
                     min={1}
                     value={quantity}
                     disabled={busy || loadingCheckout}
-                    onChange={(newQty) =>
-                      handleUpdateQty(item, newQty)
-                    }
+                    onChange={(newQty) => handleUpdateQty(item, newQty)}
                   />
                   <p className="font-semibold text-primary-700">
                     {formatToRupiah(getLineTotal(item, quantity))}
@@ -299,9 +334,7 @@ export default function CartClient({ initialCart }) {
             disabled={selectedCount === 0 || loadingCheckout}
             className="w-full"
           >
-            {loadingCheckout
-              ? "Processing..."
-              : `Checkout (${selectedCount})`}
+            {loadingCheckout ? "Processing..." : `Checkout (${selectedCount})`}
           </Button>
         </div>
       </div>

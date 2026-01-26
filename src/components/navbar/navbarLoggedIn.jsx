@@ -86,6 +86,15 @@ export function NavbarLoggedIn({
 
         <div className="shrink-0 flex items-center gap-2">
           <CartButton />
+
+          <BtnIcon
+            as="span"
+            iconName="User"
+            variant="tertiary"
+            size="sm"
+            onClick={() => router.push("/account/profile")}
+          />
+
           <BtnIcon
             iconName="Bell"
             variant="tertiary"
@@ -181,8 +190,15 @@ export function NavbarLoggedIn({
                 <SheetHeader>
                   <SheetTitle>Account</SheetTitle>
                   <SheetDescription>
-                    Google login users tidak dapat akses profile management di sini. 
-                    Gunakan <Link href="/account/profile" className="text-primary-700 underline">profile page</Link> untuk mengelola akun.
+                    Google login users tidak dapat akses profile management di
+                    sini. Gunakan{" "}
+                    <Link
+                      href="/account/profile"
+                      className="text-primary-700 underline"
+                    >
+                      profile page
+                    </Link>{" "}
+                    untuk mengelola akun.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="mt-4">
@@ -215,7 +231,9 @@ export function NavbarLoggedIn({
                         : "User"}
                     </div>
                   </SheetTitle>
-                  <SheetDescription className="py-1">Account menu</SheetDescription>
+                  <SheetDescription className="py-1">
+                    Account menu
+                  </SheetDescription>
                 </SheetHeader>
 
                 <div className="mt-4 space-y-4">
