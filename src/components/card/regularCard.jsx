@@ -15,7 +15,8 @@ import { DataReview } from "@/data";
 import { useAuth } from "@/context/AuthContext";
 import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
-import { Toast } from "radix-ui";
+import { toast } from "sonner";
+import { updateCartCache } from "@/utils/cartCache";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
@@ -262,6 +263,20 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         const res = await axios.post("/cart", payload);
         toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+        
+        if (typeof window !== "undefined") {
+          try {
+            const cartRes = await axios.get("/cart");
+            const items =
+              cartRes.data?.data?.items ||
+              cartRes.data?.data ||
+              cartRes.data?.serve ||
+              [];
+            updateCartCache(Array.isArray(items) ? items : []);
+          } catch (err) {
+            console.warn("Failed to sync cart:", err);
+          }
+        }
       } catch (error) {
         console.error("Gagal menambah ke keranjang", error);
         const isUnauthorized = error?.response?.status === 401;

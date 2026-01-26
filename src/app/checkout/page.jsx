@@ -289,7 +289,7 @@ export default function CheckoutPage() {
           <CheckoutShipping
             displayAddresses={displayAddresses}
             loadingAddr={loadingAddr}
-            selectedAddressId={selectedAddressId}
+            selectedAddress={selectedAddressResolved}
             onSelectMain={selectAsMain}
             onReloadAddresses={reloadAddresses}
             isGuest={isGuest}
@@ -297,7 +297,7 @@ export default function CheckoutPage() {
             guestAddressLine={guestAddressLine}
             guestArea={guestArea}
             onGuestRecipientNameChange={setGuestRecipientName}
-            onGuestAddressChange={setGuestAddressLine}
+            onGuestAreaChange={setGuestArea}
             weightRounded={weightRounded}
             shippingAllCount={shippingAll.length}
             loadingShip={loadingShip}

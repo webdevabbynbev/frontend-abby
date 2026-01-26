@@ -11,6 +11,7 @@ import {
 } from "@/utils";
 import { toast } from "sonner";
 import axios from "@/lib/axios.js";
+import { updateCartCache } from "@/utils/cartCache";
 import { useAuth } from "@/context/AuthContext";
 
 import {
@@ -349,7 +350,6 @@ export default function ProductDetailClient({ product }) {
 
   const handleAddToCart = async () => {
     try {
-
       if (!product?.id) {
         toast("Product id tidak ditemukan");
         return;
@@ -374,6 +374,19 @@ export default function ProductDetailClient({ product }) {
 
       const res = await axios.post("/cart", payload);
       toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+      if (typeof window !== "undefined") {
+        try {
+          const cartRes = await axios.get("/cart");
+          const items =
+            cartRes.data?.data?.items ||
+            cartRes.data?.data ||
+            cartRes.data?.serve ||
+            [];
+          updateCartCache(Array.isArray(items) ? items : []);
+        } catch (err) {
+          console.warn("Failed to sync cart:", err);
+        }
+      }
     } catch (error) {
       console.error("Gagal menambah ke keranjang", error);
       const isUnauthorized = error?.response?.status === 401;
