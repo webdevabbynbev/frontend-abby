@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/axios";
 
 export default function OAuthCallbackPage() {
   const router = useRouter();
@@ -24,13 +25,83 @@ export default function OAuthCallbackPage() {
           throw new Error("Login Google gagal");
         }
 
-        // Login ke context
-        login({ user: data.session.user });
+        const accessToken = data.session.access_token;
+        if (!accessToken) {
+          throw new Error("Tidak ada access token dari Supabase");
+        }
 
-        router.replace("/");
+        // Baca mode dari sessionStorage (register atau login)
+        const mode = typeof window !== "undefined" 
+          ? sessionStorage.getItem("google_oauth_mode") || "login"
+          : "login";
+
+        const acceptPrivacy = typeof window !== "undefined"
+          ? sessionStorage.getItem("google_oauth_accept_privacy") === "1"
+          : false;
+
+        // Kirim ke backend sesuai mode
+        if (mode === "register") {
+          setMessage("Menyelesaikan pendaftaran...");
+          const response = await api.post("/api/v1/auth/register-google", {
+            token: accessToken,
+            accept_privacy_policy: acceptPrivacy,
+          });
+
+          // Extract user dari response
+          let user = null;
+          if (response.data?.serve?.user) {
+            user = response.data.serve.user;
+          } else if (response.data?.serve?.data) {
+            user = response.data.serve.data;
+          } else if (response.data?.user) {
+            user = response.data.user;
+          }
+
+          if (user) {
+            login({ user });
+            // Clear sessionStorage
+            sessionStorage.removeItem("google_oauth_mode");
+            sessionStorage.removeItem("google_oauth_accept_privacy");
+            router.replace("/account/profile");
+          } else {
+            throw new Error("Register gagal - user data tidak valid");
+          }
+        } else {
+          // Login mode
+          setMessage("Menyelesaikan login...");
+          const response = await api.post("/api/v1/auth/login-google", {
+            token: accessToken,
+            accept_privacy_policy: acceptPrivacy,
+          });
+
+          // Extract user dari response
+          let user = null;
+          if (response.data?.serve?.user) {
+            user = response.data.serve.user;
+          } else if (response.data?.serve?.data) {
+            user = response.data.serve.data;
+          } else if (response.data?.user) {
+            user = response.data.user;
+          }
+
+          if (user) {
+            login({ user });
+            // Clear sessionStorage
+            sessionStorage.removeItem("google_oauth_mode");
+            sessionStorage.removeItem("google_oauth_accept_privacy");
+            router.replace("/");
+          } else {
+            throw new Error("Login gagal - user data tidak valid");
+          }
+        }
       } catch (err) {
-        console.error(err);
+        console.error("OAuth callback error:", err);
         setMessage("Login Google gagal. Silakan coba lagi.");
+        // Clear sessionStorage
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("google_oauth_mode");
+          sessionStorage.removeItem("google_oauth_accept_privacy");
+        }
         setTimeout(() => router.replace("/sign-in"), 2500);
       }
     };
