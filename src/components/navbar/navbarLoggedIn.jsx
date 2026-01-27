@@ -96,6 +96,38 @@ export function NavbarLoggedIn({
 
             <MegaDropdown label="Shop by concerns" items={concernsItems} />
             <BrandDropdown label="Shop by Brand" brands={brands} />
+            {links.map((link) => {
+              const isExternal =
+                typeof link.href === "string" && link.href.startsWith("http");
+              const active = isNavActive(link.href);
+
+              const className = clsx(
+                "whitespace-nowrap text-xs font-medium transition-colors",
+                active
+                  ? "text-primary-700"
+                  : "text-neutral-600 hover:text-neutral-950",
+              );
+
+              if (isExternal) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={className}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {link.label}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={link.href} href={link.href} className={className}>
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -109,38 +141,6 @@ export function NavbarLoggedIn({
           />
 
           <CartButton />
-          {links.map((link) => {
-            const isExternal =
-              typeof link.href === "string" && link.href.startsWith("http");
-            const active = isNavActive(link.href);
-
-            const className = clsx(
-              "whitespace-nowrap text-sm font-medium transition-colors",
-              active
-                ? "text-primary-700"
-                : "text-gray-700 hover:text-primary-500",
-            );
-
-            if (isExternal) {
-              return (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className={className}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {link.label}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={link.href} href={link.href} className={className}>
-                {link.label}
-              </Link>
-            );
-          })}
 
           <Link href="/notification">
             <BtnIcon as="span" iconName="Bell" variant="tertiary" size="sm" />

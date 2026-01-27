@@ -149,7 +149,7 @@ export default function MegaDropdown({ label, items }) {
           <span className="whitespace-nowrap">{label}</span>
           <ChevronRightIcon
             className={cx(
-              "h-4 w-4 rotate-90 text-gray-400 transition-transform",
+              "h-4 w-4 rotate-90 text-gray-400 transition-all",
               open && "-rotate-90"
             )}
           />
@@ -175,7 +175,7 @@ export default function MegaDropdown({ label, items }) {
               href="/"
               className={cx(
                 itemBase,
-                "justify-start font-semibold text-gray-900 hover:bg-gray-50"
+                "justify-start font-semibold text-gray-900 hover:bg-primary-700"
               )}
             >
               Explore {label}
@@ -184,7 +184,7 @@ export default function MegaDropdown({ label, items }) {
 
           <DropdownMenu.Separator className="my-1 h-px bg-gray-200" />
 
-          <div className="max-h-[70vh] overflow-auto p-1">
+          <div className="max-h-[10vh] overflow-auto p-1">
             {items.map((lvl1) => (
               <Node key={`${lvl1.label}-${lvl1.href ?? "group"}`} node={lvl1} pathname={pathname} />
             ))}
