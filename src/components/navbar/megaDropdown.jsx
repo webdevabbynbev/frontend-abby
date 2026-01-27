@@ -89,7 +89,7 @@ function Node({ node, pathname }) {
           alignOffset={-4}
           collisionPadding={16}
         >
-          <div className="max-h-[70vh] overflow-auto p-1">
+          <div className="max-h-[50vh] overflow-auto p-1">
             {node.children.map((child) => (
               <Node key={`${child.label}-${child.href ?? "group"}`} node={child} pathname={pathname} />
             ))}
@@ -139,8 +139,8 @@ export default function MegaDropdown({ label, items }) {
         <button
           type="button"
           className={cx(
-            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
-            "text-gray-700 hover:text-primary-700 hover:bg-gray-50",
+            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium",
+            "text-neutral-600 hover:text-neutral-950 transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2"
           )}
           aria-label={`${label} menu`}

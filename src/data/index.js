@@ -25,10 +25,5 @@ export {
   DataMakeupTools,
   DataMenicure,
 } from "./DataBathAndBody";
-export {
-  DataSkinConcern,
-  DataBodyConcern,
-  DataHairConcern,
-} from "./DataConcern";
 export { DataRating } from "./DataRating";
 export { DataReview } from "./DataReview";

@@ -102,10 +102,27 @@ export async function GET(req) {
           product?.categoryname ||
           ""
       ).toLowerCase();
+    const getProductBrandId = (product) =>
+      String(
+        product?.brand_id ||
+          product?.brandId ||
+          product?.brand?.id ||
+          ""
+      );
+    const getProductCategoryName = (product) =>
+      String(
+        product?.category?.name ||
+          product?.category?.categoryname ||
+          product?.categoryName ||
+          product?.category_name ||
+          product?.category ||
+          product?.categoryname ||
+          ""
+      ).toLowerCase();
     const getProductName = (product) => String(product?.name || "").toLowerCase();
 
     const matchesKeyword = (product) => {
-      const name = getProductName(product);
+      const name = String(product?.name || "").toLowerCase();
       const sku = String(product?.sku || "").toLowerCase();
       const brand = getProductBrandName(product);
       const category = getProductCategoryName(product);
@@ -141,10 +158,6 @@ export async function GET(req) {
           primaryBrandNormalized.includes(productBrandName)
         );
       }
-      const productName = normalizeSearchText(getProductName(product));
-      if (primaryBrandNormalized && productName) {
-        return productName.includes(primaryBrandNormalized);
-      }
       return false;
     };
 
@@ -154,7 +167,11 @@ export async function GET(req) {
       const res = await getProducts({ page: 1, per_page: 500, brand_id: primaryBrand.id });
       const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
       const brandMatches = list.filter(matchesBrand);
-      products = isBrandQuery ? brandMatches : list.filter(matchesKeyword);
+      if (isBrandQuery) {
+        products = brandMatches.length > 0 ? brandMatches : list;
+      } else {
+        products = list.filter(matchesKeyword);
+      }
     }
 
     if (products.length === 0) {

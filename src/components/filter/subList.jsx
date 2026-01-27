@@ -19,9 +19,9 @@ export function SubList({
         const isActive = selected.includes(uniqueId);
         const label =
           item?.category ??
-          item?.skinconcern ??
-          item?.bodyconcern ??
-          item?.hairconcern ??
+          item?.skinconcerns ??
+          item?.bodyconcerns ??
+          item?.hairconcerns ??
           item?.label ??
           "";
 

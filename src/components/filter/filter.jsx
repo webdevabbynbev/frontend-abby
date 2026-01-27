@@ -23,9 +23,9 @@ import { formatToRupiah } from "@/utils";
 
 // import data filter lain (tetap dipakai)
 import {
-  DataSkinConcern,
-  DataBodyConcern,
-  DataHairConcern,
+  DataSkinconcerns,
+  DataBodyconcerns,
+  DataHairconcerns,
   DataRating,
 } from "@/data";
 
@@ -91,48 +91,48 @@ export function Filter({
     type === "min" ? setShowTooltipMin(!isNum) : setShowTooltipMax(!isNum);
   };
 
-  // concern sections (tetap sama)
-  const concern_sections = useMemo(
+  // concerns sections (tetap sama)
+  const concerns_sections = useMemo(
     () => [
       {
-        key: "skincareconcern",
-        title: "Skincare concern",
+        key: "skincareconcerns",
+        title: "Skincare concerns",
         items: [
           {
-            value: "skinconcern",
-            label: "Skincare concern",
+            value: "skinconcerns",
+            label: "Skincare concerns",
             leftBar: false,
-            list: DataSkinConcern,
-            prefix: "skinconcern",
-            getLabel: (row) => row.skinconcern,
+            list: DataSkinconcerns,
+            prefix: "skinconcerns",
+            getLabel: (row) => row.skinconcerns,
           },
         ],
       },
       {
-        key: "bodyconcern",
-        title: "Body concern",
+        key: "bodyconcerns",
+        title: "Body concerns",
         items: [
           {
-            value: "bodyconcern",
-            label: "Body concern",
+            value: "bodyconcerns",
+            label: "Body concerns",
             leftBar: false,
-            list: DataBodyConcern,
-            prefix: "bodyconcern",
-            getLabel: (row) => row.bodyconcern,
+            list: DataBodyconcerns,
+            prefix: "bodyconcerns",
+            getLabel: (row) => row.bodyconcerns,
           },
         ],
       },
       {
-        key: "hairconcern",
-        title: "Hair concern",
+        key: "hairconcerns",
+        title: "Hair concerns",
         items: [
           {
-            value: "hairconcern",
-            label: "Hair concern",
+            value: "hairconcerns",
+            label: "Hair concerns",
             leftBar: false,
-            list: DataHairConcern,
-            prefix: "hairconcern",
-            getLabel: (row) => row.hairconcern,
+            list: DataHairconcerns,
+            prefix: "hairconcerns",
+            getLabel: (row) => row.hairconcerns,
           },
         ],
       },
@@ -319,9 +319,9 @@ export function Filter({
       />
 
       <div className="TitleCat-3 flex-row w-full space-y-2">
-        <h3 className="w-36.5 font-medium text-base">By concern</h3>
+        <h3 className="w-36.5 font-medium text-base">By concerns</h3>
         <Accordion type="single" collapsible className="space-y-2">
-          {concern_sections.map((section) => {
+          {concerns_sections.map((section) => {
             const entry = section.items?.[0];
             return (
               <AccordionItem key={section.key} value={section.key}>

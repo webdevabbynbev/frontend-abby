@@ -8,6 +8,8 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
 import { getCategories } from "@/services/api/category.services";
+import { getconcern } from "@/services/api/concern.services";
+import { getBrands } from "@/services/api/brands.services";
 import { Toaster } from "sonner";
 import GAListener from "@/components/GAListener";
 
@@ -30,7 +32,7 @@ export const metadata = {
   metadataBase: new URL("https://abbynbev.com"),
 
   icons: {
-    icon: '/favicon.svg',
+    icon: "/favicon.svg",
   },
 
   title: {
@@ -62,18 +64,39 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   let categories = [];
+  let concerns = [];
+  let brands = [];
 
   try {
     const res = await getCategories();
     categories = Array.isArray(res?.serve)
       ? res.serve
       : Array.isArray(res?.data)
-      ? res.data
-      : Array.isArray(res)
-      ? res
-      : [];
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : [];
   } catch (error) {
     console.error("Failed to load categories for navbar:", error);
+  }
+
+  try {
+    const res = await getconcern();
+    concerns = Array.isArray(res?.serve)
+      ? res.serve
+      : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+          ? res
+          : [];
+  } catch (error) {
+    console.error("Failed to load concerns for navbar:", error);
+  }
+
+  try {
+    brands = await getBrands({ page: 1, per_page: 200 });
+  } catch (error) {
+    console.error("Failed to load brands for navbar:", error);
   }
 
   return (
@@ -102,23 +125,27 @@ export default async function RootLayout({ children }) {
           `}
         </Script>
         <GAListener />
-          <AuthProvider>
-            <LoginModalProvider>
-              <WishlistProvider>
-                <NavbarClientGate categories={categories} />
+        <AuthProvider>
+          <LoginModalProvider>
+            <WishlistProvider>
+              <NavbarClientGate
+                categories={categories}
+                concerns={concerns}
+                brands={brands}
+              />
 
-                <main className="flex-1">
-                  {children}
-                  <div className="lg:hidden h-24" />
-                </main>
+              <main className="flex-1">
+                {children}
+                <div className="lg:hidden h-24" />
+              </main>
 
-                <Toaster position="top-center" />
-                <MobileBottomNav />
-                <ChatkitWidget/>
-                <Footer />
-              </WishlistProvider>
-            </LoginModalProvider>
-          </AuthProvider>
+              <Toaster position="top-center" />
+              <MobileBottomNav />
+              <ChatkitWidget />
+              <Footer />
+            </WishlistProvider>
+          </LoginModalProvider>
+        </AuthProvider>
       </body>
     </html>
   );

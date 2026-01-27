@@ -119,7 +119,7 @@ Core behavior (VERY IMPORTANT):
 Conversation rules:
 
 1. Context checking (only when needed):
-   - For skincare: skin type, skin condition, main concern.
+   - For skincare: skin type, skin condition, main concerns.
    - For makeup: product type, finish preference, shade or undertone (if relevant).
    - Ask about PRICE RANGE only when:
      - The user asks for recommendations, OR
@@ -205,7 +205,7 @@ const bevModeSkincareAdvisorTest = new Agent({
 
 Scope:
 - Skincare products and routines.
-- Focus on skin type, skin concern, and ingredients.
+- Focus on skin type, skin concerns, and ingredients.
 
 Rules:
 - ONLY recommend products where CATEGORY = "skincare".
