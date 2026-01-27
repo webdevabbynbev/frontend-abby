@@ -2,56 +2,56 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 
-const WishlistContext = createContext();
+const WishlistsContext = createContext();
 
-export function WishlistProvider({ children }) {
-  const [wishlist, setWishlist] = useState([]);
+export function WishlistsProvider({ children }) {
+  const [Wishlists, setWishlists] = useState([]);
 
-  // Load wishlist dari localStorage on mount
+  // Load Wishlists dari localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("wishlist");
+      const stored = localStorage.getItem("Wishlists");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          setWishlist(parsed);
+          setWishlists(parsed);
         }
       }
     } catch (e) {
-      console.log("Wishlist parse error:", e);
+      console.log("Wishlists parse error:", e);
     }
   }, []);
 
-  // Save wishlist to localStorage whenever it changes
+  // Save Wishlists to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem("wishlist", JSON.stringify(wishlist));
+      localStorage.setItem("Wishlists", JSON.stringify(Wishlists));
     } catch (e) {
-      console.log("Wishlist save error:", e);
+      console.log("Wishlists save error:", e);
     }
-  }, [wishlist]);
+  }, [Wishlists]);
 
-  const addToWishlist = (productId) => {
-    setWishlist((prev) => {
+  const addToWishlists = (productId) => {
+    setWishlists((prev) => {
       const exists = prev.some((id) => id === productId);
       if (exists) return prev.filter((id) => id !== productId);
       return [...prev, productId];
     });
   };
 
-  const isWishlisted = (productId) => wishlist.some((id) => id === productId);
+  const isWishlistsed = (productId) => Wishlists.some((id) => id === productId);
 
   return (
-    <WishlistContext.Provider value={{ wishlist, addToWishlist, isWishlisted }}>
+    <WishlistsContext.Provider value={{ Wishlists, addToWishlists, isWishlistsed }}>
       {children}
-    </WishlistContext.Provider>
+    </WishlistsContext.Provider>
   );
 }
 
-export function useWishlist() {
-  const context = useContext(WishlistContext);
+export function useWishlists() {
+  const context = useContext(WishlistsContext);
   if (!context) {
-    throw new Error("useWishlist must be used within WishlistProvider");
+    throw new Error("useWishlists must be used within WishlistsProvider");
   }
   return context;
 }

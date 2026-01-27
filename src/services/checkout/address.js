@@ -1,4 +1,5 @@
 import axios from "@/lib/axios.js";
+import { getApi, toQuery } from "@/services/api/client";
 import { unwrap } from "@/utils/unwrap";
 
 export async function fetchAddresses() {
@@ -8,10 +9,10 @@ export async function fetchAddresses() {
   const arr = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.serve)
-    ? payload.serve
-    : Array.isArray(payload?.data)
-    ? payload.data
-    : [];
+      ? payload.serve
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
 
   return Array.isArray(arr) ? arr : [];
 }
@@ -32,16 +33,15 @@ export async function searchAreas(input, opts = {}) {
     type: opts.type || "single", // "single" default sesuai controller
   };
 
-  const res = await axios.get("/areas", { params });
-  const payload = unwrap(res);
+  const payload = await getApi(`/areas${toQuery(params)}`);
 
   const arr = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.serve)
-    ? payload.serve
-    : Array.isArray(payload?.data)
-    ? payload.data
-    : [];
+      ? payload.serve
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
 
   return Array.isArray(arr) ? arr : [];
 }

@@ -63,7 +63,7 @@ export default function WishlistPage() {
     setErrorMsg("");
 
     try {
-      const res = await axios.get("/api/wishlists");
+      const res = await axios.get("/wishlists");
       const json = res?.data ?? {};
 
       const serve = json?.serve ?? {};
@@ -193,7 +193,7 @@ export default function WishlistPage() {
                   <HeartToggle
                     initial
                     onToggle={(active) => {
-                      // optional: kalau mau langsung remove/add, nanti sambungin ke /api/wishlist POST/DELETE
+                      // optional: kalau mau langsung remove/add, nanti sambungin ke /api/wishlists POST/DELETE
                       // console.log("toggle:", active, item.id);
                     }}
                   />

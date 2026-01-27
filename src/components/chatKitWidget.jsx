@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Bouncy } from "ldrs/react";
-import "ldrs/react/Bouncy.css";
+import { Metronome } from "ldrs/react";
+import "ldrs/react/Metronome.css";
 import { FaSprayCanSparkles } from "react-icons/fa6";
 import {
   BtnIcon,
@@ -242,6 +242,11 @@ export function ChatkitWidget({ variant = "floating", onClose }) {
               {m.text && <p className="whitespace-pre-line">{m.text}</p>}
             </div>
           ))}
+          {isSending && (
+            <div className="flex justify-center py-10 text-primary-700">
+              <Metronome size="40" speed="1.5" color="#ae2d68" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -254,7 +259,13 @@ export function ChatkitWidget({ variant = "floating", onClose }) {
           placeholder="Tulis pertanyaan kamu..."
           className="flex-1"
         />
-        <BtnIcon iconName="ArrowUp" variant="primary" size="md" onClick={sendMessage} disabled={isSending} />
+        <BtnIcon
+          iconName="ArrowUp"
+          variant="primary"
+          size="md"
+          onClick={sendMessage}
+          disabled={isSending}
+        />
       </div>
     </div>
   );

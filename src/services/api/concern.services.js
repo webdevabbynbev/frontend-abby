@@ -1,6 +1,6 @@
 import { getApi, toQuery } from "./client";
 
-export async function getconcern(params = {}) {
+export async function getConcern(params = {}) {
   const qs = toQuery({ page: 1, per_page: 200, ...params });
   const json = await getApi(`/concern${qs}`);
 

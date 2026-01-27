@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import api from "@/lib/axios.js";
+import { getApi } from "@/services/api/client";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +12,10 @@ export default function PrivacyPolicyPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get("api/privacy-policy");
-        setHtml(res?.data?.serve?.value || "");
+        const res = await getApi("api/privacy-policy");
+        setHtml(res?.serve?.value || "");
       } catch (e) {
-        setErr(e?.response?.data?.message || e?.message || "Gagal load privacy policy");
+        setErr(e?.message || "Gagal load privacy policy");
       } finally {
         setLoading(false);
       }

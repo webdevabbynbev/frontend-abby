@@ -1,6 +1,6 @@
 "use client";
-import { useDebounce } from "@/app/hooks/useDebounce";
 import React, { useMemo, useState } from "react";
+import { useDebounce } from "@/app/hooks/useDebounce";
 
 import {
   Button,
@@ -15,59 +15,90 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components";
+
 import { NestedSection } from "./nestedSection";
 import { SubList } from "..";
-import { FaChevronDown, FaStar } from "react-icons/fa6";
-
+import { FaChevronDown } from "react-icons/fa6";
 import { formatToRupiah } from "@/utils";
 
-// import data filter lain (tetap dipakai)
-import {
-  DataSkinconcerns,
-  DataBodyconcerns,
-  DataHairconcerns,
-  DataRating,
-} from "@/data";
+/* ---------------- helpers ---------------- */
+
+const normalize = (v = "") =>
+  String(v)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim();
+
+const groupConcerns = (items = []) => {
+  const groups = {
+    skin: [],
+    body: [],
+    hair: [],
+  };
+
+  items.forEach((item) => {
+    if (!item?.name) return;
+
+    const type = String(
+      item.concernId ??
+        item.concern_id ??
+        item.concernType ??
+        item.concern_type,
+    );
+    
+    if (type === "1") groups.skin.push(item);
+    if (type === "2") groups.body.push(item);
+    if (type === "3") groups.hair.push(item);
+  });
+
+  return groups;
+};
+
+/* ---------------- component ---------------- */
 
 export function Filter({
   brands = [],
   categories = [],
+  concerns = [],
+  ratings = [],
   categoriesLoading = false,
   showBrandFilter = true,
-  className = "",
 }) {
-  // state pilihan filter
+  /* ---------- state UI ---------- */
   const [selectedFilters, setSelectedFilters] = useState([]);
+  const [brandSearch, setBrandSearch] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [showTooltipMin, setShowTooltipMin] = useState(false);
   const [showTooltipMax, setShowTooltipMax] = useState(false);
 
-  // category dari DB
-  const categoryTypes = Array.isArray(categories) ? categories : [];
-  const catLoading = Boolean(categoriesLoading);
+  const debouncedBrandSearch = useDebounce(brandSearch, 250);
 
-  // brand (opsional)
-  const [brandSearch, setBrandSearch] = useState("");
-  const debouncedSearch = useDebounce(brandSearch, 250);
-
-  const norm = (s = "") =>
-    s
-      .toString()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const brandOptions = Array.isArray(brands) && brands.length > 0 ? brands : [];
-
+  /* ---------- memo ---------- */
   const filteredBrands = useMemo(() => {
-    const q = norm(debouncedSearch);
-    if (!q) return brandOptions;
-    return brandOptions.filter((b) => norm(b.brandname || b.name).includes(q));
-  }, [brandOptions, debouncedSearch]);
+    const q = normalize(debouncedBrandSearch);
+    if (!q) return brands;
+    return brands.filter((b) => normalize(b.brandname || b.name).includes(q));
+  }, [brands, debouncedBrandSearch]);
 
+  const groupedConcerns = useMemo(() => groupConcerns(concerns), [concerns]);
+  const hasSubCategory = (node) =>
+    Array.isArray(node?.children) && node.children.length > 0;
+
+  const categoryRoots = useMemo(() => {
+    if (!Array.isArray(categories)) return [];
+
+    return categories
+      .filter(hasSubCategory) // ⬅️ root harus punya child
+      .map((root) => ({
+        ...root,
+        children: root.children.filter(hasSubCategory), // ⬅️ child juga harus punya subitem
+      }))
+      .filter((root) => root.children.length > 0);
+  }, [categories]);
+
+  /* ---------- handlers ---------- */
   const handleSelect = (prefix, id) => {
     const key = `${prefix}-${id}`;
     setSelectedFilters((prev) =>
@@ -77,318 +108,196 @@ export function Filter({
 
   const handleReset = () => {
     setSelectedFilters([]);
+    setBrandSearch("");
     setMinPrice("");
     setMaxPrice("");
-    setBrandSearch("");
   };
 
   const handleChangePrice = (e, type) => {
     const raw = e.target.value.replace(/[^\d]/g, "");
-    if (type === "min") setMinPrice(raw);
-    else setMaxPrice(raw);
+    type === "min" ? setMinPrice(raw) : setMaxPrice(raw);
 
     const isNum = /^\d*$/.test(e.target.value);
     type === "min" ? setShowTooltipMin(!isNum) : setShowTooltipMax(!isNum);
   };
 
-  // concerns sections (tetap sama)
-  const concerns_sections = useMemo(
-    () => [
-      {
-        key: "skincareconcerns",
-        title: "Skincare concerns",
-        items: [
-          {
-            value: "skinconcerns",
-            label: "Skincare concerns",
-            leftBar: false,
-            list: DataSkinconcerns,
-            prefix: "skinconcerns",
-            getLabel: (row) => row.skinconcerns,
-          },
-        ],
-      },
-      {
-        key: "bodyconcerns",
-        title: "Body concerns",
-        items: [
-          {
-            value: "bodyconcerns",
-            label: "Body concerns",
-            leftBar: false,
-            list: DataBodyconcerns,
-            prefix: "bodyconcerns",
-            getLabel: (row) => row.bodyconcerns,
-          },
-        ],
-      },
-      {
-        key: "hairconcerns",
-        title: "Hair concerns",
-        items: [
-          {
-            value: "hairconcerns",
-            label: "Hair concerns",
-            leftBar: false,
-            list: DataHairconcerns,
-            prefix: "hairconcerns",
-            getLabel: (row) => row.hairconcerns,
-          },
-        ],
-      },
-    ],
-    [selectedFilters],
-  );
-
-  const sections = useMemo(() => {
-    const roots = Array.isArray(categoryTypes) ? categoryTypes : [];
-    if (roots.length === 0) return [];
-
-    return roots.map((root) => {
-      const children = Array.isArray(root?.children) ? root.children : [];
-
-      const source = children.length ? children : [root];
-      const list = source.flatMap((child) => {
-        const grand = Array.isArray(child?.children) ? child.children : [];
-
-        return grand.length
-          ? grand.map((g) => ({ id: g.id, label: g.name }))
-          : [{ id: child.id, label: child.name }];
-      });
-
-      return {
-        key: `cat-root-${root.id}`,
-        title: root?.name || "Category",
-        list,
-      };
-    });
-  }, [categoryTypes, selectedFilters]);
+  /* ---------- render ---------- */
   return (
-    <div className={`flex-row space-y-6 h-full max-w-75 ${className}`}>
-      {showBrandFilter && (
-        <NestedSection
-          title="Shop by brand"
-          items={[
-            {
-              value: "brand-list",
-              label: "Brand",
-              leftBar: false,
-              render: () => (
-                <div className="TitleCat-4 flex-row w-full space-y-2 justify-between">
-                  <TxtField
-                    placeholder="Search brand here..."
-                    iconLeftName="MagnifyingGlass"
-                    variant="outline"
-                    className="w-full"
-                    value={brandSearch ?? ""}
-                    onChange={(e) => setBrandSearch(e.target.value)}
-                  />
-
-                  <div>
-                    {brandSearch && (
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => setBrandSearch("")}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 w-full py-2 px-1 h-auto max-h-64 overflow-y-auto custom-scrollbar">
-                    {filteredBrands.length === 0 ? (
-                      <div>brand tidak ditemukan</div>
-                    ) : (
-                      filteredBrands.map((item) => {
-                        const uniqueId = `brand-${item.id}`;
-                        const isActive = selectedFilters.includes(uniqueId);
-                        return (
-                          <Chip
-                            key={item.id}
-                            label={item.brandname || item.name}
-                            onClick={() => handleSelect("brand", item.id)}
-                            isActive={isActive}
-                          >
-                            {item.brandname || item.name}
-                          </Chip>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              ),
-            },
-          ]}
-        />
-      )}
-
-      <NestedSection
-        title={`Shop by category${catLoading ? " (loading...)" : ""}`}
-        items={[
-          {
-            value: "category-list",
-            label: "Category",
-            leftBar: false,
-            render: () => (
-              <div className="TitleCat-1 flex-row w-full space-y-4">
-                {catLoading ? null : sections.length === 0 ? (
-                  <div className="text-sm text-gray-500">
-                    No categories found
-                  </div>
-                ) : (
-                  <Accordion type="single" collapsible className="space-y-2">
-                    {sections.map((section) => (
-                      <AccordionItem key={section.key} value={section.key}>
-                        <AccordionTrigger className="text-xs font-medium">
-                          <span>{section.title}</span>
-                          <FaChevronDown className="h-3 w-3 text-neutral-400" />
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <SubList
-                            data={section.list || []}
-                            prefix="category_type"
-                            selectedFilters={selectedFilters}
-                            onSelect={handleSelect}
-                          />
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                )}
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      <NestedSection
-        title="By price"
-        items={[
-          {
-            value: "price-range",
-            label: "Price range",
-            leftBar: false,
-            render: () => (
-              <div className="TitleCat-2 flex-row w-full space-y-4">
-                <div className="Price flex-row w-full space-y-2 items-center">
-                  <div className="textfieldmin w-full">
-                    <TooltipProvider>
-                      <Tooltip open={showTooltipMin}>
-                        <TooltipTrigger asChild>
-                          <TxtField
-                            label="minimum price"
-                            value={formatToRupiah(minPrice)}
-                            onChange={(e) => handleChangePrice(e, "min")}
-                            placeholder="Rp.0"
-                            variant="outline"
-                            className="w-full"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>You can only enter a number</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-
-                  <div className="textfieldmax w-full">
-                    <TooltipProvider>
-                      <Tooltip open={showTooltipMax}>
-                        <TooltipTrigger asChild>
-                          <TxtField
-                            label="maximum price"
-                            value={formatToRupiah(maxPrice)}
-                            onChange={(e) => handleChangePrice(e, "max")}
-                            placeholder="Rp.0"
-                            variant="outline"
-                            className="w-full"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>You can only enter a number</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      <div className="TitleCat-3 flex-row w-full space-y-2">
-        <h3 className="w-36.5 font-medium text-base">By concerns</h3>
-        <Accordion type="single" collapsible className="space-y-2">
-          {concerns_sections.map((section) => {
-            const entry = section.items?.[0];
-            return (
-              <AccordionItem key={section.key} value={section.key}>
-                <AccordionTrigger className="text-xs font-medium">
-                  <span>{section.title}</span>
-                  <FaChevronDown className="h-3 w-3 text-neutral-400" />
-                </AccordionTrigger>
-                <AccordionContent>
-                  <SubList
-                    data={entry?.list || []}
-                    prefix={entry?.prefix}
-                    selectedFilters={selectedFilters}
-                    onSelect={handleSelect}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
-      </div>
-
-      <NestedSection
-        title="By rating"
-        items={[
-          {
-            value: "rating-list",
-            label: "Rating",
-            leftBar: false,
-            render: () => (
-              <div className="TitleCat-5 flex-row w-full space-x-4 justify-between items-center">
-                <div className="flex flex-wrap gap-4 w-full py-2 px-1">
-                  {DataRating.map((item) => {
-                    const uniqueId = `rating-${item.id}`;
-                    const isActive = selectedFilters.includes(uniqueId);
-                    return (
-                      <Chip
-                        key={item.id}
-                        label={item.star}
-                        onClick={() => handleSelect("rating", item.id)}
-                        isActive={isActive}
-                      >
-                        {item.star}
-                      </Chip>
-                    );
-                  })}
-                </div>
-              </div>
-            ),
-          },
-        ]}
-      />
-      {/* Reset */}
-      <div className="w-auto flex justify-between space-x-4">
+    <div className={`flex flex-col gap-2 p-2 bg-neutral-50 border-primary-700`}>
+      <div className="flex flex-row items-center justify-between p-2">
+        <span className="font-medium text-sm">Filter by</span>
+        {/* RESET */}
         <Button
-          onClick={handleReset}
           variant="primary"
           size="sm"
+          onClick={handleReset}
           disabled={
-            selectedFilters.length === 0 &&
-            !minPrice &&
-            !maxPrice &&
-            !brandSearch
+            !selectedFilters.length && !brandSearch && !minPrice && !maxPrice
           }
         >
           Reset filter
         </Button>
       </div>
+      {/* BRAND */}
+      {showBrandFilter && (
+        <NestedSection
+          title="Brands"
+          mode="flat"
+          render={() => (
+            <div className="space-y-2">
+              <TxtField
+                placeholder="Search brand here..."
+                value={brandSearch}
+                onChange={(e) => setBrandSearch(e.target.value)}
+              />
+
+              <div className="flex flex-wrap gap-3 max-h-64 overflow-y-auto">
+                {filteredBrands.length === 0 ? (
+                  <div>brand tidak ditemukan</div>
+                ) : (
+                  filteredBrands.map((b) => {
+                    const active = selectedFilters.includes(`brand-${b.id}`);
+                    return (
+                      <Chip
+                        key={b.id}
+                        isActive={active}
+                        onClick={() => handleSelect("brand", b.id)}
+                      >
+                        {b.brandname || b.name}
+                      </Chip>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        />
+      )}
+
+      {/* CATEGORY */}
+      <NestedSection
+        title="Categories"
+        mode="flat"
+        render={() =>
+          categoriesLoading ? null : (
+            <Accordion type="single" collapsible className="space-y-2">
+              {categoryRoots.map((root) => (
+                <AccordionItem key={root.id} value={root.id}>
+                  <AccordionTrigger>
+                    {root.name}
+                    <FaChevronDown className="h-3 w-3" />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SubList
+                      data={root.children}
+                      prefix="category"
+                      selectedFilters={selectedFilters}
+                      onSelect={handleSelect}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )
+        }
+      />
+
+      {/* PRICE */}
+      <NestedSection
+        title="Price"
+        mode="flat"
+        render={() => (
+          <div className="space-y-2">
+            <TooltipProvider>
+              <Tooltip open={showTooltipMin}>
+                <TooltipTrigger asChild>
+                  <TxtField
+                    label="Min"
+                    value={formatToRupiah(minPrice)}
+                    onChange={(e) => handleChangePrice(e, "min")}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Number only</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip open={showTooltipMax}>
+                <TooltipTrigger asChild>
+                  <TxtField
+                    label="Max"
+                    value={formatToRupiah(maxPrice)}
+                    onChange={(e) => handleChangePrice(e, "max")}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Number only</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+      />
+
+      {/* CONCERN */}
+      <NestedSection
+        title="Concerns"
+        mode="flat"
+        render={() => {
+          const entries = Object.entries(groupedConcerns).filter(
+            ([, list]) => list.length > 0,
+          );
+
+          if (!entries.length) {
+            return (
+              <div className="text-xs text-neutral-500">
+                No concern available
+              </div>
+            );
+          }
+
+          return (
+            <Accordion type="single" collapsible className="space-y-2">
+              {entries.map(([key, list]) => (
+                <AccordionItem key={key} value={key}>
+                  <AccordionTrigger className="text-xs font-medium capitalize">
+                    {key}
+                    <FaChevronDown className="h-3 w-3 text-neutral-400" />
+                  </AccordionTrigger>
+
+                  <AccordionContent>
+                    <SubList
+                      data={list}
+                      prefix="concern"
+                      selectedFilters={selectedFilters}
+                      onSelect={handleSelect}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          );
+        }}
+      />
+
+      {/* RATING */}
+      <NestedSection
+        title="By rating"
+        mode="flat"
+        render={() => (
+          <div className="flex flex-wrap gap-3">
+            {ratings.map((r) => {
+              const active = selectedFilters.includes(`rating-${r.id}`);
+              return (
+                <Chip
+                  key={r.id}
+                  label={r.star || r.label}
+                  isActive={active}
+                  onClick={() => handleSelect("rating", r.id)}
+                />
+              );
+            })}
+          </div>
+        )}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import MegaDropdown from "./megaDropdown";
 
 import {
   BtnIcon,
@@ -19,8 +20,8 @@ import {
 } from "@/components";
 
 import CartButton from "@/components/button/cartButton";
-import ShopByCategoryDropdown from "./categoryDropdown";
-import MegaDropdown from "./megaDropdown";
+import { concernHref } from "./adapters/concern.adapter";
+import { categoryHref } from "./adapters/category.adapter";
 import BrandDropdown from "./brandDropdown";
 import { buildconcernsItems } from "./utils";
 
@@ -87,15 +88,59 @@ export function NavbarLoggedIn({
           </Link>
 
           {/* DROPDOWN MENUS */}
-          <div className="flex items-center">
-            <ShopByCategoryDropdown
-              label="Shop By Category"
-              categories={categoryTypes}
-              loading={catLoading}
+          <div className="flex items-center gap-1">
+            <MegaDropdown
+              label="Category"
+              data={categories}
+              buildHref={categoryHref}
+              searchPlaceholder="Search category..."
+              viewAllHref="/category"
+              icon="Package"
             />
 
-            <MegaDropdown label="Shop by concerns" items={concernsItems} />
-            <BrandDropdown label="Shop by Brand" brands={brands} />
+            <MegaDropdown
+              label="Concern"
+              data={concerns}
+              buildHref={concernHref}
+              searchPlaceholder="Search concern..."
+              viewAllHref="/concern"
+              icon="HeartHandshake"
+            />
+            <BrandDropdown label="Brand" brands={brands} />
+            {links.map((link) => {
+              const isExternal =
+                typeof link.href === "string" && link.href.startsWith("http");
+              const active = isNavActive(link.href);
+
+              const className = clsx(
+                "inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                active
+                  ? "text-primary-700 bg-primary-50"
+                  : "text-neutral-600 hover:text-primary-700 hover:bg-primary-50",
+              );
+
+              if (isExternal) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={className}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span>✨</span>
+                    {link.label}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={link.href} href={link.href} className={className}>
+                  <span>✨</span>
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -109,38 +154,6 @@ export function NavbarLoggedIn({
           />
 
           <CartButton />
-          {links.map((link) => {
-            const isExternal =
-              typeof link.href === "string" && link.href.startsWith("http");
-            const active = isNavActive(link.href);
-
-            const className = clsx(
-              "whitespace-nowrap text-sm font-medium transition-colors",
-              active
-                ? "text-primary-700"
-                : "text-gray-700 hover:text-primary-500",
-            );
-
-            if (isExternal) {
-              return (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className={className}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {link.label}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={link.href} href={link.href} className={className}>
-                {link.label}
-              </Link>
-            );
-          })}
 
           <Link href="/notification">
             <BtnIcon as="span" iconName="Bell" variant="tertiary" size="sm" />

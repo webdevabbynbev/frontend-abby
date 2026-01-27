@@ -25,5 +25,6 @@ export {
   DataMakeupTools,
   DataMenicure,
 } from "./DataBathAndBody";
+
 export { DataRating } from "./DataRating";
 export { DataReview } from "./DataReview";

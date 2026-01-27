@@ -1,11 +1,6 @@
 "use client";
 
-export const slugify = (value) =>
-  String(value || "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+import { slugify } from "@/utils";
 
 const resolveLabel = (item = {}) =>
   item.label ||

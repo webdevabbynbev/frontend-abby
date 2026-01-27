@@ -88,7 +88,7 @@ export function MobileBottomNav({ className = "" }) {
 
   const profileLinks = [
     { href: "/account/profile", label: "Profile" },
-    { href: "/account/wishlist", label: "Wishlist" },
+    { href: "/account/wishlists", label: "Wishlist" },
     { href: "/account/order-history", label: "Order history" },
     { href: "/vouchers", label: "Voucher" },
   ];

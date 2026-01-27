@@ -6,7 +6,7 @@ import { LoginRegisModalForm } from "@/components";
 
 export function NavbarClientGate({
   categories = [],
-  concern = [],
+  concerns = [],
   brands = [],
 }) {
   const [mounted, setMounted] = useState(false);
@@ -23,7 +23,7 @@ export function NavbarClientGate({
     <>
       <Navbar
         categories={categories}
-        concern={concern}
+        concerns={concerns}
         brands={brands}
       />
       <LoginRegisModalForm />

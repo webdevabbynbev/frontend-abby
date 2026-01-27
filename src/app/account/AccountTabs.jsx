@@ -56,8 +56,8 @@ export default function AccountTabs({ slug }) {
         </button>
 
         <button
-          onClick={() => router.push("/account/wishlist")}
-          className={navClass(pathname.startsWith("/account/wishlist"))}
+          onClick={() => router.push("/account/wishlists")}
+          className={navClass(pathname.startsWith("/account/wishlists"))}
         >
           Wishlist
         </button>

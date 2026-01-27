@@ -1,5 +1,4 @@
 import api from "@/lib/axios.js";
-import { setToken, clearToken, hasSession } from "@/services/authToken";
 
 function s(v) {
   return String(v ?? "").trim();
@@ -15,19 +14,33 @@ function n(v) {
  *  ========================= */
 export async function getUser() {
   try {
-    const res = await api.get("/api/v1/profile");
-    return { user: res.data?.serve?.user ?? null };
-  } catch (err) {
-    return { user: null };
+    const res = await api.get("/profile")
+
+    const serve = res.data?.serve ?? null
+
+    // handle:
+    // 1) serve = user object
+    // 2) serve = { data: user }
+    const user =
+      serve?.data
+        ? serve.data
+        : serve?.id
+        ? serve
+        : null
+
+    return { user }
+  } catch {
+    return { user: null }
   }
 }
+
 
 /** =========================
  *  PROFILE
  *  ========================= */
 export async function updateProfile(payload) {
   try {
-    const res = await api.put("/api/v1/profile", payload, {
+    const res = await api.put("/profile", payload, {
       headers: { "Content-Type": "application/json" },
     });
     return res.data;
@@ -44,7 +57,7 @@ export async function getAddressByQuery(userId) {
   if (!userId) return [];
 
   try {
-    const res = await api.get("/api/v1/addresses", {
+    const res = await api.get("/addresses", {
       params: { user_id: userId },
       withCredentials: true,
     });
@@ -103,12 +116,12 @@ export async function regis(
     if (!payload.accept_privacy_policy)
       throw new Error("Wajib menyetujui Privacy Policy");
 
-    const res = await api.post("/api/v1/auth/register", payload);
+    const res = await api.post("/auth/register", payload);
     return res.data;
   } catch (err) {
     const status = err?.response?.status;
     let msg = "Register gagal";
-    
+
     if (status === 409) {
       msg = "Email atau nomor HP sudah terdaftar";
     } else if (status === 400) {
@@ -118,7 +131,7 @@ export async function regis(
     } else {
       msg = err?.response?.data?.message || err?.message || msg;
     }
-    
+
     console.error("regis error:", err);
     throw new Error(msg);
   }
@@ -151,7 +164,7 @@ export async function OtpRegis(
     if (!payload.accept_privacy_policy)
       throw new Error("Wajib menyetujui Privacy Policy");
 
-    const res = await api.post("/api/v1/auth/verify-register", payload);
+    const res = await api.post("auth/verify-register", payload);
 
     const data = res.data;
     const token = data?.serve?.token;
@@ -161,7 +174,7 @@ export async function OtpRegis(
   } catch (err) {
     const status = err?.response?.status;
     let msg = "OTP salah atau register gagal";
-    
+
     if (status === 400) {
       msg = "OTP tidak valid atau sudah kadaluarsa";
     } else if (status === 429) {
@@ -171,7 +184,7 @@ export async function OtpRegis(
     } else {
       msg = err?.response?.data?.message || err?.message || msg;
     }
-    
+
     console.error("OtpRegis error:", err);
     throw new Error(msg);
   }
@@ -181,7 +194,7 @@ export async function OtpRegis(
  *  LOGIN
  *  ========================= */
 export async function loginUser(email_or_phone, password, remember_me = false) {
-  const res = await api.post("/api/v1/auth/login", {
+  const res = await api.post("/auth/login", {
     email_or_phone,
     password,
     remember_me,
@@ -193,7 +206,7 @@ export async function loginUser(email_or_phone, password, remember_me = false) {
  *  GOOGLE LOGIN
  *  ========================= */
 export async function loginGoogle(token, accept_privacy_policy = false) {
-  const res = await api.post("/api/v1/auth/login-google", {
+  const res = await api.post("/auth/login-google", {
     token,
     accept_privacy_policy,
   });
@@ -208,5 +221,5 @@ export function logoutLocal() {
 }
 
 export async function logoutUser() {
-  await api.post("/api/v1/auth/logout");
+  await api.post("/auth/logout");
 }

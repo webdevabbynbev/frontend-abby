@@ -4,11 +4,11 @@ import "./globals.css";
 
 import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
 import { AuthProvider } from "@/context/AuthContext";
-import { WishlistProvider } from "@/context/WishlistContext";
+import { WishlistsProvider } from "@/context/WishlistContext";
 import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
 import { getCategories } from "@/services/api/category.services";
-import { getconcern } from "@/services/api/concern.services";
+import { getConcern } from "@/services/api/concern.services";
 import { getBrands } from "@/services/api/brands.services";
 import { Toaster } from "sonner";
 import GAListener from "@/components/GAListener";
@@ -68,27 +68,13 @@ export default async function RootLayout({ children }) {
   let brands = [];
 
   try {
-    const res = await getCategories();
-    categories = Array.isArray(res?.serve)
-      ? res.serve
-      : Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-          ? res
-          : [];
+    categories = await getCategories({ page: 1, per_page: 200 });
   } catch (error) {
     console.error("Failed to load categories for navbar:", error);
   }
 
   try {
-    const res = await getconcern();
-    concerns = Array.isArray(res?.serve)
-      ? res.serve
-      : Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-          ? res
-          : [];
+    concerns = await getConcern({ page: 1, per_page: 200 });
   } catch (error) {
     console.error("Failed to load concerns for navbar:", error);
   }
@@ -127,7 +113,7 @@ export default async function RootLayout({ children }) {
         <GAListener />
         <AuthProvider>
           <LoginModalProvider>
-            <WishlistProvider>
+            <WishlistsProvider>
               <NavbarClientGate
                 categories={categories}
                 concerns={concerns}
@@ -143,7 +129,7 @@ export default async function RootLayout({ children }) {
               <MobileBottomNav />
               <ChatkitWidget />
               <Footer />
-            </WishlistProvider>
+            </WishlistsProvider>
           </LoginModalProvider>
         </AuthProvider>
       </body>

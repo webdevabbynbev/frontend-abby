@@ -18,9 +18,12 @@ export const writeCartCache = (items = []) => {
   } catch {}
 };
 
+// ⬅️ PENTING: async dispatch (hindari setState saat render)
 export const notifyCartUpdated = () => {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("cart:updated"));
+  queueMicrotask(() => {
+    window.dispatchEvent(new CustomEvent("cart:updated"));
+  });
 };
 
 export const updateCartCache = (items = []) => {

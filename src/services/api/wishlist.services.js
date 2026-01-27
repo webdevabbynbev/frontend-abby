@@ -1,4 +1,15 @@
-import { getApi } from "./client";
+import api from "@/lib/axios.js";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = API_BASE ? API_BASE.replace(/\/+$/, "") : "";
+
+function withPrivateBase(config = {}) {
+  return BASE_URL ? { ...config, baseURL: BASE_URL } : config;
+}
+
+function unwrap(res) {
+  return res?.data ?? res;
+}
 
 /**
  * GET Wishlist
@@ -6,11 +17,16 @@ import { getApi } from "./client";
 export async function getWishlist(token) {
   if (!token) throw new Error("Unauthorized");
 
-  return getApi("/wishlist", {
-    headers: {
-      "Proxy-Authorization": `Bearer ${token}`,
-    },
-  });
+  const res = await api.get(
+    "/wishlists",
+    withPrivateBase({
+      headers: {
+        "Proxy-Authorization": `Bearer ${token}`,
+      },
+    }),
+  );
+
+  return unwrap(res);
 }
 
 /**
@@ -21,15 +37,19 @@ export async function addWishlist(token, payload) {
   if (!token) throw new Error("Unauthorized");
   if (!payload?.product_id) throw new Error("product_id is required");
 
-  return getApi("/wishlist", {
-    method: "POST",
-    headers: {
-      "Proxy-Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const res = await api.post(
+    "/wishlists",
+    payload,
+    withPrivateBase({
+      headers: {
+        "Proxy-Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }),
+  );
+
+  return unwrap(res);
 }
 
 // kalau backend kamu pakai DELETE dengan body (paling aman)
@@ -37,13 +57,17 @@ export async function removeWishlist(token, payload) {
   if (!token) throw new Error("Unauthorized");
   if (!payload?.product_id) throw new Error("product_id is required");
 
-  return getApi("/wishlist", {
-    method: "DELETE",
-    headers: {
-      "Proxy-Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const res = await api.delete(
+    "/wishlists",
+    withPrivateBase({
+      headers: {
+        "Proxy-Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      data: payload,
+    }),
+  );
+
+  return unwrap(res);
 }
