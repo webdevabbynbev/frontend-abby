@@ -236,10 +236,14 @@ export function normalizeSaleProduct(raw) {
   const base = normalizeProduct(raw);
   if (!base) return null;
 
-  const normalPrice = Number(raw?.price ?? base.price ?? 0);
+  const normalPrice = Number(
+    raw?.realprice ?? raw?.realPrice ?? raw?.price ?? base.price ?? 0,
+  );
   const salePrice = Number(raw?.salePrice ?? raw?.sale_price ?? 0);
   const saleVariantId = Number(
-    raw?.variant_id ??
+    raw?.saleVariantId ??
+      raw?.sale_variant_id ??
+      raw?.variant_id ??
       raw?.variantId ??
       raw?.variant?.id ??
       raw?.variant?.variant_id ??
@@ -248,15 +252,15 @@ export function normalizeSaleProduct(raw) {
       NaN,
   );
 
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
+  const hasPromo = Number.isFinite(salePrice) && salePrice > 0;
+  const isDiscounted = hasPromo && salePrice < normalPrice;
 
   return {
     ...base,
-    price: isSale ? salePrice : normalPrice,
-    realprice: isSale ? normalPrice : NaN,
-    sale: isSale,
-    salePrice: isSale ? salePrice : 0,
+    price: isDiscounted ? salePrice : normalPrice,
+    realprice: isDiscounted ? normalPrice : NaN,
+    sale: hasPromo,
+    salePrice: hasPromo ? salePrice : 0,
     stock: Number(raw?.stock ?? 0),
     saleVariantId:
       Number.isFinite(saleVariantId) && saleVariantId > 0
@@ -305,18 +309,30 @@ export function normalizeFlashSaleItem(raw) {
     salePrice = currentPrice;
   }
 
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
+  const hasPromo = Number.isFinite(salePrice) && salePrice > 0;
+  const isSale = hasPromo && salePrice < normalPrice;
 
-  if (!isSale) return raw;
+  if (!hasPromo) return raw;
+
+  const promoStock =
+    raw?.stock ??
+    raw?.flashStock ??
+    raw?.flash_stock ??
+    raw?.promoStock ??
+    raw?.promo_stock ??
+    source?.stock ??
+    null;
 
   const normalizedProduct = {
     ...source,
     price: normalPrice,
     flashPrice: salePrice,
     realprice: normalPrice,
-    sale: true,
+    sale: hasPromo,
     flashSaleId: raw.flashSaleId ?? source.flashSaleId,
+    stock: promoStock ?? source?.stock ?? 0,
+    flashStock: promoStock ?? source?.flashStock ?? null,
+    promoStock: promoStock ?? source?.promoStock ?? null,
   };
 
   if (raw.product) {
