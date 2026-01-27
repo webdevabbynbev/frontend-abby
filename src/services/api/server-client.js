@@ -22,7 +22,7 @@ const BASE = API_BASE
   /^\/ramadan(\/|$)/i,
   /^\/transaction(\/|$)/i,
   /^\/vouchers\/(my|[^/]+\/claim)(\/|$)/i,
-  /^\/wishlist(\/|$)/i,
+  /^\/wishlists(\/|$)/i,
 ];
 
 function assertPublicPath(path) {

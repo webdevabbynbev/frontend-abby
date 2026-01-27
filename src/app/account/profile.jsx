@@ -50,10 +50,8 @@ export function Profilepage() {
       try {
         const { error } = await supabase.auth.getSession();
         if (error) {
-          console.error("Supabase error:", error);
           setSupabaseStatus("error");
         } else {
-          console.log("Supabase connected ✅");
           setSupabaseStatus("ok");
         }
       } catch (err) {

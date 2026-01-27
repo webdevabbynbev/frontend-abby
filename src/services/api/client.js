@@ -18,7 +18,7 @@ const PRIVATE_PATH_PATTERNS = [
   /^\/ramadan(\/|$)/i,
   /^\/transaction(\/|$)/i,
   /^\/vouchers\/(my|[^/]+\/claim)(\/|$)/i,
-  /^\/wishlist(\/|$)/i,
+  /^\/wishlists(\/|$)/i,
 ];
 
 function assertPublicPath(path) {

@@ -14,14 +14,26 @@ function n(v) {
  *  ========================= */
 export async function getUser() {
   try {
-    const res = await api.get("/profile", {
-      withCredentials: true, // ⬅️ WAJIB
-    });
-    return { user: res.data?.serve?.data ?? null }
-  } catch (err) {
-    return { user: null };
+    const res = await api.get("/profile")
+
+    const serve = res.data?.serve ?? null
+
+    // handle:
+    // 1) serve = user object
+    // 2) serve = { data: user }
+    const user =
+      serve?.data
+        ? serve.data
+        : serve?.id
+        ? serve
+        : null
+
+    return { user }
+  } catch {
+    return { user: null }
   }
 }
+
 
 /** =========================
  *  PROFILE

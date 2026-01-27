@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import axios from "@/lib/axios.js";
+import axios from "@/lib/axios";
 import {
   MobileCartActionBar,
   Button,
@@ -14,9 +14,7 @@ import { formatToRupiah } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { readCartCache, updateCartCache } from "@/utils/cartCache";
 
-const STORAGE_KEY = "checkout_selected_ids";
-
-export default function CartClient({ initialCart }) {
+export default function CartClient({ initialCart = [] }) {
   const router = useRouter();
 
   const [cart, setCart] = useState(
@@ -26,15 +24,55 @@ export default function CartClient({ initialCart }) {
   const [loadingItemId, setLoadingItemId] = useState(null);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
+  const safeCart = Array.isArray(cart) ? cart : [];
+
+  /* =========================
+   * SYNC CART CACHE (FINAL)
+   * ========================= */
+  useEffect(() => {
+    updateCartCache(safeCart);
+  }, [safeCart]);
+
+  /* =========================
+   * LOAD CART ON MOUNT
+   * ========================= */
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      try {
+        const res = await axios.get("/cart");
+        const items =
+          res?.data?.data?.items ||
+          res?.data?.data ||
+          res?.data?.serve ||
+          [];
+
+        if (active && Array.isArray(items)) {
+          setCart(items);
+        }
+      } catch {
+        if (active) {
+          setCart(readCartCache());
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /* =========================
+   * HELPERS
+   * ========================= */
   const toNumber = (v, fallback = 0) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : fallback;
   };
 
-  const safeCart = Array.isArray(cart) ? cart : [];
-
   const getQuantity = (item) =>
-    toNumber(item?.qtyCheckout ?? item?.qty ?? item?.quantity ?? 0, 0);
+    toNumber(item?.qtyCheckout ?? item?.qty ?? item?.quantity ?? 0);
 
   const getUnitPrice = (item) =>
     toNumber(
@@ -43,101 +81,24 @@ export default function CartClient({ initialCart }) {
         item?.price ??
         item?.product?.price ??
         0,
-      0,
     );
 
-  const getLineTotal = (item, qty = getQuantity(item)) => {
-    const amount = Number(item?.amount);
-    if (Number.isFinite(amount)) return amount;
-    return getUnitPrice(item) * toNumber(qty, 0);
-  };
+  const getLineTotal = (item) =>
+    getUnitPrice(item) * getQuantity(item);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed))
-        setSelectedIds(parsed.map(Number).filter(Boolean));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedIds));
-    } catch {}
-  }, [selectedIds]);
-
-  useEffect(() => {
-    const idsInCart = new Set(
-      safeCart.map((x) => Number(x?.id)).filter(Boolean),
-    );
-    setSelectedIds((prev) =>
-      prev.map(Number).filter((id) => idsInCart.has(id)),
-    );
-  }, [safeCart]);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadCart = async () => {
-      try {
-        const res = await axios.get("/cart");
-        const list = Array.isArray(items) ? items : [];
-        if (active) {
-          if (list.length > 0) {
-            setCart(list);
-            updateCartCache(list);
-          } else {
-            const cached = readCartCache();
-            setCart(cached.length > 0 ? cached : []);
-          }
-        }
-      } catch (err) {
-        console.warn("Error load cart:", err);
-        if (active) {
-          const cached = readCartCache();
-          setCart(cached.length > 0 ? cached : []);
-        }
-      }
-    };
-
-    loadCart();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  /* =========================
+   * SELECTION LOGIC
+   * ========================= */
   const allIds = useMemo(
     () => safeCart.map((x) => Number(x?.id)).filter(Boolean),
     [safeCart],
   );
 
-  const selectedCount = selectedIds.length;
-
-  const selectedSubtotal = useMemo(() => {
-    const set = new Set(selectedIds.map(Number));
-    return safeCart
-      .filter((item) => set.has(Number(item?.id)))
-      .reduce((sum, item) => sum + getLineTotal(item), 0);
-  }, [safeCart, selectedIds]);
-
-  const allSelected = allIds.length > 0 && selectedIds.length === allIds.length;
-
-  const isSelected = useCallback(
-    (item) => selectedIds.includes(Number(item?.id)),
-    [selectedIds],
-  );
-
-  const toggleSelect = useCallback((itemId, checked) => {
-    const id = Number(itemId);
-    if (!id) return;
-
+  const toggleSelect = useCallback((id, checked) => {
     setSelectedIds((prev) => {
-      const s = new Set(prev.map(Number));
-      checked ? s.add(id) : s.delete(id);
-      return Array.from(s);
+      const set = new Set(prev);
+      checked ? set.add(id) : set.delete(id);
+      return Array.from(set);
     });
   }, []);
 
@@ -146,204 +107,123 @@ export default function CartClient({ initialCart }) {
     [allIds],
   );
 
-  const handleUpdateQty = useCallback(
-    async (item, nextQty) => {
-      if (!item?.id) return;
+  const selectedSubtotal = useMemo(() => {
+    const set = new Set(selectedIds);
+    return safeCart
+      .filter((item) => set.has(Number(item.id)))
+      .reduce((sum, item) => sum + getLineTotal(item), 0);
+  }, [safeCart, selectedIds]);
 
-      const newQty = toNumber(nextQty, 0);
-      if (newQty <= 0) return;
+  /* =========================
+   * UPDATE QTY (OPTIMISTIC)
+   * ========================= */
+  const handleUpdateQty = useCallback(async (item, nextQty) => {
+    const id = Number(item?.id);
+    if (!id || nextQty <= 0) return;
 
-      const prevCart = cart;
+    setCart((prev) =>
+      prev.map((x) =>
+        Number(x.id) === id
+          ? {
+              ...x,
+              qty: nextQty,
+              quantity: nextQty,
+              qtyCheckout: nextQty,
+            }
+          : x,
+      ),
+    );
 
-      setCart((prev) => {
-        const nextCart = prev.map((x) =>
-          Number(x.id) === Number(item.id)
-            ? {
-                ...x,
-                qty: newQty,
-                quantity: newQty,
-                qtyCheckout: newQty,
-                amount: getUnitPrice(x) * newQty,
-              }
-            : x,
-        );
-        updateCartCache(nextCart);
-        return nextCart;
-      });
+    try {
+      setLoadingItemId(id);
+      await axios.put(`/cart/${id}`, { qty: nextQty });
+    } finally {
+      setLoadingItemId(null);
+    }
+  }, []);
 
-      try {
-        setLoadingItemId(Number(item.id));
-        const res = await axios.put(`/cart/${item.id}`, { qty: newQty });
-        const updated =
-          res?.data?.data?.item || res?.data?.data || res?.data?.serve || null;
-        if (updated?.id) {
-          setCart((prev) => {
-            const nextCart = prev.map((x) =>
-              Number(x.id) === Number(updated.id) ? { ...x, ...updated } : x,
-            );
-            updateCartCache(nextCart);
-            return nextCart;
-          });
-        }
-      } catch {
-        setCart(prevCart);
-      } finally {
-        setLoadingItemId(null);
-      }
-    },
-    [cart],
-  );
+  /* =========================
+   * DELETE ITEM
+   * ========================= */
+  const handleDelete = useCallback(async (item) => {
+    const id = Number(item?.id);
+    if (!id) return;
 
-  const handleDelete = useCallback(
-    async (item) => {
-      if (!item?.id) return;
-      if (!window.confirm("Hapus produk ini dari keranjang?")) return;
+    setCart((prev) => prev.filter((x) => Number(x.id) !== id));
 
-      const prevCart = cart;
+    try {
+      await axios.delete(`/cart/${id}`);
+    } catch {}
+  }, []);
 
-      setCart((prev) => {
-        const nextCart = prev.filter((x) => Number(x?.id) !== Number(item.id));
-        updateCartCache(nextCart);
-        return nextCart;
-      });
-      setSelectedIds((prev) =>
-        prev.filter((id) => Number(id) !== Number(item.id)),
-      );
-
-      try {
-        setLoadingItemId(Number(item.id));
-        await axios.delete(`/cart/${item.id}`);
-      } catch {
-        setCart(prevCart);
-      } finally {
-        setLoadingItemId(null);
-      }
-    },
-    [cart],
-  );
-
+  /* =========================
+   * CHECKOUT
+   * ========================= */
   const handleCheckout = useCallback(async () => {
-    if (selectedCount === 0) return;
-
-    const selected = selectedIds.map(Number).filter(Boolean);
-    const selectedSet = new Set(selected);
-    const unselected = allIds.filter((id) => !selectedSet.has(id));
+    if (!selectedIds.length) return;
 
     try {
       setLoadingCheckout(true);
-
-      await Promise.all([
-        axios.post("/cart/update-selection", {
-          cart_ids: selected,
-          is_checkout: 2,
-        }),
-        axios.post("/cart/update-selection", {
-          cart_ids: unselected,
-          is_checkout: 1,
-        }),
-      ]);
-
+      await axios.post("/cart/update-selection", {
+        cart_ids: selectedIds,
+        is_checkout: 2,
+      });
       router.push("/checkout");
     } finally {
       setLoadingCheckout(false);
     }
-  }, [selectedCount, selectedIds, allIds, router]);
+  }, [selectedIds, router]);
 
+  /* =========================
+   * RENDER
+   * ========================= */
   return (
-    <div className="mx-auto px-4 w-auto py-10 lg:max-w-6xl">
+    <div className="mx-auto px-4 py-10 max-w-6xl">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
-        <div className="bg-white border rounded-xl p-6 shadow-sm">
-          {safeCart.map((item, idx) => {
-            const id = item?.id;
-            const product = item.product || {};
+        <div className="bg-white border rounded-xl p-6">
+          {safeCart.map((item) => (
+            <div key={item.id} className="flex justify-between border-b pb-4 mb-4">
+              <Checkbox
+                checked={selectedIds.includes(Number(item.id))}
+                onCheckedChange={(v) =>
+                  toggleSelect(Number(item.id), v === true)
+                }
+              />
 
-            const variantImages = Array.isArray(item?.variant?.images)
-              ? item.variant.images
-              : Array.isArray(item?.variant?.medias)
-                ? item.variant.medias.map((m) => m?.url).filter(Boolean)
-                : [];
-
-            const imageUrl = getImageUrl(
-              variantImages[0] ||
-                item?.variant?.media?.url ||
-                product.thumbnail ||
-                product.image,
-            );
-
-            const quantity = getQuantity(item);
-            const busy = loadingItemId === Number(id);
-
-            return (
-              <div
-                key={id ?? `tmp-${idx}`}
-                className="flex justify-between items-center border-b pb-4 mb-4"
-              >
-                <div className="flex gap-3 items-start">
-                  <Checkbox
-                    className="mt-2 w-4 h-4"
-                    checked={!!id && isSelected(item)}
-                    disabled={!id || busy || loadingCheckout}
-                    onCheckedChange={(checked) =>
-                      id && toggleSelect(id, checked === true)
-                    }
-                  />
-
-                  <div className="flex gap-4">
-                    <Image
-                      src={imageUrl}
-                      width={60}
-                      height={60}
-                      alt={product.name || "-"}
-                      className="rounded-sm"
-                      onError={(e) => {
-                        e.currentTarget.src = getImageUrl(null);
-                      }}
-                    />
-
-                    <div>
-                      <p className="line-clamp-1">{product.name || "-"}</p>
-                      <p className="text-sm text-gray-500">
-                        Variant:{" "}
-                        {item?.variant?.name || item?.variant?.sku || "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6">
+              <div className="flex gap-4">
+                <Image
+                  src={getImageUrl(item?.product?.image)}
+                  width={60}
+                  height={60}
+                  alt=""
+                />
+                <div>
+                  <p>{item?.product?.name}</p>
                   <QuantityInput
-                    min={1}
-                    value={quantity}
-                    disabled={busy || loadingCheckout}
-                    onChange={(newQty) => handleUpdateQty(item, newQty)}
+                    value={getQuantity(item)}
+                    onChange={(v) => handleUpdateQty(item, v)}
                   />
-                  <p className="font-semibold text-primary-700">
-                    {formatToRupiah(getLineTotal(item, quantity))}
-                  </p>
                 </div>
               </div>
-            );
-          })}
+
+              <p className="font-bold text-primary-700">
+                {formatToRupiah(getLineTotal(item))}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="hidden lg:block bg-white border rounded-2xl p-6">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleCheckout}
-            disabled={selectedCount === 0 || loadingCheckout}
-            className="w-full"
-          >
-            {loadingCheckout ? "Processing..." : `Checkout (${selectedCount})`}
-          </Button>
-        </div>
+        <Button
+          disabled={!selectedIds.length || loadingCheckout}
+          onClick={handleCheckout}
+        >
+          Checkout ({selectedIds.length})
+        </Button>
       </div>
 
       <MobileCartActionBar
-        allSelected={allSelected}
-        selectedCount={selectedCount}
+        allSelected={selectedIds.length === allIds.length}
         subtotal={selectedSubtotal}
-        loadingCheckout={loadingCheckout}
         onToggleSelectAll={toggleSelectAll}
         onCheckout={handleCheckout}
       />

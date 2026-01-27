@@ -18,7 +18,7 @@ export async function getWishlist(token) {
   if (!token) throw new Error("Unauthorized");
 
   const res = await api.get(
-    "/wishlist",
+    "/wishlists",
     withPrivateBase({
       headers: {
         "Proxy-Authorization": `Bearer ${token}`,
@@ -38,7 +38,7 @@ export async function addWishlist(token, payload) {
   if (!payload?.product_id) throw new Error("product_id is required");
 
   const res = await api.post(
-    "/wishlist",
+    "/wishlists",
     payload,
     withPrivateBase({
       headers: {
@@ -58,7 +58,7 @@ export async function removeWishlist(token, payload) {
   if (!payload?.product_id) throw new Error("product_id is required");
 
   const res = await api.delete(
-    "/wishlist",
+    "/wishlists",
     withPrivateBase({
       headers: {
         "Proxy-Authorization": `Bearer ${token}`,

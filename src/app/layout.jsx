@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { Footer, MobileBottomNav, ChatkitWidget } from "../components";
 import { AuthProvider } from "@/context/AuthContext";
-import { WishlistProvider } from "@/context/WishlistContext";
+import { WishlistsProvider } from "@/context/WishlistContext";
 import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
 import { getCategories } from "@/services/api/category.services";
@@ -113,7 +113,7 @@ export default async function RootLayout({ children }) {
         <GAListener />
         <AuthProvider>
           <LoginModalProvider>
-            <WishlistProvider>
+            <WishlistsProvider>
               <NavbarClientGate
                 categories={categories}
                 concerns={concerns}
@@ -129,7 +129,7 @@ export default async function RootLayout({ children }) {
               <MobileBottomNav />
               <ChatkitWidget />
               <Footer />
-            </WishlistProvider>
+            </WishlistsProvider>
           </LoginModalProvider>
         </AuthProvider>
       </body>
