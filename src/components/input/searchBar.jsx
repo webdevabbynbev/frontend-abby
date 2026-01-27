@@ -6,8 +6,8 @@ import clsx from "clsx";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { formatToRupiah } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
-import { Bouncy } from "ldrs/react";
-import "ldrs/react/Bouncy.css";
+import { Metronome } from "ldrs/react";
+import "ldrs/react/Metronome.css";
 
 export function SearchBar({
   className = "",
@@ -164,8 +164,8 @@ export function SearchBar({
           </div>
 
           {loading ? (
-            <div className="p-3 text-sm w-full justify-center">
-              <Bouncy size="30" speed="1.2" color="#AE2D68" />
+            <div className="flex p-4 text-sm w-full justify-center">
+              <Metronome size="30" speed="1.2" color="#AE2D68" />
             </div>
           ) : items.length === 0 && brands.length === 0 ? (
             <div className="p-3 text-sm">Tidak ada suggestion.</div>

@@ -498,6 +498,8 @@ export default function CartClient({ initialCart = [] }) {
               </div>
             </div>
             <Button
+              variant="primary"
+              size="md"
               className="w-full mt-6"
               disabled={!selectedIds.length || loadingCheckout}
               onClick={handleCheckout}
