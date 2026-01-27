@@ -199,8 +199,10 @@ export function SearchBar({
                       <div className="text-sm font-medium truncate">
                         {p.name}
                       </div>
-                      <div className="text-xs text-neutral-500 truncate">
-                        {p.price ? formatToRupiah(p.price) : ""}
+                      <div className="flex flex-row gap-2 items-center text-xs text-neutral-500 truncate">
+                        {p.price ? formatToRupiah(p.price) : ""}{" "}
+                        <div className="block items-center w-1 h-1 rounded-full bg-neutral-400" />
+                        {p.category}
                       </div>
                     </div>
                   </button>

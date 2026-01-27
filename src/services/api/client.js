@@ -1,49 +1,64 @@
+// client.js
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-const normalizedBase = API_BASE.replace(/\/+$/, "").replace(/\/api$/i, "");
-const BASE = normalizedBase
-  ? normalizedBase.endsWith("/")
-    ? normalizedBase
-    : `${normalizedBase}/`
-  : "";
+
+// ✅ Jangan hapus "/api" karena backend kamu pakai "/api/v1".
+// ✅ Cukup rapikan trailing slash dan pastikan BASE selalu diakhiri "/".
+const BASE = API_BASE ? API_BASE.replace(/\/+$/, "") + "/" : "";
 
 export async function getApi(path, options = {}) {
-  if (!BASE) throw new Error("NEXT_PUBLIC_API_URL belum di-set. Cek .env");
+  console.log("API_BASE:", BASE);
+
+  if (!BASE) {
+    throw new Error(
+      "NEXT_PUBLIC_API_URL belum di-set. Set di Railway FE Variables, contoh: https://backend-abby-stagging.up.railway.app/api/v1"
+    );
+  }
 
   const cleanPath = String(path).replace(/^\/+/, "");
-  const url = path.startsWith("http")
-    ? path
-    : new URL(cleanPath, BASE).toString();
+  const url = path.startsWith("http") ? path : new URL(cleanPath, BASE).toString();
 
-  // const isGet = !options.method || options.method === "GET";
+  console.log("[getApi] url =", url);
 
   const res = await fetch(url, {
-  ...options,
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...(typeof window === "undefined" ? { credentials: "include" } : {}),
+    
+  });
 
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  },
 
-  ...(typeof window === "undefined" && { credentials: "include" }),
-});
 
-  const contentType = res.headers.get("content-type");
+  // ✅ Baca body sekali (pakai text), lalu parse jika JSON
+  const contentType = res.headers.get("content-type") || "";
+  const rawText = await res.text().catch(() => "");
+
   let data = {};
-
-  if (contentType?.includes("application/json")) {
-    data = await res.json().catch(() => ({}));
-  } else {
-    const text = await res.text().catch(() => "");
+  if (rawText && contentType.includes("application/json")) {
     try {
-      data = text ? JSON.parse(text) : {};
+      data = JSON.parse(rawText);
     } catch {
       data = {};
+    }
+  } else if (rawText) {
+    // kalau ternyata JSON tapi content-type salah
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { message: rawText };
     }
   }
 
   if (!res.ok) {
-    throw new Error(data?.message || `Request failed: ${res.status}`);
+    const msg =
+      data?.message ||
+      data?.error ||
+      `Request failed: ${res.status} ${res.statusText} (${url})`;
+    throw new Error(msg);
   }
 
   return data;

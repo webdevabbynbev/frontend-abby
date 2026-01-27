@@ -116,6 +116,7 @@ export default function CheckoutPage() {
 
   // voucher (disimpen di parent biar payload checkout kebaca)
   const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [referralCode, setReferralCode] = useState("");
 
   // persist voucher
   useEffect(() => {
@@ -135,6 +136,21 @@ export default function CheckoutPage() {
       else localStorage.removeItem("checkout_voucher");
     } catch {}
   }, [selectedVoucher]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("checkout_referral_code");
+      if (raw) setReferralCode(String(raw));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (referralCode)
+        localStorage.setItem("checkout_referral_code", referralCode);
+      else localStorage.removeItem("checkout_referral_code");
+    } catch {}
+  }, [referralCode]);
 
   const displayAddresses = useMemo(() => {
     return (Array.isArray(addresses) ? addresses : []).map((a) => {
@@ -176,6 +192,7 @@ export default function CheckoutPage() {
 
       const cartIds = checkoutItems.map((x) => x?.id).filter(Boolean);
       const voucherObj = selectedVoucher?.voucher ?? selectedVoucher;
+      const referralCodeInput = String(referralCode || "").trim();
 
       const payload = {
         cart_ids: cartIds,
@@ -188,6 +205,7 @@ export default function CheckoutPage() {
         protection_fee: 0,
         voucher_id: voucherObj?.id || 0,
       };
+      if (referralCodeInput) payload.referral_code = referralCodeInput;
 
       if (isGuest) {
         payload.address = guestAddressLine.trim();
@@ -315,6 +333,8 @@ export default function CheckoutPage() {
           setSelectedPayment={setSelectedPayment}
           selectedVoucher={selectedVoucher}
           setSelectedVoucher={setSelectedVoucher}
+          referralCode={referralCode}
+          setReferralCode={setReferralCode}
           onPayNow={handlePayNow}
         />
       </div>

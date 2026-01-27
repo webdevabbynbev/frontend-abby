@@ -3,10 +3,9 @@ import { fileSearchTool, Agent, Runner, withTrace } from "@openai/agents";
 import { z } from "zod";
 
 const vectorStoreId =
-  process.env.CHATKIT_VECTOR_STORE_ID || "vs_696767a8e684819185d8318011d40cb2";
+  process.env.CHATKIT_VECTOR_STORE_ID;
 const workflowId =
-  process.env.CHATKIT_WORKFLOW_ID ||
-  "wf_69676bc99d5081908ef9d7f6da1471770d1cc18238f4ec32";
+  process.env.CHATKIT_WORKFLOW_ID;
 
 const fileSearch = fileSearchTool([vectorStoreId]);
 
