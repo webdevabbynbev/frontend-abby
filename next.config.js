@@ -11,6 +11,14 @@ const nextConfig = {
       { protocol: "https", hostname: "blog.abbynbev.com", pathname: "/**" },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: "http://localhost:3333/api/v1/:path*",
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

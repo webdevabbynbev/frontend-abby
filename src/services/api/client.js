@@ -6,6 +6,38 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 // ✅ Cukup rapikan trailing slash dan pastikan BASE selalu diakhiri "/".
 const BASE = API_BASE ? API_BASE.replace(/\/+$/, "") + "/" : "";
 
+const PRIVATE_PATH_PATTERNS = [
+  /^\/api\/v1\/auth(\/|$)/i,
+  /^\/api\/v1\/profile(\/|$)/i,
+  /^\/api\/v1\/addresses(\/|$)/i,
+  /^\/api\/wishlists(\/|$)/i,
+  /^\/addresses(\/|$)/i,
+  /^\/admin(\/|$)/i,
+  /^\/cart(\/|$)/i,
+  /^\/profile(\/|$)/i,
+  /^\/ramadan(\/|$)/i,
+  /^\/transaction(\/|$)/i,
+  /^\/vouchers\/(my|[^/]+\/claim)(\/|$)/i,
+  /^\/wishlist(\/|$)/i,
+];
+
+function assertPublicPath(path) {
+  const rawPath = String(path || "");
+  const normalizedPath = rawPath.startsWith("http")
+    ? new URL(rawPath).pathname
+    : `/${rawPath.replace(/^\/+/, "")}`;
+
+  const matched = PRIVATE_PATH_PATTERNS.find((pattern) =>
+    pattern.test(normalizedPath),
+  );
+
+  if (matched) {
+    throw new Error(
+      `Endpoint ${normalizedPath} bersifat private. Gunakan axios (authenticated client) untuk request ini.`,
+    );
+  }
+}
+
 export async function getApi(path, options = {}) {
   // console.log("API_BASE:", BASE);
 
@@ -14,6 +46,7 @@ export async function getApi(path, options = {}) {
       "NEXT_PUBLIC_API_URL belum di-set. Set di Railway FE Variables, contoh: https://backend-abby-stagging.up.railway.app/api/v1",
     );
   }
+  assertPublicPath(path);
 
   const cleanPath = String(path).replace(/^\/+/, "");
   const url = path.startsWith("http")

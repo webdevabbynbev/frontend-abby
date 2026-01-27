@@ -518,11 +518,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
       try {
         if (next) {
-          await axios.post("/api/wishlists", {
+          await axios.post("/wishlists", {
             product_id: String(productId),
           });
         } else {
-          await axios.delete("/api/wishlists", {
+          await axios.delete("/wishlists", {
             data: { product_id: String(productId) },
           });
         }

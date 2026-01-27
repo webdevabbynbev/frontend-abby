@@ -1,22 +1,24 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
-export function useRequireAuth(redirectTo = "/login") {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+export function useRequireAuth() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    // tunggu auth selesai dicek
-    if (loading) return;
+    // ⛔ JANGAN redirect sebelum loading selesai
+    if (loading) return
 
-    // kalau tidak login → redirect
     if (!user) {
-      router.replace(redirectTo);
+      router.replace("/sign-in")
     }
-  }, [user, loading, router, redirectTo]);
+  }, [user, loading, router])
 
-  return { user, loading };
+  return {
+    user,
+    loading,
+  }
 }

@@ -4,7 +4,7 @@ import AccountTabs from "./AccountTabs";
 import { useRequireAuth } from "../hooks/useRequireAuth";
 
 export default function AccountLayout({ children }) {
-  const { loading } = useRequireAuth("/login");
+  const { loading } = useRequireAuth("/sign-in");
 
   // ⛔ Jangan render apa pun sebelum auth selesai dicek
   if (loading) {

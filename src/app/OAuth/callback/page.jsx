@@ -44,7 +44,7 @@ export default function OAuthCallbackPage() {
         // Kirim ke backend sesuai mode
         if (mode === "register") {
           setMessage("Menyelesaikan pendaftaran...");
-          const response = await api.post("/api/v1/auth/register-google", {
+          const response = await api.post("/auth/register-google", {
             token: accessToken,
             accept_privacy_policy: acceptPrivacy,
           });
@@ -71,7 +71,7 @@ export default function OAuthCallbackPage() {
         } else {
           // Login mode
           setMessage("Menyelesaikan login...");
-          const response = await api.post("/api/v1/auth/login-google", {
+          const response = await api.post("/auth/login-google", {
             token: accessToken,
             accept_privacy_policy: acceptPrivacy,
           });

@@ -1,4 +1,5 @@
 import axios from "@/lib/axios.js";
+import { getApi } from "@/services/api/client";
 import { unwrap } from "@/utils/unwrap";
 
 function pickArray(payload) {
@@ -24,8 +25,7 @@ function normalizeVoucherList(list) {
 }
 
 export async function fetchAvailableVouchers() {
-  const res = await axios.get("/vouchers/available");
-  const payload = unwrap(res);
+  const payload = await getApi("/vouchers/available");
   const arr = pickArray(payload);
   return normalizeVoucherList(arr);
 }

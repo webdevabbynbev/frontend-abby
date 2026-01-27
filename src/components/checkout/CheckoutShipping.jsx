@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import axios from "@/lib/axios.js";
+import { getApi, toQuery } from "@/services/api/client";
 import { AddressCard } from "@/app/account";
 import { NewAddress } from "@/app/account/popup";
 import { Textarea, TxtField } from "@/components";
@@ -63,15 +64,13 @@ export default function CheckoutShipping({
     }
 
     try {
-      const res = await axios.get("/areas", {
-        params: {
-          input: searchInput,
-          countries: "ID",
-          type: "single",
-        },
-      });
-
-      const areas = res.data?.serve || [];
+      const params = {
+        input: searchInput,
+        countries: "ID",
+        type: "single",
+      };
+      const res = await getApi(`/areas${toQuery(params)}`);
+      const areas = res?.serve || [];
 
       areas.forEach((area) => {
         const exists = allAreasRef.current.find((a) => a.id === area.id);

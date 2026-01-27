@@ -14,10 +14,10 @@ function n(v) {
  *  ========================= */
 export async function getUser() {
   try {
-    const res = await api.get("/api/v1/profile", {
+    const res = await api.get("/profile", {
       withCredentials: true, // ⬅️ WAJIB
     });
-    return { user: res.data?.serve?.user ?? null };
+    return { user: res.data?.serve?.data ?? null }
   } catch (err) {
     return { user: null };
   }
@@ -28,7 +28,7 @@ export async function getUser() {
  *  ========================= */
 export async function updateProfile(payload) {
   try {
-    const res = await api.put("/api/v1/profile", payload, {
+    const res = await api.put("/profile", payload, {
       headers: { "Content-Type": "application/json" },
     });
     return res.data;
@@ -45,7 +45,7 @@ export async function getAddressByQuery(userId) {
   if (!userId) return [];
 
   try {
-    const res = await api.get("/api/v1/addresses", {
+    const res = await api.get("/addresses", {
       params: { user_id: userId },
       withCredentials: true,
     });
@@ -104,7 +104,7 @@ export async function regis(
     if (!payload.accept_privacy_policy)
       throw new Error("Wajib menyetujui Privacy Policy");
 
-    const res = await api.post("/api/v1/auth/register", payload);
+    const res = await api.post("/auth/register", payload);
     return res.data;
   } catch (err) {
     const status = err?.response?.status;
@@ -152,7 +152,7 @@ export async function OtpRegis(
     if (!payload.accept_privacy_policy)
       throw new Error("Wajib menyetujui Privacy Policy");
 
-    const res = await api.post("/api/v1/auth/verify-register", payload);
+    const res = await api.post("auth/verify-register", payload);
 
     const data = res.data;
     const token = data?.serve?.token;
@@ -182,7 +182,7 @@ export async function OtpRegis(
  *  LOGIN
  *  ========================= */
 export async function loginUser(email_or_phone, password, remember_me = false) {
-  const res = await api.post("/api/v1/auth/login", {
+  const res = await api.post("/auth/login", {
     email_or_phone,
     password,
     remember_me,
@@ -194,7 +194,7 @@ export async function loginUser(email_or_phone, password, remember_me = false) {
  *  GOOGLE LOGIN
  *  ========================= */
 export async function loginGoogle(token, accept_privacy_policy = false) {
-  const res = await api.post("/api/v1/auth/login-google", {
+  const res = await api.post("/auth/login-google", {
     token,
     accept_privacy_policy,
   });
@@ -209,5 +209,5 @@ export function logoutLocal() {
 }
 
 export async function logoutUser() {
-  await api.post("/api/v1/auth/logout");
+  await api.post("/auth/logout");
 }

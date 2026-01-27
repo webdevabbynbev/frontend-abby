@@ -10,12 +10,46 @@ const BASE = API_BASE
     : `${API_BASE}/`
   : "";
 
+  const PRIVATE_PATH_PATTERNS = [
+  /^\/api\/v1\/auth(\/|$)/i,
+  /^\/api\/v1\/profile(\/|$)/i,
+  /^\/api\/v1\/addresses(\/|$)/i,
+  /^\/api\/wishlists(\/|$)/i,
+  /^\/addresses(\/|$)/i,
+  /^\/admin(\/|$)/i,
+  /^\/cart(\/|$)/i,
+  /^\/profile(\/|$)/i,
+  /^\/ramadan(\/|$)/i,
+  /^\/transaction(\/|$)/i,
+  /^\/vouchers\/(my|[^/]+\/claim)(\/|$)/i,
+  /^\/wishlist(\/|$)/i,
+];
+
+function assertPublicPath(path) {
+  const rawPath = String(path || "");
+  const normalizedPath = rawPath.startsWith("http")
+    ? new URL(rawPath).pathname
+    : `/${rawPath.replace(/^\/+/, "")}`;
+
+  const matched = PRIVATE_PATH_PATTERNS.find((pattern) =>
+    pattern.test(normalizedPath),
+  );
+
+  if (matched) {
+    throw new Error(
+      `Endpoint ${normalizedPath} bersifat private. Gunakan axios (authenticated client) untuk request ini.`,
+    );
+  }
+}
+
 /**
  * Server-side fetch dengan proper headers untuk menghindari CORB
  */
 export async function getApiServer(path, options = {}) {
   if (!BASE) throw new Error("NEXT_PUBLIC_API_URL belum di-set. Cek .env");
 
+  assertPublicPath(path);
+  
   const cleanPath = String(path).replace(/^\/+/, "");
   const url = path.startsWith("http")
     ? path
