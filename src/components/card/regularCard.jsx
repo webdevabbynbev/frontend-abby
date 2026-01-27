@@ -228,7 +228,8 @@ const REVIEW_STATS = (() => {
 export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
-  const { user, logout } = useAuth();
+
+  const { user, logout } = useAuth() ?? {};
   const { openLoginModal } = useLoginModal();
 
   if (!product) return null;
@@ -246,7 +247,10 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         const variantItems = product?.variantItems ?? [];
         const variant =
-          variantItems?.[0] ?? product?.variant ?? product?.variants?.[0] ?? null;
+          variantItems?.[0] ??
+          product?.variant ??
+          product?.variants?.[0] ??
+          null;
 
         if (!variant && variantItems.length) {
           toast("Varian produk tidak ditemukan");
@@ -263,7 +267,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         const res = await axios.post("/cart", payload);
         toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
-        
+
         if (typeof window !== "undefined") {
           try {
             const cartRes = await axios.get("/cart");

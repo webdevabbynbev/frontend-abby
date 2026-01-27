@@ -37,7 +37,7 @@ export function FlashSaleCarousel({ rawItems = [] }) {
             className="flex-none basis-1/2 md:basis-1/4 lg:basis-1/5"
           >
             <div className="relative h-full w-full overflow-hidden rounded-lg">
-              <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[24px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
+              <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-6 items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
                 Flash Sale
               </span>
               <FlashSaleCard
@@ -51,7 +51,7 @@ export function FlashSaleCarousel({ rawItems = [] }) {
             </div>
           </CarouselItem>
         ))}
-        <div className="flex-none w-[0px]" aria-hidden="true" />
+        <div className="flex-none w-0" aria-hidden="true" />
       </CarouselContent>
 
       <CarouselPrevious />

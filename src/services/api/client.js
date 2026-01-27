@@ -7,7 +7,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const BASE = API_BASE ? API_BASE.replace(/\/+$/, "") + "/" : "";
 
 export async function getApi(path, options = {}) {
-  console.log("API_BASE:", BASE);
+  // console.log("API_BASE:", BASE);
 
   if (!BASE) {
     throw new Error(
@@ -18,7 +18,7 @@ export async function getApi(path, options = {}) {
   const cleanPath = String(path).replace(/^\/+/, "");
   const url = path.startsWith("http") ? path : new URL(cleanPath, BASE).toString();
 
-  console.log("[getApi] url =", url);
+  // console.log("[getApi] url =", url);
 
   const res = await fetch(url, {
     ...options,

@@ -19,7 +19,7 @@ export function HeroCarousel({ banners = [] }) {
 
   const Wrapper = ({ children }) => (
     <div className="w-full">
-      <div className="relative w-full overflow-hidden rounded-lg aspect-16/4">
+      <div className="relative w-full overflow-hidden rounded-lg aspect-3/1">
         {children}
       </div>
     </div>

@@ -8,7 +8,7 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { LoginModalProvider } from "@/context/LoginModalContext";
 import { NavbarClientGate } from "@/components/navbar";
 import { getCategories } from "@/services/api/category.services";
-import { getconcern } from "@/services/api/concern.services";
+import { getConcern } from "@/services/api/concern.services";
 import { getBrands } from "@/services/api/brands.services";
 import { Toaster } from "sonner";
 import GAListener from "@/components/GAListener";
@@ -68,30 +68,18 @@ export default async function RootLayout({ children }) {
   let brands = [];
 
   try {
-    const res = await getCategories();
-    categories = Array.isArray(res?.serve)
-      ? res.serve
-      : Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-          ? res
-          : [];
-  } catch (error) {
-    console.error("Failed to load categories for navbar:", error);
-  }
+  categories = await getCategories({ page: 1, per_page: 200 });
+} catch (error) {
+  console.error("Failed to load concerns for navbar:", error);
+}
+
 
   try {
-    const res = await getconcern();
-    concerns = Array.isArray(res?.serve)
-      ? res.serve
-      : Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-          ? res
-          : [];
-  } catch (error) {
-    console.error("Failed to load concerns for navbar:", error);
-  }
+  concerns = await getConcern({ page: 1, per_page: 200 });
+} catch (error) {
+  console.error("Failed to load concerns for navbar:", error);
+}
+
 
   try {
     brands = await getBrands({ page: 1, per_page: 200 });

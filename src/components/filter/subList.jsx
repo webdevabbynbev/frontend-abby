@@ -18,6 +18,8 @@ export function SubList({
         const uniqueId = `${prefix}-${item?.id}`;
         const isActive = selected.includes(uniqueId);
         const label =
+          item?.name ??
+          item?.brandname??
           item?.category ??
           item?.skinconcerns ??
           item?.bodyconcerns ??
