@@ -1,5 +1,4 @@
 import api from "@/lib/axios.js";
-import { setToken, clearToken, hasSession } from "@/services/authToken";
 
 function s(v) {
   return String(v ?? "").trim();
@@ -15,7 +14,9 @@ function n(v) {
  *  ========================= */
 export async function getUser() {
   try {
-    const res = await api.get("/api/v1/profile");
+    const res = await api.get("/api/v1/profile", {
+      withCredentials: true, // ⬅️ WAJIB
+    });
     return { user: res.data?.serve?.user ?? null };
   } catch (err) {
     return { user: null };
@@ -108,7 +109,7 @@ export async function regis(
   } catch (err) {
     const status = err?.response?.status;
     let msg = "Register gagal";
-    
+
     if (status === 409) {
       msg = "Email atau nomor HP sudah terdaftar";
     } else if (status === 400) {
@@ -118,7 +119,7 @@ export async function regis(
     } else {
       msg = err?.response?.data?.message || err?.message || msg;
     }
-    
+
     console.error("regis error:", err);
     throw new Error(msg);
   }
@@ -161,7 +162,7 @@ export async function OtpRegis(
   } catch (err) {
     const status = err?.response?.status;
     let msg = "OTP salah atau register gagal";
-    
+
     if (status === 400) {
       msg = "OTP tidak valid atau sudah kadaluarsa";
     } else if (status === 429) {
@@ -171,7 +172,7 @@ export async function OtpRegis(
     } else {
       msg = err?.response?.data?.message || err?.message || msg;
     }
-    
+
     console.error("OtpRegis error:", err);
     throw new Error(msg);
   }

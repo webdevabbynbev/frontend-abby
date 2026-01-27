@@ -38,10 +38,15 @@ const groupConcerns = (items = []) => {
   };
 
   items.forEach((item) => {
-    if (!item?.id || !item?.name) return;
+    if (!item?.name) return;
 
-    const type = String(item.concernId);
-
+    const type = String(
+      item.concernId ??
+        item.concern_id ??
+        item.concernType ??
+        item.concern_type,
+    );
+    
     if (type === "1") groups.skin.push(item);
     if (type === "2") groups.body.push(item);
     if (type === "3") groups.hair.push(item);
@@ -59,7 +64,6 @@ export function Filter({
   ratings = [],
   categoriesLoading = false,
   showBrandFilter = true,
-  className = "",
 }) {
   /* ---------- state UI ---------- */
   const [selectedFilters, setSelectedFilters] = useState([]);

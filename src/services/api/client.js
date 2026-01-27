@@ -11,27 +11,26 @@ export async function getApi(path, options = {}) {
 
   if (!BASE) {
     throw new Error(
-      "NEXT_PUBLIC_API_URL belum di-set. Set di Railway FE Variables, contoh: https://backend-abby-stagging.up.railway.app/api/v1"
+      "NEXT_PUBLIC_API_URL belum di-set. Set di Railway FE Variables, contoh: https://backend-abby-stagging.up.railway.app/api/v1",
     );
   }
 
   const cleanPath = String(path).replace(/^\/+/, "");
-  const url = path.startsWith("http") ? path : new URL(cleanPath, BASE).toString();
+  const url = path.startsWith("http")
+    ? path
+    : new URL(cleanPath, BASE).toString();
 
   // console.log("[getApi] url =", url);
 
   const res = await fetch(url, {
     ...options,
+    credentials: "include", // ⬅️ WAJIB DI SEMUA KONDISI
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
-    ...(typeof window === "undefined" ? { credentials: "include" } : {}),
-    
   });
-
-
 
   // ✅ Baca body sekali (pakai text), lalu parse jika JSON
   const contentType = res.headers.get("content-type") || "";

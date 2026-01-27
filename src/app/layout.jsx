@@ -68,18 +68,16 @@ export default async function RootLayout({ children }) {
   let brands = [];
 
   try {
-  categories = await getCategories({ page: 1, per_page: 200 });
-} catch (error) {
-  console.error("Failed to load concerns for navbar:", error);
-}
-
+    categories = await getCategories({ page: 1, per_page: 200 });
+  } catch (error) {
+    console.error("Failed to load categories for navbar:", error);
+  }
 
   try {
-  concerns = await getConcern({ page: 1, per_page: 200 });
-} catch (error) {
-  console.error("Failed to load concerns for navbar:", error);
-}
-
+    concerns = await getConcern({ page: 1, per_page: 200 });
+  } catch (error) {
+    console.error("Failed to load concerns for navbar:", error);
+  }
 
   try {
     brands = await getBrands({ page: 1, per_page: 200 });

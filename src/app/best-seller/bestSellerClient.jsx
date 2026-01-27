@@ -29,6 +29,7 @@ const BestSellerClient = ({
   products = [],
   brands = [],
   categories = [],
+  concerns = [],
   meta = {},
   currentPage = 1,
   search = "",
@@ -98,6 +99,7 @@ const BestSellerClient = ({
               <Filter
                 brands={brands}
                 categories={categories}
+                concerns={concerns}
                 showBrandFilter
                 className="w-full"
               />

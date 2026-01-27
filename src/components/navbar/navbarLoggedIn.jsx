@@ -5,6 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import MegaDropdown from "./megaDropdown";
 
 import {
   BtnIcon,

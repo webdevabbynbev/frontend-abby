@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/context/AuthContext";
-import { categoryHref, categoryAdapter } from "./adapters/category.adapter";
-import { concernAdapter, concernHref } from "./adapters/concern.adapter";
+import { categoryAdapter } from "./adapters/category.adapter";
+import { concernAdapter } from "./adapters/concern.adapter";
 
 import { NavbarGuest, NavbarLoggedIn } from ".";
 
@@ -17,8 +17,8 @@ export function Navbar({ categories = [], concerns = [], brands = [] }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { user, token, logout } = useAuth();
-  const isAuthed = !!token || !!user;
+  const { user, loading, logout } = useAuth();
+  const isAuthed = !!user;
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
