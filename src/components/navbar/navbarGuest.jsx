@@ -4,12 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
 import { BtnIcon, Button, SearchBar } from "@/components";
-import MegaDropdown from "./megaDropdown";
-import ShopByCategoryDropdown from "./categoryDropdown";
 import BrandDropdown from "./brandDropdown";
 import CartButton from "@/components/button/cartButton";
 import { buildconcernsItems } from "./utils";
 import { useLoginModal } from "@/context/LoginModalContext";
+import MegaDropdown from "./megaDropdown";
+import { categoryHref } from "./adapters/category.adapter";
+import { concernHref } from "./adapters/concern.adapter";
 
 /* ===================== COMPONENT ===================== */
 export function NavbarGuest({
@@ -59,13 +60,21 @@ export function NavbarGuest({
           </Link>
           {/* DROPDOWN MENUS */}
           <div className="flex items-center text-xs">
-            <ShopByCategoryDropdown
+            <MegaDropdown
               label="Category"
-              categories={categoryTypes}
-              loading={catLoading}
+              data={categories}
+              buildHref={categoryHref}
+              searchPlaceholder="Search category..."
+              viewAllHref="/category"
             />
 
-            <MegaDropdown label="Concern" items={concernsItems} />
+            <MegaDropdown
+              label="Concern"
+              data={concerns}
+              buildHref={concernHref}
+              searchPlaceholder="Search concern..."
+              viewAllHref="/concern"
+            />
             <BrandDropdown label="Brand" brands={brands} />
           </div>
           {/* STATIC LINKS */}
@@ -112,7 +121,12 @@ export function NavbarGuest({
             onSearch={onSearch}
           />
           <CartButton />
-          <Button variant="primary" size="md" onClick={openLoginModal}>
+          <Button
+            variant="primary"
+            iconName="RightToBracket"
+            size="md"
+            onClick={openLoginModal}
+          >
             Masuk
           </Button>
         </div>

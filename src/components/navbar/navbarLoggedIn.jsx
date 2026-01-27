@@ -19,8 +19,8 @@ import {
 } from "@/components";
 
 import CartButton from "@/components/button/cartButton";
-import ShopByCategoryDropdown from "./categoryDropdown";
-import MegaDropdown from "./megaDropdown";
+import { concernHref } from "./adapters/concern.adapter";
+import { categoryHref } from "./adapters/category.adapter";
 import BrandDropdown from "./brandDropdown";
 import { buildconcernsItems } from "./utils";
 
@@ -88,13 +88,21 @@ export function NavbarLoggedIn({
 
           {/* DROPDOWN MENUS */}
           <div className="flex items-center">
-            <ShopByCategoryDropdown
-              label="Shop By Category"
-              categories={categoryTypes}
-              loading={catLoading}
+            <MegaDropdown
+              label="Category"
+              data={categories}
+              buildHref={categoryHref}
+              searchPlaceholder="Search category..."
+              viewAllHref="/category"
             />
 
-            <MegaDropdown label="Shop by concerns" items={concernsItems} />
+            <MegaDropdown
+              label="Concern"
+              data={concerns}
+              buildHref={concernHref}
+              searchPlaceholder="Search concern..."
+              viewAllHref="/concern"
+            />
             <BrandDropdown label="Shop by Brand" brands={brands} />
             {links.map((link) => {
               const isExternal =

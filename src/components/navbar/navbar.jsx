@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/context/AuthContext";
+import { categoryHref, categoryAdapter } from "./adapters/category.adapter";
+import { concernAdapter, concernHref } from "./adapters/concern.adapter";
 
 import { NavbarGuest, NavbarLoggedIn } from ".";
 
 export function Navbar({ categories = [], concerns = [], brands = [] }) {
+  const categoryData = useMemo(() => categoryAdapter(categories), [categories]);
+
+  const concernData = useMemo(() => concernAdapter(concerns), [concerns]);
+
   const pathname = usePathname();
   const router = useRouter();
 
@@ -67,8 +73,8 @@ export function Navbar({ categories = [], concerns = [], brands = [] }) {
             onSearch={handleSearch}
             open={open}
             onLogout={handleLogout}
-            categories={categories}
-            concerns={concerns}
+            categories={categoryData}
+            concerns={concernData}
             brands={brands}
           />
         ) : (
@@ -79,8 +85,8 @@ export function Navbar({ categories = [], concerns = [], brands = [] }) {
             search={search}
             setSearch={setSearch}
             onSearch={handleSearch}
-            categories={categories}
-            concerns={concerns}
+            categories={categoryData}
+            concerns={concernData}
             brands={brands}
           />
         )}
