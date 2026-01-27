@@ -9,7 +9,7 @@ export function concernAdapter(concerns = []) {
     if (!c?.name || !groups[c.concernId]) return;
 
     groups[c.concernId].items.push({
-      id: c.id,
+      id: `${groups[c.concernId].key}-${c.id}`, // ✅ KEY STABLE
       name: c.name,
       slug: c.slug,
     });
@@ -19,5 +19,7 @@ export function concernAdapter(concerns = []) {
 }
 
 export function concernHref(item) {
-  return `?concern=${item.slug}`;
+  if (!item?.slug) return "#";
+  return `/best-seller?concern=${item.slug}`;
 }
+

@@ -2,7 +2,7 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 function cx(...c) {
@@ -24,12 +24,24 @@ export default function MegaDropdown({
   const [query, setQuery] = useState("");
 
   const activeGroup = data.find((g) => g.key === activeKey);
+  
+  useEffect(() => {
+    setQuery("");
+  }, [activeKey]);
 
   const filteredItems = useMemo(() => {
     if (!query) return activeGroup?.items || [];
     const q = query.toLowerCase();
     return activeGroup?.items.filter((i) => i.name.toLowerCase().includes(q));
   }, [query, activeGroup]);
+
+  useEffect(() => {
+    if (!data.length) return;
+    const hasActive = data.some((g) => g.key === activeKey);
+    if (!hasActive) {
+      setActiveKey(data[0].key);
+    }
+  }, [data, activeKey]);
 
   const closeTimer = useRef(null);
 
@@ -108,7 +120,7 @@ export default function MegaDropdown({
           {/* BODY */}
           <div className="grid grid-cols-[220px_1fr] gap-4 px-4 py-4">
             {/* LEFT */}
-            <div className="space-y-1">
+            <div className="max-h-[55vh] space-y-1 overflow-y-auto pr-2">
               {data.map((g) => (
                 <button
                   key={g.key}
@@ -126,20 +138,25 @@ export default function MegaDropdown({
             </div>
 
             {/* RIGHT */}
-            <div className="grid grid-cols-2 gap-2">
-              {filteredItems.map((item) => (
-                <DropdownMenu.Item key={item.id} asChild>
-                  <button
-                    className="rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50"
-                    onClick={() => {
-                      router.push(buildHref(item));
-                      setOpen(false);
-                    }}
+            <div className="max-h-[55vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 gap-2">
+                {filteredItems.map((item) => (
+                  <DropdownMenu.Item
+                    key={`${activeKey}-${item.id ?? item.slug}`}
+                    asChild
                   >
-                    {item.name}
-                  </button>
-                </DropdownMenu.Item>
-              ))}
+                    <button
+                      className="rounded-lg px-3 py-2 text-sm text-left hover:bg-gray-50"
+                      onClick={() => {
+                        router.push(buildHref(item));
+                        setOpen(false);
+                      }}
+                    >
+                      {item.name}
+                    </button>
+                  </DropdownMenu.Item>
+                ))}
+              </div>
             </div>
           </div>
         </DropdownMenu.Content>

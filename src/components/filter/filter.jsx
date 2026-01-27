@@ -31,26 +31,20 @@ const normalize = (v = "") =>
     .trim();
 
 const groupConcerns = (items = []) => {
-  const groups = { skin: [], body: [], hair: [] };
+  const groups = {
+    skin: [],
+    body: [],
+    hair: [],
+  };
 
   items.forEach((item) => {
-    if (!item?.name) return;
+    if (!item?.id || !item?.name) return;
 
-    const entry = { id: item.id, name: item.name };
+    const type = String(item.concernId);
 
-    switch (String(item.concernId)) {
-      case "1":
-        groups.skin.push(entry);
-        break;
-      case "2":
-        groups.body.push(entry);
-        break;
-      case "3":
-        groups.hair.push(entry);
-        break;
-      default:
-        break;
-    }
+    if (type === "1") groups.skin.push(item);
+    if (type === "2") groups.body.push(item);
+    if (type === "3") groups.hair.push(item);
   });
 
   return groups;
@@ -85,8 +79,20 @@ export function Filter({
   }, [brands, debouncedBrandSearch]);
 
   const groupedConcerns = useMemo(() => groupConcerns(concerns), [concerns]);
+  const hasSubCategory = (node) =>
+    Array.isArray(node?.children) && node.children.length > 0;
 
-  const categoryRoots = Array.isArray(categories) ? categories : [];
+  const categoryRoots = useMemo(() => {
+    if (!Array.isArray(categories)) return [];
+
+    return categories
+      .filter(hasSubCategory) // ⬅️ root harus punya child
+      .map((root) => ({
+        ...root,
+        children: root.children.filter(hasSubCategory), // ⬅️ child juga harus punya subitem
+      }))
+      .filter((root) => root.children.length > 0);
+  }, [categories]);
 
   /* ---------- handlers ---------- */
   const handleSelect = (prefix, id) => {
@@ -113,7 +119,21 @@ export function Filter({
 
   /* ---------- render ---------- */
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`flex flex-col gap-2 p-2 bg-neutral-50 border-primary-700`}>
+      <div className="flex flex-row items-center justify-between p-2">
+        <span className="font-medium text-sm">Filter by</span>
+        {/* RESET */}
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleReset}
+          disabled={
+            !selectedFilters.length && !brandSearch && !minPrice && !maxPrice
+          }
+        >
+          Reset filter
+        </Button>
+      </div>
       {/* BRAND */}
       {showBrandFilter && (
         <NestedSection
@@ -165,7 +185,7 @@ export function Filter({
                   </AccordionTrigger>
                   <AccordionContent>
                     <SubList
-                      data={root.children ?? []}
+                      data={root.children}
                       prefix="category"
                       selectedFilters={selectedFilters}
                       onSelect={handleSelect}
@@ -217,12 +237,22 @@ export function Filter({
       <NestedSection
         title="Concerns"
         mode="flat"
-        render={() => (
-          <Accordion type="single" collapsible className="space-y-2">
-            {Object.entries(groupedConcerns).map(([key, list]) => {
-              if (!list.length) return null;
+        render={() => {
+          const entries = Object.entries(groupedConcerns).filter(
+            ([, list]) => list.length > 0,
+          );
 
-              return (
+          if (!entries.length) {
+            return (
+              <div className="text-xs text-neutral-500">
+                No concern available
+              </div>
+            );
+          }
+
+          return (
+            <Accordion type="single" collapsible className="space-y-2">
+              {entries.map(([key, list]) => (
                 <AccordionItem key={key} value={key}>
                   <AccordionTrigger className="text-xs font-medium capitalize">
                     {key}
@@ -231,20 +261,17 @@ export function Filter({
 
                   <AccordionContent>
                     <SubList
-                      data={list.map((c) => ({
-                        id: c.id,
-                        name: c.name, // ✅ WAJIB
-                      }))}
+                      data={list}
                       prefix="concern"
                       selectedFilters={selectedFilters}
                       onSelect={handleSelect}
                     />
                   </AccordionContent>
                 </AccordionItem>
-              );
-            })}
-          </Accordion>
-        )}
+              ))}
+            </Accordion>
+          );
+        }}
       />
 
       {/* RATING */}
@@ -267,16 +294,6 @@ export function Filter({
           </div>
         )}
       />
-
-      {/* RESET */}
-      <Button
-        onClick={handleReset}
-        disabled={
-          !selectedFilters.length && !brandSearch && !minPrice && !maxPrice
-        }
-      >
-        Reset filter
-      </Button>
     </div>
   );
 }
