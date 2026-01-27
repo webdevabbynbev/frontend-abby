@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "cross-env NEXT_DISABLE_TURBOPACK=1 next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0 -p $PORT",
     "setup": "npm ci"
   },
   "dependencies": {
@@ -33,7 +33,9 @@
     "dayjs": "^1.11.18",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^5.2.1",
     "framer-motion": "^12.23.22",
+    "hono": "^4.11.5",
     "jwt-decode": "^4.0.0",
     "ldrs": "^1.1.9",
     "lucide-react": "^0.542.0",

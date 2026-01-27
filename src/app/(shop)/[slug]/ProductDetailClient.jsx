@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { FaStar } from "react-icons/fa";
@@ -43,6 +42,17 @@ const parseNumericParam = (value) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
+const normalizePromoStock = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const isPromoStockInactive = (value) => {
+  const stock = normalizePromoStock(value);
+  return stock !== null && stock <= 0;
+};
+
 const RATING_OPTIONS = [
   { id: 1, value: "5", star: "5" },
   { id: 2, value: "4", star: "4" },
@@ -55,6 +65,7 @@ export default function ProductDetailClient({ product }) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
+
   const salePriceParam = parseNumericParam(searchParams?.get("salePrice"));
   const realPriceParam = parseNumericParam(searchParams?.get("realPrice"));
   const saleVariantParam = parseNumericParam(
@@ -63,40 +74,93 @@ export default function ProductDetailClient({ product }) {
 
   const hasSaleVariantParam =
     Number.isFinite(saleVariantParam) && saleVariantParam > 0;
+
   // Prevent hydration mismatch for relative time
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
+
+  const hasPromoData = useMemo(() => {
+    return variants.some((variant) => {
+      const promoValue = Number(
+        variant?.promoPrice ??
+          variant?.promo_price ??
+          variant?.flashPrice ??
+          variant?.salePrice ??
+          0,
+      );
+      return Number.isFinite(promoValue) && promoValue > 0;
+    });
+  }, [variants]);
+
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (
       hasSaleVariantParam &&
-      variants.some((variant) => Number(variant.id) === saleVariantParam)
+      variants.some(
+        (variant) => Number(variant.id) === Number(saleVariantParam),
+      )
     ) {
-      return saleVariantParam;
+      return Number(saleVariantParam);
     }
-
-    return variants.length ? variants[0].id : null;
+    return variants.length ? Number(variants[0].id) : null;
   });
 
   const selectedVariantObj = useMemo(() => {
-    return variants.find((v) => v.id === selectedVariantId) || null;
+    return (
+      variants.find((v) => Number(v.id) === Number(selectedVariantId)) || null
+    );
   }, [variants, selectedVariantId]);
 
-  // kalau selectedVariantId kosong tapi variants ada, set default
+  const selectedPromoStockRaw =
+    selectedVariantObj?.promoStock ??
+    selectedVariantObj?.promo_stock ??
+    selectedVariantObj?.promo?.stock ??
+    null;
+  const promoStockInactive = isPromoStockInactive(selectedPromoStockRaw);
+
+  const variantBasePriceValue = Number(selectedVariantObj?.price ?? NaN);
+  const variantBasePrice =
+    Number.isFinite(variantBasePriceValue) && variantBasePriceValue > 0
+      ? variantBasePriceValue
+      : undefined;
+
+  const variantPromoPriceValue = Number(
+    selectedVariantObj?.promoPrice ??
+      selectedVariantObj?.promo_price ??
+      selectedVariantObj?.flashPrice ??
+      selectedVariantObj?.salePrice ??
+      NaN,
+  );
+  const variantPromoPrice =
+    !promoStockInactive &&
+    Number.isFinite(variantPromoPriceValue) &&
+    variantPromoPriceValue > 0
+      ? variantPromoPriceValue
+      : undefined;
+
+  // kalau selectedVariantId kosong/tidak valid tapi variants ada, set default sekali
   useEffect(() => {
-    if (
-      hasSaleVariantParam &&
-      variants.some((variant) => Number(variant.id) === saleVariantParam) &&
-      Number(selectedVariantId) !== saleVariantParam
-    ) {
-      setSelectedVariantId(saleVariantParam);
+    if (!variants.length) return;
+
+    const isCurrentValid = variants.some(
+      (variant) => Number(variant.id) === Number(selectedVariantId),
+    );
+    if (isCurrentValid) return;
+
+    const hasSaleVariant = hasSaleVariantParam
+      ? variants.some(
+          (variant) => Number(variant.id) === Number(saleVariantParam),
+        )
+      : false;
+
+    if (hasSaleVariant) {
+      setSelectedVariantId(Number(saleVariantParam));
       return;
     }
-    if (!selectedVariantId && variants.length > 0) {
-      setSelectedVariantId(variants[0].id);
-    }
+
+    setSelectedVariantId(Number(variants[0].id));
   }, [hasSaleVariantParam, saleVariantParam, selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
@@ -125,19 +189,39 @@ export default function ProductDetailClient({ product }) {
 
   const saleVariantExists =
     hasSaleVariantParam &&
-    variants.some((variant) => Number(variant.id) === saleVariantParam);
+    variants.some((variant) => Number(variant.id) === Number(saleVariantParam));
+
   const saleAppliesToVariant = !saleVariantExists
     ? true
-    : Number(selectedVariantId) === saleVariantParam;
+    : Number(selectedVariantId) === Number(saleVariantParam);
 
-  const priceOverride =
+  const allowQueryOverride = !hasPromoData;
+
+  const queryPriceOverride =
+    allowQueryOverride &&
     saleAppliesToVariant &&
+    !promoStockInactive &&
     Number.isFinite(salePriceParam) &&
     salePriceParam > 0
       ? salePriceParam
       : undefined;
 
-  // ====== BASE PRICE (sebelum extraDiscount storewide ditempel) ======
+  const queryRealPriceOverride =
+    allowQueryOverride &&
+    saleAppliesToVariant &&
+    !promoStockInactive &&
+    Number.isFinite(realPriceParam) &&
+    realPriceParam > 0
+      ? realPriceParam
+      : undefined;
+
+  const promoOverride =
+    variantPromoPrice !== undefined &&
+    (variantBasePrice === undefined || variantPromoPrice < variantBasePrice)
+      ? variantPromoPrice
+      : undefined;
+
+  // ====== BASE PRICE (sebelum extraDiscount ditempel) ======
   const baseProductPrice =
     product?.price ?? product?.base_price ?? product?.basePrice ?? 0;
 
@@ -149,23 +233,30 @@ export default function ProductDetailClient({ product }) {
     0;
 
   const baseFinalPrice =
-    priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
+    promoOverride ??
+    queryPriceOverride ??
+    variantBasePrice ??
+    baseProductPrice;
 
-  const realPriceOverride =
-    saleAppliesToVariant &&
-    Number.isFinite(realPriceParam) &&
-    realPriceParam > 0
-      ? realPriceParam
+  const compareFromVariant =
+    variantBasePrice !== undefined &&
+    (promoOverride !== undefined || queryPriceOverride !== undefined)
+      ? variantBasePrice
       : undefined;
 
-  const baseCompareAt = realPriceOverride ?? baseRealPrice ?? baseFinalPrice;
+  const baseCompareAt =
+    queryRealPriceOverride ?? compareFromVariant ?? baseRealPrice ?? baseFinalPrice;
+
+  const appliedOverride = promoOverride ?? queryPriceOverride;
 
   const saleOverrideActive =
-    priceOverride !== undefined &&
+    appliedOverride !== undefined &&
     Number.isFinite(baseCompareAt) &&
-    priceOverride < baseCompareAt;
+    appliedOverride < baseCompareAt;
 
-  const isSale = (product?.sale && saleAppliesToVariant) || saleOverrideActive;
+  const isSale =
+    !promoStockInactive &&
+    (saleOverrideActive || (product?.sale && saleAppliesToVariant));
 
   // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
@@ -187,6 +278,7 @@ export default function ProductDetailClient({ product }) {
   const isVariantEligible =
     extraAppliesTo === 3 &&
     selectedVariantId !== null &&
+    selectedVariantId !== undefined &&
     eligibleVariantIds.includes(Number(selectedVariantId));
 
   const hasEligibleVariant =
@@ -197,7 +289,7 @@ export default function ProductDetailClient({ product }) {
   const showExtraLabel =
     Boolean(extraLabel) && (extraAppliesTo !== 3 || hasEligibleVariant);
 
-  // ====== DISPLAY PRICE (setelah extraDiscount storewide) ======
+  // ====== DISPLAY PRICE (setelah extraDiscount storewide / per-variant) ======
   let displayFinalPrice = Number(baseFinalPrice || 0);
   let displayCompareAt =
     isSale &&
@@ -216,9 +308,15 @@ export default function ProductDetailClient({ product }) {
       (extraAppliesTo === 3 && isVariantEligible));
 
   if (shouldApplyExtraDiscount) {
-    const after = applyExtraDiscount(extra, displayFinalPrice);
+    // ✅ PASS selectedVariantId agar diskon bisa beda-beda per variant (rulesByVariantId)
+    const after = applyExtraDiscount(
+      extra,
+      displayFinalPrice,
+      selectedVariantId,
+    );
+
     if (Number.isFinite(after) && after > 0 && after < displayFinalPrice) {
-      // kalau sebelumnya belum ada compareAt, coret harga sebelum diskon storewide
+      // kalau sebelumnya belum ada compareAt, coret harga sebelum diskon
       if (!displayCompareAt || displayCompareAt <= displayFinalPrice) {
         displayCompareAt = displayFinalPrice;
       }
@@ -233,19 +331,25 @@ export default function ProductDetailClient({ product }) {
     ? getDiscountPercent(displayCompareAt, displayFinalPrice)
     : null;
 
-  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const baseStockValue = Number(
+    selectedVariantObj?.stock ?? product?.stock ?? 0,
+  );
+  const baseStock = Number.isFinite(baseStockValue) ? baseStockValue : 0;
+  const promoStockValue = normalizePromoStock(selectedPromoStockRaw);
+  const promoStockActive =
+    promoStockValue !== null && promoStockValue > 0 && isSale;
+  const stock = promoStockActive ? promoStockValue : baseStock;
   const subtotal = displayFinalPrice * qty;
 
+  // ✅ jangan toggle jadi null, biar state variant konsisten & diskon tidak “hilang”
   const handleSelect = (id) => {
-    setSelectedVariantId((prev) => (prev === id ? null : id));
+    setSelectedVariantId(Number(id));
   };
 
   const getVariantDisplayName = (variant) => {
     if (!variant) return "";
-    // Check for both camelCase and snake_case
     const attributes = variant.attribute_values || variant.attributeValues;
     if (attributes && Array.isArray(attributes) && attributes.length > 0) {
-      // Check for property 'name' or 'value' inside the attribute object
       const displayValues = attributes
         .map((av) => av.value || av.name)
         .filter(Boolean);
@@ -345,7 +449,7 @@ export default function ProductDetailClient({ product }) {
       offers: {
         "@type": "Offer",
         priceCurrency: "IDR",
-        // ✅ gunakan harga yang ditampilkan (setelah extraDiscount storewide)
+        // ✅ gunakan harga yang ditampilkan (setelah extraDiscount)
         price: displayFinalPrice,
         availability:
           stock > 0
@@ -418,7 +522,7 @@ export default function ProductDetailClient({ product }) {
               {/* Product Image */}
               <div className="Image-container">
                 <div className="h-auto w-full relative overflow-hidden rounded-lg">
-                  {/* ✅ tampilkan tag sale kalau ada discount apa pun (sale/storewide) */}
+                  {/* ✅ tampilkan tag sale kalau ada discount apa pun */}
                   {showDiscount && (
                     <img
                       src="/sale-tag.svg"
@@ -523,12 +627,14 @@ export default function ProductDetailClient({ product }) {
                       const variantThumb = Array.isArray(v?.images)
                         ? v.images[0]
                         : null;
+
                       const variantDisplayName = getVariantDisplayName(v);
+
                       return (
                         <Chip
                           key={v.id}
                           onClick={() => handleSelect(v.id)}
-                          isActive={selectedVariantId === v.id}
+                          isActive={Number(selectedVariantId) === Number(v.id)}
                         >
                           <span className="flex items-center gap-2">
                             {variantThumb ? (
@@ -692,15 +798,7 @@ export default function ProductDetailClient({ product }) {
                 />
               </div>
 
-              <div className="flex-row space-y-1">
-                {/* {showDiscount && (
-                  <img
-                    src="/sale-tag-square.svg"
-                    alt="Discount"
-                    className="w-8 h-8"
-                  />
-                )} */}
-              </div>
+              <div className="flex-row space-y-1" />
             </div>
 
             <div className="flex flex-col space-y-2">

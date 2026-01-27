@@ -102,6 +102,24 @@ export async function GET(req) {
           product?.categoryname ||
           ""
       ).toLowerCase();
+    const getProductBrandId = (product) =>
+      String(
+        product?.brand_id ||
+          product?.brandId ||
+          product?.brand?.id ||
+          ""
+      );
+    const getProductCategoryName = (product) =>
+      String(
+        product?.category?.name ||
+          product?.category?.categoryname ||
+          product?.categoryName ||
+          product?.category_name ||
+          product?.category ||
+          product?.categoryname ||
+          ""
+      ).toLowerCase();
+    const getProductName = (product) => String(product?.name || "").toLowerCase();
 
     const matchesKeyword = (product) => {
       const name = String(product?.name || "").toLowerCase();
