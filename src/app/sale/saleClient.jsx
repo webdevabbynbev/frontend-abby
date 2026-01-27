@@ -24,6 +24,8 @@ import {
 function buildKey(product) {
   return (
     product?.id ??
+    product?.productId ??
+    product?.product_id ??
     product?.slug ??
     product?.sku ??
     `${product?.name ?? "product"}-${product?.brand ?? "brand"}`
@@ -118,8 +120,20 @@ export default function SaleClient({
   }, [filtered, visibleSaleCount]);
 
   const buildSaleHrefQuery = (product) => {
-    const salePrice = Number(product?.price ?? 0);
-    const realPrice = Number(product?.realprice ?? 0);
+    const basePrice = Number(product?.price ?? 0);
+    const salePrice = Number(
+      product?.salePrice ?? product?.sale_price ?? product?.price ?? 0,
+    );
+    let realPrice = Number(product?.realprice ?? product?.realPrice ?? 0);
+    if (
+      (!Number.isFinite(realPrice) || realPrice <= 0) &&
+      Number.isFinite(basePrice) &&
+      basePrice > 0 &&
+      salePrice > 0 &&
+      salePrice !== basePrice
+    ) {
+      realPrice = basePrice;
+    }
     const saleVariantId = Number(product?.saleVariantId ?? 0);
     const params = {};
 

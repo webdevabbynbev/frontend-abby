@@ -7,8 +7,10 @@ import { ProgressBar } from "../progress/progressBar";
 import { getImageUrl } from "@/utils/getImageUrl";
 
 export function FlashSaleCard({ product, item, hrefQuery }) {
-  const flashStock = 100;
-  const flashStockLeft = 10;
+  const toSafeNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
 
   const data = useMemo(() => {
     if (!product && !item) return null;
@@ -21,18 +23,52 @@ export function FlashSaleCard({ product, item, hrefQuery }) {
 
     const salePrice = Number(source.flashPrice ?? 0);
     const originalPrice = Number(source.price ?? 0);
-    const isSale = salePrice > 0 && salePrice < originalPrice;
+    const hasOriginalPrice = originalPrice > 0;
+    const hasPromoPrice = salePrice > 0;
+    const isSale = hasPromoPrice && (!hasOriginalPrice || salePrice < originalPrice);
 
     const rawImage =
       source.image ??
       (Array.isArray(source.images) ? source.images[0] : null) ??
       (Array.isArray(source.medias) ? source.medias[0]?.url : null);
 
+    const stockTotalRaw =
+      source.flashStockTotal ??
+      source.flash_stock_total ??
+      source.promoStockTotal ??
+      source.promo_stock_total ??
+      source.flashStock ??
+      source.flash_stock ??
+      source.promoStock ??
+      source.promo_stock ??
+      source.stockTotal ??
+      source.stock_total ??
+      source.stock;
+
+    const stockLeftRaw =
+      source.flashStockLeft ??
+      source.flash_stock_left ??
+      source.promoStockLeft ??
+      source.promo_stock_left ??
+      source.stockLeft ??
+      source.stock_left ??
+      source.promoStock ??
+      source.promo_stock ??
+      source.stock;
+
+    const totalStock = toSafeNumber(stockTotalRaw, 0);
+    const leftStock = toSafeNumber(stockLeftRaw, totalStock);
+    const resolvedTotal = totalStock > 0 ? totalStock : Math.max(leftStock, 0);
+    const resolvedLeft =
+      resolvedTotal > 0
+        ? Math.min(Math.max(leftStock, 0), resolvedTotal)
+        : Math.max(leftStock, 0);
+
     return {
       id: source.id ?? source._id ?? crypto.randomUUID(),
       name,
       price: isSale ? salePrice : originalPrice,
-      compareAt: isSale ? originalPrice : NaN,
+      compareAt: isSale && hasOriginalPrice ? originalPrice : NaN,
       image: getImageUrl(rawImage),
       brand:
         source.brand?.name ??
@@ -50,8 +86,10 @@ export function FlashSaleCard({ product, item, hrefQuery }) {
         "",
       slug: slugify(source.slug || source.path || name || ""),
       sale: isSale,
+      flashStock: resolvedTotal,
+      flashStockLeft: resolvedLeft,
     };
-  }, [product, item]);
+  }, [item, product]);
 
   if (!data) return null;
 
@@ -69,7 +107,10 @@ export function FlashSaleCard({ product, item, hrefQuery }) {
     ? `/${encodeURIComponent(data.slug)}${queryString ? `?${queryString}` : ""}`
     : "#";
 
-  const progress = Math.round((flashStockLeft / flashStock) * 100);
+  const flashStock = data.flashStock ?? 0;
+  const flashStockLeft = data.flashStockLeft ?? 0;
+  const progress =
+    flashStock > 0 ? Math.round((flashStockLeft / flashStock) * 100) : 0;
 
   return (
     <div className="group relative flex h-full w-full flex-col rounded-3xl bg-white space-y-4 overflow-hidden">
