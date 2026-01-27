@@ -65,7 +65,7 @@ export function NavbarGuest({
               loading={catLoading}
             />
 
-            <MegaDropdown label="concerns" items={concernsItems} />
+            <MegaDropdown label="Concern" items={concernsItems} />
             <BrandDropdown label="Brand" brands={brands} />
           </div>
           {/* STATIC LINKS */}
