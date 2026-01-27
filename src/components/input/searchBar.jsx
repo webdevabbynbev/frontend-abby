@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { TxtField } from "..";
+import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { formatToRupiah } from "@/utils";
 import { getImageUrl } from "@/utils/getImageUrl";
 import { Bouncy } from "ldrs/react";
@@ -13,6 +13,8 @@ export function SearchBar({
   className = "",
   placeholder = "Cari disini . . .",
   per_page = 10,
+  enableSuggestions = true,
+  suggestCount = 3,
 }) {
   const router = useRouter();
   const wrapRef = useRef(null);
@@ -44,40 +46,54 @@ export function SearchBar({
   }, []);
 
   useEffect(() => {
-    if (!trimmed) {
-      setItems([]);
-      setBrands([]);
-      setOpen(false);
-      setLoading(false);
-      return;
+    // nothing here; suggestion fetching handled by fetchSuggestions
+  }, []);
+
+  // Shared debounced fetch function, can be called from onFocus or when trimmed changes
+  const sample = (arr, n) => {
+    if (!Array.isArray(arr) || arr.length === 0) return [];
+    const out = [...arr];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
     }
+    return out.slice(0, n);
+  };
 
-    setOpen(true);
-    setLoading(true);
-
+  const fetchSuggestions = (q) => {
+    if (!enableSuggestions) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
+    setLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
 
-        const res = await fetch(
-          `/api/products/suggest?q=${encodeURIComponent(
-            trimmed,
-          )}&limit=${per_page}`,
-          { signal: abortRef.current.signal },
-        );
-
+        const url = `/api/products/suggest?limit=${Math.max(per_page, suggestCount * 4)}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+        const res = await fetch(url, { signal: abortRef.current.signal });
         const json = await res.json();
-        setItems(Array.isArray(json?.data) ? json.data : []);
-        setBrands(Array.isArray(json?.brands) ? json.brands : []);
-      } catch {
+        const fetchedItems = Array.isArray(json?.data) ? json.data : [];
+        const fetchedBrands = Array.isArray(json?.brands) ? json.brands : [];
+
+        // pick random samples for friendly suggestions when query is empty,
+        // otherwise show top results but limit to suggestCount
+        const itemsToShow = q ? fetchedItems.slice(0, suggestCount) : sample(fetchedItems, suggestCount);
+        const brandsToShow = q ? fetchedBrands.slice(0, suggestCount) : sample(fetchedBrands, suggestCount);
+
+        setItems(itemsToShow);
+        setBrands(brandsToShow);
+        setOpen(true);
+      } catch (e) {
+        // ignore abort/errors
       } finally {
         setLoading(false);
       }
     }, 250);
+  };
 
+  // Trigger suggestions when query changes
+  useEffect(() => {
+    fetchSuggestions(trimmed);
     return () => clearTimeout(debounceRef.current);
   }, [trimmed, per_page]);
 
@@ -98,25 +114,53 @@ export function SearchBar({
 
   return (
     <div ref={wrapRef} className={clsx("relative", className)}>
-      <TxtField
-        id="global-search-input"
-        placeholder={placeholder}
-        iconLeftName="MagnifyingGlass"
-        variant="outline"
-        size="sm"
-        className="w-full min-w-0 sm:min-w-75"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") goSearchPage();
-          if (e.key === "Escape") setOpen(false);
-        }}
-      />
+      <div
+        className={clsx(
+          "flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 transition-all duration-150",
+          value ? "shadow-sm" : "",
+        )}
+      >
+        <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        <input
+          id="global-search-input"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => {
+            fetchSuggestions(trimmed);
+            setOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") goSearchPage();
+            if (e.key === "Escape") setOpen(false);
+          }}
+          className="w-full text-sm outline-none bg-transparent placeholder:text-gray-400"
+        />
+        {value ? (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => {
+              setValue("");
+              setItems([]);
+              setBrands([]);
+              setOpen(false);
+            }}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
 
       {open && (
         <div className="absolute left-0 right-0 mt-2 z-50 rounded-xl border bg-white overflow-hidden">
           <div className="px-3 py-2 text-xs text-neutral-500 border-b">
-            {loading ? "Mencari..." : `Hasil untuk "${trimmed}"`}
+            {loading
+              ? "Mencari..."
+              : trimmed
+              ? `Hasil untuk "${trimmed}"`
+              : "Rekomendasi untukmu"}
           </div>
 
           {loading ? (
@@ -200,9 +244,13 @@ export function SearchBar({
                         {p.name}
                       </div>
                       <div className="flex flex-row gap-2 items-center text-xs text-neutral-500 truncate">
-                        {p.price ? formatToRupiah(p.price) : ""}{" "}
+                        {p.price ? (
+                          <span className="text-sm font-medium text-primary-700">
+                            {formatToRupiah(p.price)}
+                          </span>
+                        ) : null}
                         <div className="block items-center w-1 h-1 rounded-full bg-neutral-400" />
-                        {p.category}
+                        <span className="truncate">{p.category}</span>
                       </div>
                     </div>
                   </button>

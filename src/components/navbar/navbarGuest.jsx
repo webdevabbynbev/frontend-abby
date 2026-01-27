@@ -59,13 +59,14 @@ export function NavbarGuest({
             />
           </Link>
           {/* DROPDOWN MENUS */}
-          <div className="flex items-center text-xs">
+          <div className="flex items-center gap-1 text-xs">
             <MegaDropdown
               label="Category"
               data={categories}
               buildHref={categoryHref}
               searchPlaceholder="Search category..."
               viewAllHref="/category"
+              icon="Package"
             />
 
             <MegaDropdown
@@ -74,6 +75,7 @@ export function NavbarGuest({
               buildHref={concernHref}
               searchPlaceholder="Search concern..."
               viewAllHref="/concern"
+              icon="HeartHandshake"
             />
             <BrandDropdown label="Brand" brands={brands} />
           </div>
@@ -84,10 +86,10 @@ export function NavbarGuest({
             const active = isNavActive(link.href);
 
             const className = clsx(
-              "whitespace-nowrap text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg",
               active
-                ? "text-primary-700"
-                : "text-neutral-600 hover:text-neutral-950",
+                ? "text-primary-700 bg-primary-50"
+                : "text-neutral-600 hover:text-primary-700 hover:bg-primary-50",
             );
 
             if (isExternal) {
@@ -99,6 +101,7 @@ export function NavbarGuest({
                   target="_blank"
                   rel="noreferrer"
                 >
+                  <span>✨</span>
                   {link.label}
                 </a>
               );
@@ -106,6 +109,7 @@ export function NavbarGuest({
 
             return (
               <Link key={link.href} href={link.href} className={className}>
+                <span>✨</span>
                 {link.label}
               </Link>
             );

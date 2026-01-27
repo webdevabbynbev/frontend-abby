@@ -1,10 +1,11 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getImageUrl } from "@/utils/getImageUrl";
+import { SearchBar } from "@/components/input/searchBar";
 import { normalizeBrands } from "./utils";
 
 function cx(...classes) {
@@ -131,8 +132,10 @@ export default function BrandDropdown({
         <button
           type="button"
           className={cx(
-            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium",
-            "text-neutral-600 hover:text-neutral-950 transition-all",
+            "inline-flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150",
+            open
+              ? "bg-primary-50 text-primary-700"
+              : "text-neutral-600 hover:bg-primary-50 hover:text-primary-700",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2"
           )}
           aria-label={`${label} menu`}
@@ -141,7 +144,7 @@ export default function BrandDropdown({
           <span className="whitespace-nowrap">{label}</span>
           <ChevronRightIcon
             className={cx(
-              "h-4 w-4 rotate-90 text-gray-400 transition-transform",
+              "h-4 w-4 rotate-90 transition-transform",
               open && "-rotate-90"
             )}
           />
@@ -149,21 +152,23 @@ export default function BrandDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className={cx(contentClass, "w-[92vw] max-w-360")}
-          sideOffset={10}
-          align="start"
-          collisionPadding={16}
-          {...(canHover
-            ? {
-                onMouseEnter: clearCloseTimer,
-                onMouseLeave: scheduleClose,
-              }
-            : {})}
-        >
-          <div className="grid gap-0 px-2 pb-2 pt-4 md:grid-cols-[260px_1fr]">
-            <div className="border-b border-gray-100 px-4 pb-4 md:border-b-0 md:border-r md:pr-5">
-              <div className="text-sm font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <DropdownMenu.Content
+            className={cx(contentClass, "w-[92vw] max-w-360 pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300")}
+            sideOffset={0}
+            side="bottom"
+            align="center"
+            collisionPadding={16}
+            {...(canHover
+              ? {
+                  onMouseEnter: clearCloseTimer,
+                  onMouseLeave: scheduleClose,
+                }
+              : {})}
+          >
+          <div className="grid gap-0 px-4 pb-4 pt-6 md:grid-cols-[260px_1fr]">
+            <div className="border-b border-gray-100 pb-4 md:border-b-0 md:border-r md:pr-5">
+              <div className="text-lg font-bold text-gray-900">
                 Popular Brands
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
@@ -173,8 +178,8 @@ export default function BrandDropdown({
               </div>
             </div>
 
-            <div className="px-4 pt-4">
-              <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-3">
+            <div className="px-4 pt-6 md:pt-0">
+              <div className="flex flex-wrap gap-2 border-b border-gray-100 pb-4">
                 {letters.map((letter) => {
                   const isDisabled = !grouped[letter]?.length;
                   const isActive = letter === activeLetter;
@@ -185,9 +190,9 @@ export default function BrandDropdown({
                       onClick={() => setActiveLetter(letter)}
                       disabled={isDisabled}
                       className={cx(
-                        "h-8 w-8 rounded-md text-sm font-semibold transition",
+                        "h-8 w-8 rounded-md text-sm font-semibold transition-colors duration-150",
                         isActive
-                          ? "bg-primary-50 text-primary-700"
+                          ? "bg-primary-50 text-primary-700 border border-primary-200"
                           : "text-gray-600 hover:bg-gray-50",
                         isDisabled && "cursor-not-allowed opacity-40"
                       )}
@@ -198,29 +203,19 @@ export default function BrandDropdown({
                 })}
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-                <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-                <input
+              <div className="mt-4">
+                <SearchBar
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Cari berdasarkan nama brand"
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+                  enableSuggestions={false}
                 />
-                {query ? (
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
-                  >
-                    Clear
-                  </button>
-                ) : null}
               </div>
 
-              <div className="mt-5 max-h-[55vh] overflow-auto pr-2">
+              <div className="mt-5 max-h-[55vh] overflow-auto pr-3">
                 {activeBrands.length ? (
                   <div className="space-y-4">
-                    <div className="text-2xl font-semibold text-gray-800">
+                    <div className="text-lg font-bold text-gray-900">
                       {activeLetter}
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -228,7 +223,7 @@ export default function BrandDropdown({
                         <Link
                           key={brand.id}
                           href={`/brand/${encodeURIComponent(brand.slug)}`}
-                          className="rounded-lg px-2 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                          className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-150 hover:text-primary-600"
                         >
                           {brand.name}
                         </Link>
@@ -236,8 +231,8 @@ export default function BrandDropdown({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                    Brand tidak ditemukan.
+                  <div className="flex items-center justify-center h-32 text-gray-500">
+                    <p className="text-sm">Tidak ada hasil ditemukan</p>
                   </div>
                 )}
               </div>
@@ -245,7 +240,8 @@ export default function BrandDropdown({
           </div>
 
           <DropdownMenu.Arrow className="fill-white" />
-        </DropdownMenu.Content>
+          </DropdownMenu.Content>
+        </div>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
   );

@@ -19,6 +19,18 @@ const nextConfig = {
       },
     ];
   },
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 5,
+  },
+  webpack: (config, { isServer }) => {
+    // Suppress Supabase internal module warnings
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /supabase/ },
+    ];
+    return config;
+  },
 };
 
 module.exports = nextConfig;

@@ -282,7 +282,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           }
         }
       } catch (error) {
-        console.error("Gagal menambah ke keranjang", error);
         const isUnauthorized = error?.response?.status === 401;
         const msg = isUnauthorized
           ? "Sesi kamu habis. Silakan login ulang."

@@ -88,13 +88,14 @@ export function NavbarLoggedIn({
           </Link>
 
           {/* DROPDOWN MENUS */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
             <MegaDropdown
               label="Category"
               data={categories}
               buildHref={categoryHref}
               searchPlaceholder="Search category..."
               viewAllHref="/category"
+              icon="Package"
             />
 
             <MegaDropdown
@@ -103,18 +104,19 @@ export function NavbarLoggedIn({
               buildHref={concernHref}
               searchPlaceholder="Search concern..."
               viewAllHref="/concern"
+              icon="HeartHandshake"
             />
-            <BrandDropdown label="Shop by Brand" brands={brands} />
+            <BrandDropdown label="Brand" brands={brands} />
             {links.map((link) => {
               const isExternal =
                 typeof link.href === "string" && link.href.startsWith("http");
               const active = isNavActive(link.href);
 
               const className = clsx(
-                "whitespace-nowrap text-xs font-medium transition-colors",
+                "inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg",
                 active
-                  ? "text-primary-700"
-                  : "text-neutral-600 hover:text-neutral-950",
+                  ? "text-primary-700 bg-primary-50"
+                  : "text-neutral-600 hover:text-primary-700 hover:bg-primary-50",
               );
 
               if (isExternal) {
@@ -126,6 +128,7 @@ export function NavbarLoggedIn({
                     target="_blank"
                     rel="noreferrer"
                   >
+                    <span>✨</span>
                     {link.label}
                   </a>
                 );
@@ -133,6 +136,7 @@ export function NavbarLoggedIn({
 
               return (
                 <Link key={link.href} href={link.href} className={className}>
+                  <span>✨</span>
                   {link.label}
                 </Link>
               );
