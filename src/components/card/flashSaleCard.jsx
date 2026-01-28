@@ -145,7 +145,7 @@ export function FlashSaleCard({ product, item, hrefQuery }) {
 
           <p className="text-xs text-neutral-500">
             Tersisa{" "}
-            <span className="font-bold text-primary-700">
+            <span className="font-bold">
               {flashStockLeft}
             </span>{" "}
             dari {flashStock}

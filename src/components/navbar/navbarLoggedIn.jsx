@@ -6,6 +6,7 @@ import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import MegaDropdown from "./megaDropdown";
+import { useState } from "react";
 
 import {
   BtnIcon,
@@ -34,8 +35,6 @@ export function NavbarLoggedIn({
   search,
   setSearch,
   onSearch,
-  open,
-  setOpen,
   onLogout,
   categories = [],
   concerns = [],
@@ -48,7 +47,7 @@ export function NavbarLoggedIn({
   const categoryTypes = Array.isArray(categories) ? categories : [];
   const catLoading = Boolean(categoriesLoading);
   const concernsItems = buildconcernsItems(concerns);
-
+  const [open, setOpen] = useState(false);
   return (
     <>
       {/* ===================== MOBILE ( < lg ) ===================== */}
@@ -161,27 +160,62 @@ export function NavbarLoggedIn({
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <BtnIcon as="span" iconName="User" variant="tertiary" size="sm" />
+              <BtnIcon
+                as="span"
+                iconName="User"
+                variant="tertiary"
+                size="sm"
+                onClick={() => setOpen(true)}
+              />
             </SheetTrigger>
 
             {/* ✅ Hide account menu untuk Google login users */}
-            {user?.photoProfile?.includes("googleusercontent") ? (
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Account</SheetTitle>
-                  <SheetDescription>
-                    Google login users tidak dapat akses profile management di
-                    sini. Gunakan{" "}
-                    <Link
-                      href="/account/profile"
-                      className="text-primary-700 underline"
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <img
+                    src={
+                      user?.photoProfile
+                        ? user.photoProfile
+                        : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                    }
+                    alt="user"
+                    className="h-8 w-8 rounded-full"
+                  />
+                  <div className="text-sm">
+                    {user?.firstName
+                      ? `${user?.firstName} ${user?.lastName}`
+                      : "User"}
+                  </div>
+                </SheetTitle>
+
+                <SheetDescription className="py-1">
+                  Account menu
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-4 space-y-4">
+                {linksidebar.map((item) => {
+                  const Icon = FaIcons[item.icon] || null;
+
+                  return (
+                    <button
+                      key={item.href}
+                      className={clsx(
+                        "flex items-center gap-2 text-sm",
+                        pathname === item.href
+                          ? "text-primary-700"
+                          : "text-neutral-600 hover:text-primary-700",
+                      )}
+                      onClick={() => router.push(item.href)}
                     >
-                      profile page
-                    </Link>{" "}
-                    untuk mengelola akun.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-4">
+                      {Icon && <Icon />}
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+
+                <div className="border-t pt-4">
                   <Button
                     variant="error"
                     size="sm"
@@ -191,67 +225,8 @@ export function NavbarLoggedIn({
                     Log out
                   </Button>
                 </div>
-              </SheetContent>
-            ) : (
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <img
-                      src={
-                        user?.photoProfile
-                          ? user.photoProfile
-                          : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                      }
-                      alt="user"
-                      className="h-8 w-8 rounded-full"
-                    />
-                    <div className="text-sm">
-                      {user?.firstName
-                        ? `${user?.firstName} ${user?.lastName}`
-                        : "User"}
-                    </div>
-                  </SheetTitle>
-                  <SheetDescription className="py-1">
-                    Account menu
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div className="mt-4 space-y-4">
-                  {linksidebar.map((item) => {
-                    const Icon = FaIcons[item.icon] || null;
-
-                    return (
-                      <button
-                        key={item.href}
-                        className={clsx(
-                          "flex items-center gap-2 text-sm",
-                          pathname === item.href
-                            ? "text-primary-700"
-                            : "text-neutral-600 hover:text-primary-700",
-                        )}
-                        onClick={() => router.push(item.href)}
-                      >
-                        {Icon && <Icon />}
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-
-                  <div className="border-t pt-4">
-                    <Button
-                      variant="error"
-                      size="sm"
-                      onClick={onLogout}
-                      className="w-full"
-                    >
-                      Log out
-                    </Button>
-                  </div>
-                </div>
-
-                <SheetDescription />
-              </SheetContent>
-            )}
+              </div>
+            </SheetContent>
           </Sheet>
         </div>
       </div>

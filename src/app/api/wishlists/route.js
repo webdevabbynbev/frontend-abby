@@ -1,4 +1,4 @@
-import { addWishlist, getWishlist, removeWishlist } from "@/services/api/wishlists.services";
+import { addWishlist, getWishlist, removeWishlist } from "@/services/api/wishlists.services.js";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
