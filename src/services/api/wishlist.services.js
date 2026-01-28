@@ -1,6 +1,6 @@
 import api from "@/lib/axios.js";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.API_URL;
 const BASE_URL = API_BASE ? API_BASE.replace(/\/+$/, "") : "";
 
 function withPrivateBase(config = {}) {
