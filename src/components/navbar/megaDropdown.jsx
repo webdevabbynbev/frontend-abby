@@ -2,196 +2,176 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import SearchBarDropdown from "@/components/input/searchBarDropdown";
 
-function cx(...classes) {
-  return classes.filter(Boolean).join(" ");
+function cx(...c) {
+  return c.filter(Boolean).join(" ");
 }
 
-function useCanHover() {
-  const [canHover, setCanHover] = useState(false);
-
-  useEffect(() => {
-    // Desktop-ish: hover + pointer fine
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setCanHover(!!mq.matches);
-    update();
-    mq.addEventListener?.("change", update);
-    return () => mq.removeEventListener?.("change", update);
-  }, []);
-
-  return canHover;
-}
-
-const contentClass =
-  "z-50 min-w-[260px] rounded-xl border border-gray-200 bg-white/95 backdrop-blur p-1 " +
-  "shadow-2xl shadow-black/10 outline-none " +
-  "data-[state=open]:opacity-100 data-[state=closed]:opacity-0 " +
-  "data-[state=open]:scale-100 data-[state=closed]:scale-[0.98] " +
-  "transition duration-150 will-change-[transform,opacity]";
-
-const itemBase =
-  "group flex w-full select-none items-start justify-between gap-3 rounded-lg px-3 py-2 " +
-  "text-sm text-gray-800 outline-none " +
-  "hover:bg-gray-50 focus:bg-gray-50 data-[disabled]:opacity-50 data-[disabled]:pointer-events-none";
-
-const subIconClass =
-  "h-4 w-4 shrink-0 text-gray-400 transition-transform duration-150 group-data-[state=open]:translate-x-0.5";
-
-function LeafItem({ node, pathname }) {
-  const isActive = node.href && pathname === node.href;
-
-  return (
-    <DropdownMenu.Item asChild>
-      <Link
-        href={node.href}
-        aria-current={isActive ? "page" : undefined}
-        className={cx(
-          "w-full",
-          itemBase,
-          "justify-start",
-          isActive && "bg-gray-50 text-primary-700"
-        )}
-      >
-        <span className="flex flex-col gap-0.5">
-          <span className={cx("leading-5", isActive && "font-semibold")}>
-            {node.label}
-          </span>
-          {node.description ? (
-            <span className="text-xs leading-4 text-gray-500">{node.description}</span>
-          ) : null}
-        </span>
-      </Link>
-    </DropdownMenu.Item>
-  );
-}
-
-function Node({ node, pathname }) {
-  const hasChildren = !!node.children?.length;
-
-  if (!hasChildren) return <LeafItem node={node} pathname={pathname} />;
-
-  return (
-    <DropdownMenu.Sub>
-      <DropdownMenu.SubTrigger className={cx(itemBase, "data-[state=open]:bg-gray-50")}>
-        <span className="truncate">{node.label}</span>
-        <ChevronRightIcon className={subIconClass} />
-      </DropdownMenu.SubTrigger>
-
-      <DropdownMenu.Portal>
-        <DropdownMenu.SubContent
-          className={contentClass}
-          side="right"
-          align="start"
-          sideOffset={10}
-          alignOffset={-4}
-          collisionPadding={16}
-        >
-          <div className="max-h-[70vh] overflow-auto p-1">
-            {node.children.map((child) => (
-              <Node key={`${child.label}-${child.href ?? "group"}`} node={child} pathname={pathname} />
-            ))}
-          </div>
-          <DropdownMenu.Arrow className="fill-white" />
-        </DropdownMenu.SubContent>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Sub>
-  );
-}
-
-export default function MegaDropdown({ label, items }) {
+export default function MegaDropdown({
+  label,
+  data = [], // ← hasil adapter
+  buildHref, // ← fn routing
+  searchPlaceholder,
+  viewAllHref,
+  icon = "→",
+}) {
   const pathname = usePathname();
-  const canHover = useCanHover();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
+  const [activeKey, setActiveKey] = useState(data[0]?.key);
+  const [query, setQuery] = useState("");
+
+  const activeGroup = data.find((g) => g.key === activeKey);
+  
+  useEffect(() => {
+    setQuery("");
+  }, [activeKey]);
+
+  const filteredItems = useMemo(() => {
+    if (!query) return activeGroup?.items || [];
+    const q = query.toLowerCase();
+    return activeGroup?.items.filter((i) => i.name.toLowerCase().includes(q));
+  }, [query, activeGroup]);
+
+  useEffect(() => {
+    if (!data.length) return;
+    const hasActive = data.some((g) => g.key === activeKey);
+    if (!hasActive) {
+      setActiveKey(data[0].key);
+    }
+  }, [data, activeKey]);
+
   const closeTimer = useRef(null);
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
-      window.clearTimeout(closeTimer.current);
+      clearTimeout(closeTimer.current);
       closeTimer.current = null;
     }
   };
 
   const scheduleClose = () => {
     clearCloseTimer();
-    closeTimer.current = window.setTimeout(() => setOpen(false), 140);
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
   };
-
-  // Prevent re-creating handlers
-  const hoverHandlers = useMemo(() => {
-    if (!canHover) return {};
-    return {
-      onMouseEnter: () => {
-        clearCloseTimer();
-        setOpen(true);
-      },
-      onMouseLeave: scheduleClose,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canHover]);
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
+          onMouseEnter={() => {
+            clearCloseTimer();
+            setOpen(true);
+          }}
+          onMouseLeave={scheduleClose}
           className={cx(
-            "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
-            "text-gray-700 hover:text-primary-700 hover:bg-gray-50",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2"
+            "inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150",
+            open
+              ? "bg-primary-50 text-primary-700"
+              : "text-neutral-600 hover:bg-primary-50 hover:text-primary-700"
           )}
-          aria-label={`${label} menu`}
-          {...hoverHandlers}
         >
-          <span className="whitespace-nowrap">{label}</span>
+          {label}
           <ChevronRightIcon
             className={cx(
-              "h-4 w-4 rotate-90 text-gray-400 transition-transform",
-              open && "-rotate-90"
+              "h-4 w-4 rotate-90 transition-transform",
+              open && "-rotate-90",
             )}
           />
         </button>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          className={contentClass}
-          sideOffset={10}
-          align="start"
-          collisionPadding={16}
-          {...(canHover
-            ? {
-                onMouseEnter: clearCloseTimer,
-                onMouseLeave: scheduleClose,
-              }
-            : {})}
-        >
-          {/* Optional: header/quick link */}
-          <DropdownMenu.Item asChild>
-            <Link
-              href="/"
-              className={cx(
-                itemBase,
-                "justify-start font-semibold text-gray-900 hover:bg-gray-50"
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <DropdownMenu.Content
+            className="z-50 w-[90vw] max-w-5xl rounded-2xl bg-white shadow-xl pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300"
+            sideOffset={0}
+            side="bottom"
+            align="center"
+            onMouseEnter={clearCloseTimer}
+            onMouseLeave={scheduleClose}
+          >
+          {/* HEADER & SEARCH */}
+          <div className="border-b border-gray-100 px-6 pt-6 pb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex-1">
+                <div className="text-lg font-bold text-gray-900">{label}</div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Browse available options
+                </div>
+              </div>
+              <div className="flex-1 max-w-xs" onKeyDown={(e) => e.stopPropagation()}>
+                <SearchBarDropdown
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={searchPlaceholder}
+                />
+              </div>
+              {viewAllHref && (
+                <DropdownMenu.Item asChild>
+                  <a href={viewAllHref} className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors whitespace-nowrap">
+                    View all
+                  </a>
+                </DropdownMenu.Item>
               )}
-            >
-              Explore {label}
-            </Link>
-          </DropdownMenu.Item>
-
-          <DropdownMenu.Separator className="my-1 h-px bg-gray-200" />
-
-          <div className="max-h-[70vh] overflow-auto p-1">
-            {items.map((lvl1) => (
-              <Node key={`${lvl1.label}-${lvl1.href ?? "group"}`} node={lvl1} pathname={pathname} />
-            ))}
+            </div>
           </div>
 
-          <DropdownMenu.Arrow className="fill-white" />
-        </DropdownMenu.Content>
+          {/* BODY */}
+          <div className="grid grid-cols-[220px_1fr] gap-6 px-6 py-4 pb-6">
+            {/* LEFT */}
+            <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-3">
+              {data.map((g) => (
+                <button
+                  key={g.key}
+                  onMouseEnter={() => setActiveKey(g.key)}
+                  className={cx(
+                    "w-full rounded-lg px-4 py-3 text-sm text-left font-semibold transition-all duration-150 border",
+                    activeKey === g.key
+                      ? "bg-primary-50 text-primary-700 border-primary-200 shadow-sm"
+                      : "text-gray-700 hover:bg-gray-50 border-transparent hover:border-gray-100",
+                  )}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+
+            {/* RIGHT */}
+            <div className="max-h-[55vh] overflow-y-auto pr-3">
+              {filteredItems.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredItems.map((item) => (
+                    <DropdownMenu.Item
+                      key={`${activeKey}-${item.id ?? item.slug}`}
+                      asChild
+                    >
+                      <button
+                        className="rounded-lg px-4 py-3 text-sm text-gray-700 text-left hover:bg-primary-50 transition-all duration-150 hover:text-primary-700 font-medium hover:shadow-sm border border-transparent hover:border-primary-100"
+                        onClick={() => {
+                          router.push(buildHref(item));
+                          setOpen(false);
+                        }}
+                      >
+                        {item.name}
+                      </button>
+                    </DropdownMenu.Item>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-32 text-gray-500">
+                  <p className="text-sm">Tidak ada hasil ditemukan</p>
+                </div>
+              )}
+            </div>
+          </div>
+          </DropdownMenu.Content>
+        </div>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
   );

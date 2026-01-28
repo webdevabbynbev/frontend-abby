@@ -1,25 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/context/AuthContext";
-
+import { categoryAdapter } from "./adapters/category.adapter";
+import { concernAdapter } from "./adapters/concern.adapter";
 import { NavbarGuest, NavbarLoggedIn } from ".";
 
-export function Navbar({ categories = [] }) {
+export function Navbar({ categories = [], concerns = [], brands = [] }) {
+  const categoryData = useMemo(() => categoryAdapter(categories), [categories]);
+  const concernData = useMemo(() => concernAdapter(concerns), [concerns]);
+
   const pathname = usePathname();
   const router = useRouter();
 
-  const { user, token, logout } = useAuth();
-  const isAuthed = !!token || !!user;
+  const { user, loading, logout } = useAuth();
+  const isAuthed = !!user;
 
+  // ✅ HOOKS HARUS DI ATAS
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!isAuthed) setOpen(false);
   }, [isAuthed]);
+
+  // ✅ BOLEH return SETELAH semua hooks
+  if (loading) {
+    return null;
+  }
 
   const handleLogout = async () => {
     await logout();
@@ -33,17 +43,13 @@ export function Navbar({ categories = [] }) {
   };
 
   const links = [
-    // { href: "/best-seller", label: "Best seller" },
-    // { href: "/sale", label: "Sale" },
-    // { href: "/new-arrival", label: "New arrival" },
-    // { href: "/blog", label: "Beauty & tips" },
     { href: "https://blog.abbynbev.com/blog/", label: "Beauty & tips" },
   ];
 
   const linksidebar = [
     { icon: "FaRegUser", href: "/account/profile", label: "Profile" },
     { icon: "FaBox", href: "/account/order-history", label: "My order" },
-    { icon: "FaRegHeart", href: "/account/wishlist", label: "Wishlist" },
+    { icon: "FaRegHeart", href: "/account/wishlists", label: "Wishlist" },
   ];
 
   const isNavActive = (href) => {
@@ -66,9 +72,10 @@ export function Navbar({ categories = [] }) {
             setSearch={setSearch}
             onSearch={handleSearch}
             open={open}
-            setOpen={setOpen}
             onLogout={handleLogout}
-            categories={categories}
+            categories={categoryData}
+            concerns={concernData}
+            brands={brands}
           />
         ) : (
           <NavbarGuest
@@ -78,7 +85,9 @@ export function Navbar({ categories = [] }) {
             search={search}
             setSearch={setSearch}
             onSearch={handleSearch}
-            categories={categories}
+            categories={categoryData}
+            concerns={concernData}
+            brands={brands}
           />
         )}
       </div>

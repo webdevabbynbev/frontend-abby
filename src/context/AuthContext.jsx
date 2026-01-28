@@ -13,23 +13,27 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // 🚩 flag untuk mencegah race condition OAuth
+  const justLoggedInRef = useRef(false);
 
   /**
-   * ✅ HttpOnly cookie mode:
-   * - token tidak disimpan di FE
-   * - login cukup set user
+   * Login dari FE (OAuth / manual)
    */
   const login = ({ user }) => {
+    justLoggedInRef.current = true;
     setUser(user || null);
   };
 
   const clearSession = useCallback(() => {
+    justLoggedInRef.current = false;
     setUser(null);
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await logoutUser(); // backend clear cookie
+      await logoutUser();
       clearSession();
     } catch (err) {
       console.error("Logout failed:", err);
@@ -37,7 +41,8 @@ export function AuthProvider({ children }) {
   }, [clearSession]);
 
   const didLoadRef = useRef(false);
-  // hydrate from backend via HttpOnly cookie
+
+  // hydrate dari backend via HttpOnly cookie
   useEffect(() => {
     if (didLoadRef.current) return;
     didLoadRef.current = true;
@@ -45,17 +50,25 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     const loadUser = async () => {
+      // ⛔ Jangan hydrate ulang tepat setelah OAuth login
+      if (justLoggedInRef.current) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { user } = await getUser();
 
-        if (!user) return; // belum login → DIAM
-
-        if (isMounted) {
+        if (isMounted && user) {
           setUser(user);
         }
       } catch (err) {
-        // 🚨 hanya masuk sini kalau session EXPIRED
-        clearSession();
+        // ⛔ JANGAN clear user di sini
+        console.warn("getUser failed, skip clearing session", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -64,10 +77,10 @@ export function AuthProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, [clearSession]);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

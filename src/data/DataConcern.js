@@ -1,4 +1,4 @@
-const DataSkinConcern = [
+const DataSkinconcern = [
   {
     id: 1,
     skinconcern: "Dehydrated",
@@ -60,7 +60,7 @@ const DataSkinConcern = [
   },
 ];
 
-const DataBodyConcern = [
+const DataBodyconcern = [
   {
     id: 1,
     bodyconcern: "Stretch marks",
@@ -117,7 +117,7 @@ const DataBodyConcern = [
   },
 ];
 
-const DataHairConcern = [
+const DataHairconcern = [
   {
     id: 1,
     hairconcern: "Dandruff",
@@ -169,4 +169,4 @@ const DataHairConcern = [
   },
 ];
 
-export { DataBodyConcern, DataSkinConcern, DataHairConcern };
+export { DataBodyconcern, DataSkinconcern, DataHairconcern };

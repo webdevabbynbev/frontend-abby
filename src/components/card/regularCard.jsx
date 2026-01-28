@@ -15,7 +15,8 @@ import { DataReview } from "@/data";
 import { useAuth } from "@/context/AuthContext";
 import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
-import { Toast } from "radix-ui";
+import { toast } from "sonner";
+import { updateCartCache } from "@/utils/cartCache";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
@@ -227,7 +228,8 @@ const REVIEW_STATS = (() => {
 export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wlPending, setWlPending] = useState(false);
-  const { user, logout } = useAuth();
+
+  const { user, logout } = useAuth() ?? {};
   const { openLoginModal } = useLoginModal();
 
   if (!product) return null;
@@ -245,7 +247,10 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         const variantItems = product?.variantItems ?? [];
         const variant =
-          variantItems?.[0] ?? product?.variant ?? product?.variants?.[0] ?? null;
+          variantItems?.[0] ??
+          product?.variant ??
+          product?.variants?.[0] ??
+          null;
 
         if (!variant && variantItems.length) {
           toast("Varian produk tidak ditemukan");
@@ -262,8 +267,21 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
         const res = await axios.post("/cart", payload);
         toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+
+        if (typeof window !== "undefined") {
+          try {
+            const cartRes = await axios.get("/cart");
+            const items =
+              cartRes.data?.data?.items ||
+              cartRes.data?.data ||
+              cartRes.data?.serve ||
+              [];
+            updateCartCache(Array.isArray(items) ? items : []);
+          } catch (err) {
+            console.warn("Failed to sync cart:", err);
+          }
+        }
       } catch (error) {
-        console.error("Gagal menambah ke keranjang", error);
         const isUnauthorized = error?.response?.status === 401;
         const msg = isUnauthorized
           ? "Sesi kamu habis. Silakan login ulang."
@@ -499,11 +517,11 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
 
       try {
         if (next) {
-          await axios.post("/api/wishlists", {
+          await axios.post("/wishlists", {
             product_id: String(productId),
           });
         } else {
-          await axios.delete("/api/wishlists", {
+          await axios.delete("/wishlists", {
             data: { product_id: String(productId) },
           });
         }

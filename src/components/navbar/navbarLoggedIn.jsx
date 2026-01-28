@@ -5,6 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import * as FaIcons from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import MegaDropdown from "./megaDropdown";
 
 import {
   BtnIcon,
@@ -19,36 +20,10 @@ import {
 } from "@/components";
 
 import CartButton from "@/components/button/cartButton";
-import ShopByCategoryDropdown from "./categoryDropdown";
-import MegaDropdown from "./megaDropdown";
-
-/* ===================== DROPDOWN DATA ===================== */
-export const shopByConcern = [
-  {
-    label: "Acne",
-    children: [
-      {
-        label: "Oily Skin",
-        children: [{ label: "Acne Cleanser", href: "/concern/acne-cleanser" }],
-      },
-    ],
-  },
-];
-
-export const shopByBrand = [
-  {
-    label: "Local Brand",
-    children: [
-      {
-        label: "Skincare",
-        children: [
-          { label: "Somethinc", href: "/brand/somethinc" },
-          { label: "Avoskin", href: "/brand/avoskin" },
-        ],
-      },
-    ],
-  },
-];
+import { concernHref } from "./adapters/concern.adapter";
+import { categoryHref } from "./adapters/category.adapter";
+import BrandDropdown from "./brandDropdown";
+import { buildconcernsItems } from "./utils";
 
 export function NavbarLoggedIn({
   pathname,
@@ -63,6 +38,8 @@ export function NavbarLoggedIn({
   setOpen,
   onLogout,
   categories = [],
+  concerns = [],
+  brands = [],
   categoriesLoading = false,
 }) {
   const router = useRouter();
@@ -70,6 +47,7 @@ export function NavbarLoggedIn({
   // category dari DB
   const categoryTypes = Array.isArray(categories) ? categories : [];
   const catLoading = Boolean(categoriesLoading);
+  const concernsItems = buildconcernsItems(concerns);
 
   return (
     <>
@@ -86,6 +64,7 @@ export function NavbarLoggedIn({
 
         <div className="shrink-0 flex items-center gap-2">
           <CartButton />
+
           <BtnIcon
             iconName="Bell"
             variant="tertiary"
@@ -108,50 +87,60 @@ export function NavbarLoggedIn({
             />
           </Link>
 
-          {/* STATIC LINKS */}
-          {links.map((link) => {
-            const isExternal =
-              typeof link.href === "string" && link.href.startsWith("http");
-            const active = isNavActive(link.href);
-
-            const className = clsx(
-              "whitespace-nowrap text-sm font-medium transition-colors",
-              active
-                ? "text-primary-700"
-                : "text-gray-700 hover:text-primary-500",
-            );
-
-            if (isExternal) {
-              return (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className={className}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {link.label}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={link.href} href={link.href} className={className}>
-                {link.label}
-              </Link>
-            );
-          })}
-
           {/* DROPDOWN MENUS */}
-          <div className="flex items-center">
-            <ShopByCategoryDropdown
-              label="Shop By Category"
-              categories={categoryTypes}
-              loading={catLoading}
+          <div className="flex items-center gap-1">
+            <MegaDropdown
+              label="Category"
+              data={categories}
+              buildHref={categoryHref}
+              searchPlaceholder="Search category..."
+              viewAllHref="/category"
+              icon="Package"
             />
 
-            <MegaDropdown label="Shop by Concern" items={shopByConcern} />
-            <MegaDropdown label="Shop by Brand" items={shopByBrand} />
+            <MegaDropdown
+              label="Concern"
+              data={concerns}
+              buildHref={concernHref}
+              searchPlaceholder="Search concern..."
+              viewAllHref="/concern"
+              icon="HeartHandshake"
+            />
+            <BrandDropdown label="Brand" brands={brands} />
+            {links.map((link) => {
+              const isExternal =
+                typeof link.href === "string" && link.href.startsWith("http");
+              const active = isNavActive(link.href);
+
+              const className = clsx(
+                "inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                active
+                  ? "text-primary-700 bg-primary-50"
+                  : "text-neutral-600 hover:text-primary-700 hover:bg-primary-50",
+              );
+
+              if (isExternal) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={className}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span>✨</span>
+                    {link.label}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={link.href} href={link.href} className={className}>
+                  <span>✨</span>
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -181,8 +170,15 @@ export function NavbarLoggedIn({
                 <SheetHeader>
                   <SheetTitle>Account</SheetTitle>
                   <SheetDescription>
-                    Google login users tidak dapat akses profile management di sini. 
-                    Gunakan <Link href="/account/profile" className="text-primary-700 underline">profile page</Link> untuk mengelola akun.
+                    Google login users tidak dapat akses profile management di
+                    sini. Gunakan{" "}
+                    <Link
+                      href="/account/profile"
+                      className="text-primary-700 underline"
+                    >
+                      profile page
+                    </Link>{" "}
+                    untuk mengelola akun.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="mt-4">
@@ -215,7 +211,9 @@ export function NavbarLoggedIn({
                         : "User"}
                     </div>
                   </SheetTitle>
-                  <SheetDescription className="py-1">Account menu</SheetDescription>
+                  <SheetDescription className="py-1">
+                    Account menu
+                  </SheetDescription>
                 </SheetHeader>
 
                 <div className="mt-4 space-y-4">

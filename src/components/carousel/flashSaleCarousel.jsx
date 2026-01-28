@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";import {
+import React, { useMemo } from "react";
+import {
   Carousel,
   CarouselContent,
   CarouselNext,
@@ -15,18 +16,28 @@ export function FlashSaleCarousel({ rawItems = [] }) {
     return rawItems.map(normalizeFlashSaleItem).filter(Boolean);
   }, [rawItems]);
 
+  const buildKey = (product, index) => {
+    const key =
+      product?.variant_id ??
+      product?.variantId ??
+      product?.variant?.id ??
+      product?.sku ??
+      product?.id;
+    return key ? String(key) : `flash-${index}`;
+  };
+
   if (products.length === 0) return null;
 
   return (
     <Carousel className="w-full" opts={{ align: "start" }}>
       <CarouselContent className="justify-start snap-start gap-0">
-        {products.slice(0, 10).map((product) => (
+        {products.slice(0, 10).map((product, index) => (
           <CarouselItem
-            key={product.id}
+            key={buildKey(product, index)}
             className="flex-none basis-1/2 md:basis-1/4 lg:basis-1/5"
           >
             <div className="relative h-full w-full overflow-hidden rounded-lg">
-              <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-[24px] items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
+              <span className="pointer-events-none absolute top-0 left-0 z-10 flex h-6 items-center rounded-br-lg bg-[#AE2D68] px-2 text-[10px] font-bold uppercase tracking-wide text-[#F6F6F6]">
                 Flash Sale
               </span>
               <FlashSaleCard
@@ -40,7 +51,7 @@ export function FlashSaleCarousel({ rawItems = [] }) {
             </div>
           </CarouselItem>
         ))}
-        <div className="flex-none w-[0px]" aria-hidden="true" />
+        <div className="flex-none w-0" aria-hidden="true" />
       </CarouselContent>
 
       <CarouselPrevious />

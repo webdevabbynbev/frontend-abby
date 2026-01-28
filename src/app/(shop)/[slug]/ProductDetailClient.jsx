@@ -11,6 +11,7 @@ import {
 } from "@/utils";
 import { toast } from "sonner";
 import axios from "@/lib/axios.js";
+import { updateCartCache } from "@/utils/cartCache";
 import { useAuth } from "@/context/AuthContext";
 
 import {
@@ -39,6 +40,17 @@ const parseNumericParam = (value) => {
   if (value === null || value === undefined || value === "") return NaN;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : NaN;
+};
+
+const normalizePromoStock = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const isPromoStockInactive = (value) => {
+  const stock = normalizePromoStock(value);
+  return stock !== null && stock <= 0;
 };
 
 const RATING_OPTIONS = [
@@ -70,6 +82,19 @@ export default function ProductDetailClient({ product }) {
   // variants dari backend (variantItems sudah berisi images)
   const variants = product?.variantItems ?? [];
 
+  const hasPromoData = useMemo(() => {
+    return variants.some((variant) => {
+      const promoValue = Number(
+        variant?.promoPrice ??
+          variant?.promo_price ??
+          variant?.flashPrice ??
+          variant?.salePrice ??
+          0,
+      );
+      return Number.isFinite(promoValue) && promoValue > 0;
+    });
+  }, [variants]);
+
   const [selectedVariantId, setSelectedVariantId] = useState(() => {
     if (
       hasSaleVariantParam &&
@@ -88,29 +113,59 @@ export default function ProductDetailClient({ product }) {
     );
   }, [variants, selectedVariantId]);
 
-  // kalau selectedVariantId kosong tapi variants ada, set default
+  const selectedPromoStockRaw =
+    selectedVariantObj?.promoStock ??
+    selectedVariantObj?.promo_stock ??
+    selectedVariantObj?.promo?.stock ??
+    null;
+  const promoStockInactive = isPromoStockInactive(selectedPromoStockRaw);
+
+  const variantBasePriceValue = Number(selectedVariantObj?.price ?? NaN);
+  const variantBasePrice =
+    Number.isFinite(variantBasePriceValue) && variantBasePriceValue > 0
+      ? variantBasePriceValue
+      : undefined;
+
+  const variantPromoPriceValue = Number(
+    selectedVariantObj?.promoPrice ??
+      selectedVariantObj?.promo_price ??
+      selectedVariantObj?.flashPrice ??
+      selectedVariantObj?.salePrice ??
+      NaN,
+  );
+  const variantPromoPrice =
+    !promoStockInactive &&
+    Number.isFinite(variantPromoPriceValue) &&
+    variantPromoPriceValue > 0
+      ? variantPromoPriceValue
+      : undefined;
+
+  // kalau selectedVariantId kosong/tidak valid tapi variants ada, set default sekali
   useEffect(() => {
-    if (
-      hasSaleVariantParam &&
-      variants.some(
-        (variant) => Number(variant.id) === Number(saleVariantParam),
-      ) &&
-      Number(selectedVariantId) !== Number(saleVariantParam)
-    ) {
+    if (!variants.length) return;
+
+    const isCurrentValid = variants.some(
+      (variant) => Number(variant.id) === Number(selectedVariantId),
+    );
+    if (isCurrentValid) return;
+
+    const hasSaleVariant = hasSaleVariantParam
+      ? variants.some(
+          (variant) => Number(variant.id) === Number(saleVariantParam),
+        )
+      : false;
+
+    if (hasSaleVariant) {
       setSelectedVariantId(Number(saleVariantParam));
       return;
     }
-    if (
-      (selectedVariantId === null || selectedVariantId === undefined) &&
-      variants.length > 0
-    ) {
-      setSelectedVariantId(Number(variants[0].id));
-    }
+
+    setSelectedVariantId(Number(variants[0].id));
   }, [hasSaleVariantParam, saleVariantParam, selectedVariantId, variants]);
 
   // SATU sumber images: ambil dari selectedVariantObj.images
   // fallback: product.images, lalu product.image
-  const variantImages = useMemo(() => {
+  const galerryImages = useMemo(() => {
     const imgs = selectedVariantObj?.images?.length
       ? selectedVariantObj.images
       : Array.isArray(product?.images) && product.images.length
@@ -127,8 +182,8 @@ export default function ProductDetailClient({ product }) {
 
   // setiap variant berubah, set gambar pertama jadi active
   useEffect(() => {
-    setActiveImage(variantImages[0] || "");
-  }, [variantImages]);
+    setActiveImage(galerryImages[0] || "");
+  }, [galerryImages]);
 
   const [qty, setQty] = useState(1);
 
@@ -140,11 +195,30 @@ export default function ProductDetailClient({ product }) {
     ? true
     : Number(selectedVariantId) === Number(saleVariantParam);
 
-  const priceOverride =
+  const allowQueryOverride = !hasPromoData;
+
+  const queryPriceOverride =
+    allowQueryOverride &&
     saleAppliesToVariant &&
+    !promoStockInactive &&
     Number.isFinite(salePriceParam) &&
     salePriceParam > 0
       ? salePriceParam
+      : undefined;
+
+  const queryRealPriceOverride =
+    allowQueryOverride &&
+    saleAppliesToVariant &&
+    !promoStockInactive &&
+    Number.isFinite(realPriceParam) &&
+    realPriceParam > 0
+      ? realPriceParam
+      : undefined;
+
+  const promoOverride =
+    variantPromoPrice !== undefined &&
+    (variantBasePrice === undefined || variantPromoPrice < variantBasePrice)
+      ? variantPromoPrice
       : undefined;
 
   // ====== BASE PRICE (sebelum extraDiscount ditempel) ======
@@ -159,23 +233,30 @@ export default function ProductDetailClient({ product }) {
     0;
 
   const baseFinalPrice =
-    priceOverride ?? selectedVariantObj?.price ?? baseProductPrice;
+    promoOverride ??
+    queryPriceOverride ??
+    variantBasePrice ??
+    baseProductPrice;
 
-  const realPriceOverride =
-    saleAppliesToVariant &&
-    Number.isFinite(realPriceParam) &&
-    realPriceParam > 0
-      ? realPriceParam
+  const compareFromVariant =
+    variantBasePrice !== undefined &&
+    (promoOverride !== undefined || queryPriceOverride !== undefined)
+      ? variantBasePrice
       : undefined;
 
-  const baseCompareAt = realPriceOverride ?? baseRealPrice ?? baseFinalPrice;
+  const baseCompareAt =
+    queryRealPriceOverride ?? compareFromVariant ?? baseRealPrice ?? baseFinalPrice;
+
+  const appliedOverride = promoOverride ?? queryPriceOverride;
 
   const saleOverrideActive =
-    priceOverride !== undefined &&
+    appliedOverride !== undefined &&
     Number.isFinite(baseCompareAt) &&
-    priceOverride < baseCompareAt;
+    appliedOverride < baseCompareAt;
 
-  const isSale = (product?.sale && saleAppliesToVariant) || saleOverrideActive;
+  const isSale =
+    !promoStockInactive &&
+    (saleOverrideActive || (product?.sale && saleAppliesToVariant));
 
   // ====== EXTRA DISCOUNT ======
   const extra = product?.extraDiscount ?? null;
@@ -250,7 +331,14 @@ export default function ProductDetailClient({ product }) {
     ? getDiscountPercent(displayCompareAt, displayFinalPrice)
     : null;
 
-  const stock = selectedVariantObj?.stock ?? product?.stock ?? 0;
+  const baseStockValue = Number(
+    selectedVariantObj?.stock ?? product?.stock ?? 0,
+  );
+  const baseStock = Number.isFinite(baseStockValue) ? baseStockValue : 0;
+  const promoStockValue = normalizePromoStock(selectedPromoStockRaw);
+  const promoStockActive =
+    promoStockValue !== null && promoStockValue > 0 && isSale;
+  const stock = promoStockActive ? promoStockValue : baseStock;
   const subtotal = displayFinalPrice * qty;
 
   // ✅ jangan toggle jadi null, biar state variant konsisten & diskon tidak “hilang”
@@ -292,7 +380,6 @@ export default function ProductDetailClient({ product }) {
 
   const handleAddToCart = async () => {
     try {
-
       if (!product?.id) {
         toast("Product id tidak ditemukan");
         return;
@@ -317,6 +404,19 @@ export default function ProductDetailClient({ product }) {
 
       const res = await axios.post("/cart", payload);
       toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
+      if (typeof window !== "undefined") {
+        try {
+          const cartRes = await axios.get("/cart");
+          const items =
+            cartRes.data?.data?.items ||
+            cartRes.data?.data ||
+            cartRes.data?.serve ||
+            [];
+          updateCartCache(Array.isArray(items) ? items : []);
+        } catch (err) {
+          console.warn("Failed to sync cart:", err);
+        }
+      }
     } catch (error) {
       console.error("Gagal menambah ke keranjang", error);
       const isUnauthorized = error?.response?.status === 401;
@@ -340,7 +440,7 @@ export default function ProductDetailClient({ product }) {
       "@context": "https://schema.org",
       "@type": "Product",
       name: product.name,
-      image: variantImages.length ? variantImages : [product.image],
+      image: galerryImages.length ? galerryImages : [product.image],
       description: product.description,
       brand: {
         "@type": "Brand",
@@ -367,7 +467,7 @@ export default function ProductDetailClient({ product }) {
     };
   }, [
     product,
-    variantImages,
+    galerryImages,
     displayFinalPrice,
     stock,
     reviews,
@@ -444,14 +544,14 @@ export default function ProductDetailClient({ product }) {
                   </div>
                 </div>
 
-                <div className="flex w-full py-2 items-center space-x-4 max-h-64 overflow-x-auto custom-scrollbar">
-                  {variantImages.map((img, i) => (
+                <div className="flex w-full px-1 py-2 items-center space-x-4 max-h-64 overflow-x-auto custom-scrollbar">
+                  {galerryImages.map((img, i) => (
                     <img
                       key={i}
                       src={img}
                       alt={`${product?.name}-${i}`}
                       onClick={() => setActiveImage(img)}
-                      className={`h-20 w-20 border p-2 rounded-md cursor-pointer ${
+                      className={`h-16 w-16 border p-1 rounded-md cursor-pointer ${
                         activeImage === img ? "ring-2 ring-primary-700" : ""
                       }`}
                     />
@@ -461,23 +561,23 @@ export default function ProductDetailClient({ product }) {
 
               {/* Right Content */}
               <div className="Content-right w-full space-y-4 lg:px-10 ">
-                <div className="title-product">
-                  <h2 className="text-sm font-medium text-neutral-500">
+                <div className="title-product" href={brandSlug ? `/brand/${brandSlug}` : "#"}>
+                  <h2 className="text-xl font-bold text-neutral-900">
                     {brandName}
                   </h2>
-                  <h3 className="text-xl font-semibold">{product?.name}</h3>
+                  <h3 className="text-md font-medium text-neutral-900">{product?.name}</h3>
                 </div>
 
                 {/* Price */}
                 <div className="price space-y-2">
                   {/* ✅ badge dari backend */}
-                  {showExtraLabel ? (
+                  {/* {showExtraLabel ? (
                     <div>
                       <span className="text-[10px] py-1 px-3 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                         {extraLabel}
                       </span>
                     </div>
-                  ) : null}
+                  ) : null} */}
 
                   {showDiscount ? (
                     <>
@@ -715,13 +815,13 @@ export default function ProductDetailClient({ product }) {
                 </div>
               </div>
 
-              {showExtraLabel ? (
+              {/* {showExtraLabel ? (
                 <div>
                   <span className="text-[10px] py-1 px-2 bg-primary-200 w-fit rounded-full text-primary-700 font-bold">
                     {extraLabel}
                   </span>
                 </div>
-              ) : null}
+              ) : null} */}
             </div>
           </div>
 

@@ -18,6 +18,8 @@ export default function SearchResultsClient({
   initialMeta,
   brands,
   categories,
+  concerns,
+  ratings,
   itemsPerPage = 24,
 }) {
   const router = useRouter();
@@ -56,13 +58,15 @@ export default function SearchResultsClient({
   const totalPages = meta?.total_pages || meta?.lastPage || 1;
 
   return (
-    <div className="flex w-full mx-auto flex-col justify-between xl:max-w-[1280px] lg:max-w-[1136px] lg:flex-row">
+    <div className="flex w-full mx-auto flex-col justify-between xl:max-w-7xl lg:max-w-284 lg:flex-row">
       {/* Sidebar Filter (desktop) */}
-      <div className="hidden w-[300px] lg:w-[300px] pl-10 pr-2 py-6 lg:block">
+      <div className="hidden w-75 lg:w-75 pl-10 pr-2 py-6 lg:block">
         <Filter
           brands={brands}
           categories={categories}
           showBrandFilter={true}
+          concerns={concerns}
+          ratings={ratings}
           className="w-full py-24"
         />
       </div>
@@ -83,7 +87,7 @@ export default function SearchResultsClient({
                 Filter
               </Button>
             </DialogTrigger>
-            <DialogContent className="flex max-h-[80vh] w-full flex-col overflow-y-auto overflow-x-hidden custom-scrollbar sm:max-w-[400px]">
+            <DialogContent className="flex max-h-[80vh] w-full flex-col overflow-y-auto overflow-x-hidden custom-scrollbar sm:max-w-100">
               <DialogHeader>
                 <DialogTitle>Filter</DialogTitle>
               </DialogHeader>

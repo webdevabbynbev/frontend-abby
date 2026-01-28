@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "@/lib/axios.js";
 import Link from "next/link";
 import { BtnIcon } from "..";
+import { countCartItems, readCartCache, updateCartCache } from "@/utils/cartCache";
 
 export default function CartButton() {
   const [totalQty, setTotalQty] = useState(0);
@@ -11,16 +12,36 @@ export default function CartButton() {
   const loadCartCount = async () => {
     try {
       const res = await axios.get("/cart");
-      const items = res.data?.data?.items || [];
-      const count = items.reduce((sum, item) => sum + item.quantity, 0);
-      setTotalQty(count);
+      const items = res.data?.data?.items || res.data?.data || res.data?.serve || [];
+      const list = Array.isArray(items) ? items : [];
+      if (list.length > 0) {
+        updateCartCache(list);
+        setTotalQty(countCartItems(list));
+      } else {
+        const cached = readCartCache();
+        setTotalQty(countCartItems(cached));
+      }
     } catch (err) {
       console.log("Error load cart:", err);
+      const cached = readCartCache();
+      setTotalQty(countCartItems(cached));
     }
   };
 
   useEffect(() => {
     loadCartCount();
+
+    const handleCartUpdated = () => {
+      const cached = readCartCache();
+      setTotalQty(countCartItems(cached));
+    };
+
+    window.addEventListener("cart:updated", handleCartUpdated);
+    window.addEventListener("storage", handleCartUpdated);
+    return () => {
+      window.removeEventListener("cart:updated", handleCartUpdated);
+      window.removeEventListener("storage", handleCartUpdated);
+    };
   }, []);
 
   return (

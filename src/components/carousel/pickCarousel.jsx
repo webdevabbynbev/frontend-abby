@@ -25,7 +25,7 @@ export function PickCarousel({ products = [] }) {
             <RegularCard product={product} />
           </CarouselItem>
         ))}
-        <div className="flex-none w-[0px]" aria-hidden="true" />
+        <div className="flex-none w-0" aria-hidden="true" />
       </CarouselContent>
 
       <CarouselPrevious />

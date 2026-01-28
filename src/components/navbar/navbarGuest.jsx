@@ -3,37 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
-import { LoginButton, LoginRegisModalForm, SearchBar } from "@/components";
+import { BtnIcon, Button, SearchBar } from "@/components";
+import BrandDropdown from "./brandDropdown";
+import CartButton from "@/components/button/cartButton";
+import { buildconcernsItems } from "./utils";
+import { useLoginModal } from "@/context/LoginModalContext";
 import MegaDropdown from "./megaDropdown";
-import ShopByCategoryDropdown from "./categoryDropdown";
-
-/* ===================== DROPDOWN DATA ===================== */
-export const shopByConcern = [
-  {
-    label: "Acne",
-    children: [
-      {
-        label: "Oily Skin",
-        children: [{ label: "Acne Cleanser", href: "/concern/acne-cleanser" }],
-      },
-    ],
-  },
-];
-
-export const shopByBrand = [
-  {
-    label: "Local Brand",
-    children: [
-      {
-        label: "Skincare",
-        children: [
-          { label: "Somethinc", href: "/brand/somethinc" },
-          { label: "Avoskin", href: "/brand/avoskin" },
-        ],
-      },
-    ],
-  },
-];
+import { categoryHref } from "./adapters/category.adapter";
+import { concernHref } from "./adapters/concern.adapter";
 
 /* ===================== COMPONENT ===================== */
 export function NavbarGuest({
@@ -43,10 +20,14 @@ export function NavbarGuest({
   setSearch,
   onSearch,
   categories = [],
+  concerns = [],
+  brands = [],
   categoriesLoading = false,
 }) {
   const categoryTypes = Array.isArray(categories) ? categories : [];
   const catLoading = Boolean(categoriesLoading);
+  const concernsItems = buildconcernsItems(concerns);
+  const { openLoginModal } = useLoginModal();
 
   return (
     <>
@@ -60,27 +41,44 @@ export function NavbarGuest({
             onSearch={onSearch}
           />
         </div>
-
-        <div className="shrink-0">
-          <LoginButton />
-        </div>
+        <CartButton />
       </div>
 
       {/* ===================== DESKTOP (>= lg) ===================== */}
-      <div className="hidden items-center justify-between gap-6 lg:flex">
+      <div className="hidden lg:flex items-center justify-between gap-2">
         {/* LEFT SIDE */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2 shrink-0">
           {/* LOGO */}
           <Link href="/" className="shrink-0">
             <Image
               src="/Logoabby-text.svg"
               alt="Abby n Bev"
-              width={160}
-              height={80}
+              width={140}
+              height={60}
               priority
             />
           </Link>
+          {/* DROPDOWN MENUS */}
+          <div className="flex items-center gap-1 text-xs">
+            <MegaDropdown
+              label="Category"
+              data={categories}
+              buildHref={categoryHref}
+              searchPlaceholder="Search category..."
+              viewAllHref="/category"
+              icon="Package"
+            />
 
+            <MegaDropdown
+              label="Concern"
+              data={concerns}
+              buildHref={concernHref}
+              searchPlaceholder="Search concern..."
+              viewAllHref="/concern"
+              icon="HeartHandshake"
+            />
+            <BrandDropdown label="Brand" brands={brands} />
+          </div>
           {/* STATIC LINKS */}
           {links.map((link) => {
             const isExternal =
@@ -88,10 +86,10 @@ export function NavbarGuest({
             const active = isNavActive(link.href);
 
             const className = clsx(
-              "whitespace-nowrap text-sm font-medium transition-colors",
+              "inline-flex items-center gap-1 px-3 py-2 text-xs font-medium transition-colors rounded-lg",
               active
-                ? "text-primary-700"
-                : "text-gray-700 hover:text-primary-500",
+                ? "text-primary-700 bg-primary-50"
+                : "text-neutral-600 hover:text-primary-700 hover:bg-primary-50",
             );
 
             if (isExternal) {
@@ -103,6 +101,7 @@ export function NavbarGuest({
                   target="_blank"
                   rel="noreferrer"
                 >
+                  <span>✨</span>
                   {link.label}
                 </a>
               );
@@ -110,34 +109,30 @@ export function NavbarGuest({
 
             return (
               <Link key={link.href} href={link.href} className={className}>
+                <span>✨</span>
                 {link.label}
               </Link>
             );
           })}
-
-          {/* DROPDOWN MENUS */}
-          <div className="flex items-center">
-            <ShopByCategoryDropdown
-              label="Shop By Category"
-              categories={categoryTypes}
-              loading={catLoading}
-            />
-
-            <MegaDropdown label="Shop by Concern" items={shopByConcern} />
-            <MegaDropdown label="Shop by Brand" items={shopByBrand} />
-          </div>
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-1 min-w-0 items-center gap-4 justify-end">
           <SearchBar
             className="max-w-75"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onSearch={onSearch}
           />
-
-          <LoginButton />
+          <CartButton />
+          <Button
+            variant="primary"
+            iconName="RightToBracket"
+            size="md"
+            onClick={openLoginModal}
+          >
+            Masuk
+          </Button>
         </div>
       </div>
     </>

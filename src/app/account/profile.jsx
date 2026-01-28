@@ -50,10 +50,8 @@ export function Profilepage() {
       try {
         const { error } = await supabase.auth.getSession();
         if (error) {
-          console.error("Supabase error:", error);
           setSupabaseStatus("error");
         } else {
-          console.log("Supabase connected ✅");
           setSupabaseStatus("ok");
         }
       } catch (err) {
@@ -72,7 +70,10 @@ export function Profilepage() {
 
   const genderNum = Number(currentUser.gender ?? 0);
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace("/api/v1", "");
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(
+    "/api/v1",
+    "",
+  );
   const photoUrl =
     currentUser.photoProfile && apiBase
       ? `${apiBase}/${currentUser.photoProfile}`
@@ -112,7 +113,7 @@ export function Profilepage() {
       <div className="rounded-4xl bg-white px-6 py-10 space-y-10">
         <div className="flex flex-col md:flex-row gap-4 justify-between">
           {/* Avatar */}
-          <div className="rounded-full h-[100px] w-[100px] border-4 flex items-center justify-center bg-neutral-100 overflow-hidden">
+          <div className="rounded-full h-25 w-25 border-4 flex items-center justify-center bg-neutral-100 overflow-hidden">
             {showPhoto ? (
               <img
                 src={photoUrl}

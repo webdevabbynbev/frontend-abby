@@ -16,6 +16,9 @@ export function normalizeProduct(raw) {
 
   const medias = Array.isArray(item.medias) ? item.medias : [];
   const variants = Array.isArray(item.variants) ? item.variants : [];
+  const rawVariantItems = Array.isArray(item.variantItems)
+    ? item.variantItems
+    : [];
 
   const variantMediaList = variants
     .flatMap((variant) => {
@@ -83,42 +86,108 @@ export function normalizeProduct(raw) {
     ? Math.min(...variantPrices)
     : null;
 
-  const variantItems = sortedVariants
+  const normalizeVariantItem = (variant, fallbackImages = []) => {
+    if (!variant) return null;
+
+    const attrs = Array.isArray(variant.attributes)
+      ? variant.attributes
+      : Array.isArray(variant.attribute_values)
+        ? variant.attribute_values
+        : Array.isArray(variant.attributeValues)
+          ? variant.attributeValues
+          : [];
+
+    const attrLabel = attrs
+      .map(
+        (attr) =>
+          attr?.attribute_value ||
+          attr?.label ||
+          attr?.value ||
+          attr?.attribute?.name ||
+          "",
+      )
+      .filter(Boolean)
+      .join(" / ");
+
+    const fallbackLabel =
+      variant?.label || variant?.name || variant?.sku || variant?.code || "";
+
+    const rawImages =
+      Array.isArray(variant?.images) && variant.images.length
+        ? variant.images
+        : fallbackImages;
+
+    const promoPriceRaw =
+      variant?.promoPrice ??
+      variant?.promo_price ??
+      variant?.flashPrice ??
+      variant?.flash_price ??
+      variant?.salePrice ??
+      variant?.sale_price;
+    const promoPrice = Number(promoPriceRaw ?? 0);
+    const promoKind =
+      variant?.promoKind ?? variant?.promo_kind ?? variant?.promo?.kind ?? null;
+    const promoId =
+      variant?.promoId ?? variant?.promo_id ?? variant?.promo?.promoId ?? null;
+    const promoStockRaw =
+      variant?.promoStock ?? variant?.promo_stock ?? variant?.promo?.stock ?? null;
+    const promoStartDatetime =
+      variant?.promoStartDatetime ??
+      variant?.promo_start_datetime ??
+      variant?.promo?.startDatetime ??
+      null;
+    const promoEndDatetime =
+      variant?.promoEndDatetime ??
+      variant?.promo_end_datetime ??
+      variant?.promo?.endDatetime ??
+      null;
+
+    return {
+      id: variant.id,
+      label: attrLabel || fallbackLabel || `Varian ${variant.id}`,
+      price: Number(variant.price || 0),
+      stock: Number(variant.stock ?? 0),
+      images: uniqueUrls(rawImages).map(getImageUrl),
+      promoPrice:
+        Number.isFinite(promoPrice) && promoPrice > 0 ? promoPrice : null,
+      promoKind,
+      promoId,
+      promoStock:
+        promoStockRaw !== null && promoStockRaw !== undefined
+          ? Number(promoStockRaw)
+          : null,
+      promoStartDatetime,
+      promoEndDatetime,
+    };
+  };
+
+  const variantItemsFromRaw = rawVariantItems
     .map((variant) => {
-      if (!variant) return null;
+      const fallbackImages = mediaList
+        .filter((media) => String(media.variantId) === String(variant.id))
+        .sort(sortMedia)
+        .map((media) => media.url);
 
-      const attrs = Array.isArray(variant.attributes) ? variant.attributes : [];
+      return normalizeVariantItem(variant, fallbackImages);
+    })
+    .filter(Boolean);
 
-      const attrLabel = attrs
-        .map(
-          (attr) =>
-            attr?.attribute_value ||
-            attr?.label ||
-            attr?.value ||
-            attr?.attribute?.name ||
-            "",
-        )
-        .filter(Boolean)
-        .join(" / ");
-
-      const fallbackLabel =
-        variant?.name || variant?.sku || variant?.code || "";
-
+  const variantItemsFromVariants = sortedVariants
+    .map((variant) => {
       const variantImages = uniqueUrls(
         mediaList
           .filter((media) => String(media.variantId) === String(variant.id))
           .sort(sortMedia),
       );
 
-      return {
-        id: variant.id,
-        label: attrLabel || fallbackLabel || `Varian ${variant.id}`,
-        price: Number(variant.price || 0),
-        stock: Number(variant.stock ?? 0),
-        images: variantImages.map(getImageUrl),
-      };
+      return normalizeVariantItem(variant, variantImages);
     })
     .filter(Boolean);
+
+  const variantItems =
+    variantItemsFromRaw.length > 0
+      ? variantItemsFromRaw
+      : variantItemsFromVariants;
 
   return {
     ...item,
@@ -167,10 +236,14 @@ export function normalizeSaleProduct(raw) {
   const base = normalizeProduct(raw);
   if (!base) return null;
 
-  const normalPrice = Number(raw?.price ?? base.price ?? 0);
+  const normalPrice = Number(
+    raw?.realprice ?? raw?.realPrice ?? raw?.price ?? base.price ?? 0,
+  );
   const salePrice = Number(raw?.salePrice ?? raw?.sale_price ?? 0);
   const saleVariantId = Number(
-    raw?.variant_id ??
+    raw?.saleVariantId ??
+      raw?.sale_variant_id ??
+      raw?.variant_id ??
       raw?.variantId ??
       raw?.variant?.id ??
       raw?.variant?.variant_id ??
@@ -179,15 +252,15 @@ export function normalizeSaleProduct(raw) {
       NaN,
   );
 
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
+  const hasPromo = Number.isFinite(salePrice) && salePrice > 0;
+  const isDiscounted = hasPromo && salePrice < normalPrice;
 
   return {
     ...base,
-    price: isSale ? salePrice : normalPrice,
-    realprice: isSale ? normalPrice : NaN,
-    sale: isSale,
-    salePrice: isSale ? salePrice : 0,
+    price: isDiscounted ? salePrice : normalPrice,
+    realprice: isDiscounted ? normalPrice : NaN,
+    sale: hasPromo,
+    salePrice: hasPromo ? salePrice : 0,
     stock: Number(raw?.stock ?? 0),
     saleVariantId:
       Number.isFinite(saleVariantId) && saleVariantId > 0
@@ -236,18 +309,30 @@ export function normalizeFlashSaleItem(raw) {
     salePrice = currentPrice;
   }
 
-  const isSale =
-    Number.isFinite(salePrice) && salePrice > 0 && salePrice < normalPrice;
+  const hasPromo = Number.isFinite(salePrice) && salePrice > 0;
+  const isSale = hasPromo && salePrice < normalPrice;
 
-  if (!isSale) return raw;
+  if (!hasPromo) return raw;
+
+  const promoStock =
+    raw?.stock ??
+    raw?.flashStock ??
+    raw?.flash_stock ??
+    raw?.promoStock ??
+    raw?.promo_stock ??
+    source?.stock ??
+    null;
 
   const normalizedProduct = {
     ...source,
     price: normalPrice,
     flashPrice: salePrice,
     realprice: normalPrice,
-    sale: true,
+    sale: hasPromo,
     flashSaleId: raw.flashSaleId ?? source.flashSaleId,
+    stock: promoStock ?? source?.stock ?? 0,
+    flashStock: promoStock ?? source?.flashStock ?? null,
+    promoStock: promoStock ?? source?.promoStock ?? null,
   };
 
   if (raw.product) {
