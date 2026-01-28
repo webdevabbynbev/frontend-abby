@@ -59,7 +59,6 @@ export async function getAddressByQuery(userId) {
   try {
     const res = await api.get("/addresses", {
       params: { user_id: userId },
-      withCredentials: true,
     });
 
     return res.data?.serve ?? res.data?.data ?? [];

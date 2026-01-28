@@ -14,10 +14,10 @@ export function ProgressBar({
   // warna adaptif (flash sale friendly)
   const barColor =
     progress <= 20
-      ? "bg-red-500"
+      ? "bg-linear-to-r from-primary-700 to-secondary-300"
       : progress <= 50
-      ? "bg-warning-400"
-      : "bg-primary-700";
+      ? "bg-linear-to-r from-primary-600 to-secondary-300"
+      : "bg-linear-to-r from-primary-600 to-secondary-300";
 
   return (
     <div className={`w-full ${className}`}>
