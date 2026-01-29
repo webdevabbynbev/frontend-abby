@@ -31,8 +31,12 @@ export const updateCartCache = (items = []) => {
   notifyCartUpdated();
 };
 
-export const countCartItems = (items = []) =>
-  (Array.isArray(items) ? items : []).reduce((sum, item) => {
-    const qty = Number(item?.qty ?? item?.quantity ?? item?.qtyCheckout ?? 0);
-    return sum + (Number.isFinite(qty) ? qty : 0);
-  }, 0);
+export const countCartItems = (items = []) => {
+  console.log('🧮 countCartItems called with', items.length, 'items');
+  
+  // Count number of unique items, not total quantity
+  const result = Array.isArray(items) ? items.length : 0;
+  
+  console.log('🧮 Total unique items:', result);
+  return result;
+};

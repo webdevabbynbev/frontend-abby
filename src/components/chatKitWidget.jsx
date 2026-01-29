@@ -220,38 +220,38 @@ export function ChatkitWidget({ variant = "floating", onClose }) {
   }, [messages]);
 
   const room = (
-    <div className="w-full h-full flex flex-col overflow-hidden bg-primary-200">
+    <div className="w-full h-full flex flex-col overflow-hidden bg-gradient-to-b from-primary-50 to-white">
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-3"
+        className="flex-1 overflow-y-auto px-4 py-4"
       >
-        <div className="min-h-full flex flex-col gap-4">
+        <div className="min-h-full flex flex-col gap-3">
           {/* spacer */}
           <div className="flex-1" />
 
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`rounded-xl px-3 py-2 text-sm max-w-[85%] ${
+              className={`rounded-2xl px-4 py-3 text-sm max-w-[85%] shadow-sm ${
                 m.role === "user"
-                  ? "bg-primary-700 text-white ml-auto"
-                  : "bg-slate-100 text-slate-800"
+                  ? "bg-primary-600 text-white ml-auto"
+                  : "bg-white text-neutral-800 border border-neutral-100"
               }`}
             >
-              {m.text && <p className="whitespace-pre-line">{m.text}</p>}
+              {m.text && <p className="whitespace-pre-line leading-relaxed">{m.text}</p>}
             </div>
           ))}
           {isSending && (
-            <div className="flex justify-center py-10 text-primary-700">
-              <Metronome size="40" speed="1.5" color="#ae2d68" />
+            <div className="flex justify-center py-6">
+              <Metronome size="40" speed="1.5" color="#c53d7f" />
             </div>
           )}
         </div>
       </div>
 
       {/* Input */}
-      <div className="border-t px-3 py-2 flex gap-2 shrink-0 bg-white">
+      <div className="border-t border-neutral-200 px-4 py-3 flex gap-2 shrink-0 bg-white shadow-lg">
         <TxtField
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -278,8 +278,8 @@ export function ChatkitWidget({ variant = "floating", onClose }) {
     <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button className="rounded-full px-5 py-3 shadow-lg">
-            <FaSprayCanSparkles className="mr-2" />
+          <Button className="rounded-full px-6 py-3 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+            <FaSprayCanSparkles className="mr-2 text-lg" />
             Your Beauty Assistant
           </Button>
         </SheetTrigger>
@@ -287,8 +287,8 @@ export function ChatkitWidget({ variant = "floating", onClose }) {
           side="right"
           className="w-full max-w-md p-0 flex flex-col h-full"
         >
-          <SheetHeader className="px-4 pt-4 shrink-0">
-            <SheetTitle className="text-primary-700">
+          <SheetHeader className="px-5 pt-5 pb-3 shrink-0 border-b border-neutral-100">
+            <SheetTitle className="text-primary-700 text-xl font-bold">
               Chat dengan Abby
             </SheetTitle>
           </SheetHeader>

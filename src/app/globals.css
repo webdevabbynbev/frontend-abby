@@ -384,3 +384,56 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+/* Sonner Toast Custom Styles */
+[data-sonner-toast] {
+  @apply rounded-xl shadow-lg border;
+}
+
+[data-sonner-toast][data-type="success"] {
+  @apply bg-success-50 border-success-200;
+}
+
+[data-sonner-toast][data-type="success"] [data-title] {
+  @apply text-success-800 font-semibold;
+}
+
+[data-sonner-toast][data-type="success"] [data-description] {
+  @apply text-success-700;
+}
+
+[data-sonner-toast][data-type="error"] {
+  @apply bg-error-50 border-error-200;
+}
+
+[data-sonner-toast][data-type="error"] [data-title] {
+  @apply text-error-800 font-semibold;
+}
+
+[data-sonner-toast][data-type="error"] [data-description] {
+  @apply text-error-700;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  @apply bg-warning-50 border-warning-300;
+}
+
+[data-sonner-toast][data-type="warning"] [data-title] {
+  @apply text-warning-900 font-semibold;
+}
+
+[data-sonner-toast][data-type="warning"] [data-description] {
+  @apply text-warning-800;
+}
+
+[data-sonner-toast][data-type="info"] {
+  @apply bg-primary-50 border-primary-200;
+}
+
+[data-sonner-toast][data-type="info"] [data-title] {
+  @apply text-primary-800 font-semibold;
+}
+
+[data-sonner-toast][data-type="info"] [data-description] {
+  @apply text-primary-700;
+}

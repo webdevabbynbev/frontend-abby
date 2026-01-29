@@ -9,10 +9,16 @@ export function concernAdapter(concerns = []) {
     if (!c?.name || !groups[c.concernId]) return;
 
     groups[c.concernId].items.push({
-      id: `${groups[c.concernId].key}-${c.id}`, // ✅ KEY STABLE
+      id: c.id,
       name: c.name,
       slug: c.slug,
+      isGroup: false, // Tandai sebagai item biasa, bukan group
     });
+  });
+
+  // Sort items by id ASC dalam setiap group
+  Object.values(groups).forEach((group) => {
+    group.items.sort((a, b) => a.id - b.id);
   });
 
   return Object.values(groups).filter((g) => g.items.length);

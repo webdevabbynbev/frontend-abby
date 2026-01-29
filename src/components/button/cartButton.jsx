@@ -10,21 +10,33 @@ export default function CartButton() {
   const [totalQty, setTotalQty] = useState(0);
 
   const loadCartCount = async () => {
+    console.log('🔵 loadCartCount called');
     try {
       const res = await axios.get("/cart");
-      const items = res.data?.data?.items || res.data?.data || res.data?.serve || [];
+      const items = res.data?.serve?.data || res.data?.data?.items || res.data?.data || [];
       const list = Array.isArray(items) ? items : [];
+      console.log('🔢 Cart badge: loaded', list.length, 'items from API');
+      console.log('📊 Items:', list.map(item => ({ id: item.id, qty: item.qty, quantity: item.quantity })));
+      
       if (list.length > 0) {
         updateCartCache(list);
-        setTotalQty(countCartItems(list));
+        const count = countCartItems(list);
+        console.log('✅ Setting totalQty to:', count);
+        setTotalQty(count);
       } else {
         const cached = readCartCache();
-        setTotalQty(countCartItems(cached));
+        console.log('🔢 Cart badge: using cached', cached.length, 'items');
+        const count = countCartItems(cached);
+        console.log('✅ Setting totalQty to:', count);
+        setTotalQty(count);
       }
     } catch (err) {
       console.log("Error load cart:", err);
       const cached = readCartCache();
-      setTotalQty(countCartItems(cached));
+      console.log('🔢 Cart badge: error, using cached', cached.length, 'items');
+      const count = countCartItems(cached);
+      console.log('✅ Setting totalQty to:', count);
+      setTotalQty(count);
     }
   };
 
@@ -32,8 +44,13 @@ export default function CartButton() {
     loadCartCount();
 
     const handleCartUpdated = () => {
+      console.log('🔔 Cart updated event received');
       const cached = readCartCache();
-      setTotalQty(countCartItems(cached));
+      console.log('� Cached items:', cached.map(item => ({ id: item.id || item.cart_id, qty: item.qty || item.quantity })));
+      const count = countCartItems(cached);
+      console.log('🔢 Cart badge updated from cache:', cached.length, 'items, total qty:', count);
+      console.log('✅ Setting totalQty to:', count);
+      setTotalQty(count);
     };
 
     window.addEventListener("cart:updated", handleCartUpdated);

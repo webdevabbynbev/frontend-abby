@@ -14,10 +14,6 @@ function sanitizeValue(value, key = "") {
 
   // Log jika ada URL Cloudinary
   if (CLOUDINARY_PATTERN.test(value)) {
-    console.warn(
-      `[safeStorage] Detected external URL in "${key}":`,
-      value.substring(0, 100)
-    );
     // Jangan simpan URL eksternal, return null untuk skip
     return null;
   }
@@ -36,7 +32,7 @@ export const safeLocalStorage = {
           body: JSON.stringify({ key, value: sanitized }),
         });
       } catch (e) {
-        console.error("[safeStorage] Failed to set item:", key, e);
+        // Failed to set item
       }
     }
   },
@@ -48,7 +44,6 @@ export const safeLocalStorage = {
       const payload = await res.json();
       return payload?.value ?? null;
     } catch (e) {
-      console.error("[safeStorage] Failed to get item:", key, e);
       return null;
     }
   },
@@ -59,7 +54,7 @@ export const safeLocalStorage = {
         method: "DELETE",
       });
     } catch (e) {
-      console.error("[safeStorage] Failed to remove item:", key, e);
+      // Failed to remove item
     }
   },
 };
@@ -71,7 +66,7 @@ export const safeSessionStorage = {
       try {
         sessionStorage.setItem(key, sanitized);
       } catch (e) {
-        console.error("[safeStorage] Failed to set item:", key, e);
+        // Failed to set item
       }
     }
   },
@@ -80,7 +75,6 @@ export const safeSessionStorage = {
     try {
       return sessionStorage.getItem(key);
     } catch (e) {
-      console.error("[safeStorage] Failed to get item:", key, e);
       return null;
     }
   },
@@ -89,7 +83,7 @@ export const safeSessionStorage = {
     try {
       sessionStorage.removeItem(key);
     } catch (e) {
-      console.error("[safeStorage] Failed to remove item:", key, e);
+      // Failed to remove item
     }
   },
 };

@@ -17,6 +17,7 @@ import { useLoginModal } from "@/context/LoginModalContext";
 import axios from "@/lib/axios.js";
 import { toast } from "sonner";
 import { updateCartCache } from "@/utils/cartCache";
+import { addToGuestCart } from "@/utils/guestCart";
 
 const WISHLIST_KEY = "abv_wishlist_ids_v1";
 
@@ -240,7 +241,10 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       event?.stopPropagation?.();
 
       try {
+        console.log('🎯 [RegularCard] Add to cart clicked, product:', product);
+        
         if (!product?.id) {
+          console.error('❌ [RegularCard] Product id tidak ditemukan:', product);
           toast("Product id tidak ditemukan");
           return;
         }
@@ -252,11 +256,32 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           product?.variants?.[0] ??
           null;
 
-        if (!variant && variantItems.length) {
+        console.log('🔍 [RegularCard] Product ID:', product.id);
+        console.log('🔍 [RegularCard] Variant items:', variantItems);
+        console.log('🔍 [RegularCard] Selected variant:', variant);
+
+        if (!variant) {
+          console.error('❌ [RegularCard] Varian produk tidak ditemukan');
           toast("Varian produk tidak ditemukan");
           return;
         }
 
+        // Guest users: add to localStorage
+        if (!user) {
+          console.log('🛒 [RegularCard] Adding to guest cart:', { product, variant });
+          const updatedCart = addToGuestCart(product, variant, 1);
+          console.log('📦 [RegularCard] Guest cart after add:', updatedCart);
+          
+          // Trigger cart update event for badge and cart page
+          if (typeof window !== "undefined") {
+            updateCartCache(updatedCart);
+          }
+          
+          toast("Produk berhasil dimasukkan ke keranjang");
+          return;
+        }
+
+        // Authenticated users: add via API
         const payload = {
           product_id: product.id,
           variant_id: variant?.id ?? 0,
@@ -265,16 +290,18 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           is_buy_now: false,
         };
 
+        console.log('📤 [RegularCard] Sending payload:', payload);
         const res = await axios.post("/cart", payload);
+        console.log('✅ [RegularCard] API response:', res.data);
         toast(res.data?.message || "Produk berhasil dimasukkan ke keranjang");
 
         if (typeof window !== "undefined") {
           try {
             const cartRes = await axios.get("/cart");
             const items =
+              cartRes.data?.serve?.data ||
               cartRes.data?.data?.items ||
               cartRes.data?.data ||
-              cartRes.data?.serve ||
               [];
             updateCartCache(Array.isArray(items) ? items : []);
           } catch (err) {
@@ -282,6 +309,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
           }
         }
       } catch (error) {
+        console.error('❌ [RegularCard] Error adding to cart:', error);
         const isUnauthorized = error?.response?.status === 401;
         const msg = isUnauthorized
           ? "Sesi kamu habis. Silakan login ulang."
@@ -504,7 +532,6 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
       const next = !isWishlisted;
 
       if (!wishlistId) {
-        console.error("Missing product_id");
         return;
       }
 
@@ -534,10 +561,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
         const errorMessage = err?.response?.data?.message || err?.message;
 
         if (statusCode === 401 || errorMessage?.includes("Unauthorized")) {
-          console.warn("User session expired, showing login modal");
           openLoginModal();
-        } else {
-          console.error("Wishlist error:", errorMessage);
         }
       } finally {
         setWlPending(false);
@@ -623,7 +647,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             )}
           </div>
 
-          <div className="rating flex gap-1 items-center">
+          {/* <div className="rating flex gap-1 items-center">
             {averageRating === 0 ? (
               <span className="text-xs text-primary-700 font-light">
                 No rating
@@ -638,7 +662,7 @@ export function RegularCard({ product, hrefQuery, showDiscountBadge = true }) {
             <div className="text-xs font-light text-neutral-300">
               ({reviewCount})
             </div>
-          </div>
+          </div> */}
           <div className="hidden opacity-0 absolute left-0 bg-white -bottom-4 flex-row w-full group-hover:-bottom-2 transition-all p-4 justify-center group-hover:opacity-100">
             <div className="button w-full flex space-x-2">
               <Button

@@ -2,6 +2,7 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { FaChevronRight } from "react-icons/fa6";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import SearchBarDropdown from "@/components/input/searchBarDropdown";
@@ -16,7 +17,6 @@ export default function MegaDropdown({
   buildHref, // ← fn routing
   searchPlaceholder,
   viewAllHref,
-  icon = "→",
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -34,7 +34,13 @@ export default function MegaDropdown({
   const filteredItems = useMemo(() => {
     if (!query) return activeGroup?.items || [];
     const q = query.toLowerCase();
-    return activeGroup?.items.filter((i) => i.name.toLowerCase().includes(q));
+    return activeGroup?.items.filter((i) => {
+      // Filter by item name
+      if (i.name.toLowerCase().includes(q)) return true;
+      // Filter by subItems (level 3) names
+      if (i.subItems?.some(sub => sub.name.toLowerCase().includes(q))) return true;
+      return false;
+    });
   }, [query, activeGroup]);
 
   useEffect(() => {
@@ -123,7 +129,7 @@ export default function MegaDropdown({
           </div>
 
           {/* BODY */}
-          <div className="grid grid-cols-[220px_1fr] gap-6 px-6 py-4 pb-6">
+          <div className="grid grid-cols-[220px_1fr] gap-6 px-2 py-2 pb-6">
             {/* LEFT */}
             <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-3">
               {data.map((g) => (
@@ -131,7 +137,7 @@ export default function MegaDropdown({
                   key={g.key}
                   onMouseEnter={() => setActiveKey(g.key)}
                   className={cx(
-                    "w-full rounded-lg px-4 py-3 text-sm text-left font-semibold transition-all duration-150 border",
+                    "w-full rounded-lg px-2 py-2 text-sm text-left font-semibold transition-all duration-150 border",
                     activeKey === g.key
                       ? "bg-primary-50 text-primary-700 border-primary-200 shadow-sm"
                       : "text-gray-700 hover:bg-gray-50 border-transparent hover:border-gray-100",
@@ -145,23 +151,90 @@ export default function MegaDropdown({
             {/* RIGHT */}
             <div className="max-h-[55vh] overflow-y-auto pr-3">
               {filteredItems.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredItems.map((item) => (
-                    <DropdownMenu.Item
-                      key={`${activeKey}-${item.id ?? item.slug}`}
-                      asChild
-                    >
-                      <button
-                        className="rounded-lg px-4 py-3 text-sm text-gray-700 text-left hover:bg-primary-50 transition-all duration-150 hover:text-primary-700 font-medium hover:shadow-sm border border-transparent hover:border-primary-100"
-                        onClick={() => {
-                          router.push(buildHref(item));
-                          setOpen(false);
-                        }}
-                      >
-                        {item.name}
-                      </button>
-                    </DropdownMenu.Item>
-                  ))}
+                <div className="space-y-4">
+                  {/* Check if all items are concern items (no groups) */}
+                  {filteredItems.every(item => !item.isGroup) ? (
+                    // Grid layout untuk concern items
+                    <div className="grid grid-cols-3 gap-3">
+                      {filteredItems.map((item) => (
+                        <DropdownMenu.Item
+                          key={`${activeKey}-${item.id ?? item.slug}`}
+                          asChild
+                        >
+                          <button
+                            className="group flex items-center gap-2 rounded-lg py-2 text-xs text-neutral-400 text-left transition-all duration-150 hover:text-primary-700 font-semibold"
+                            onClick={() => {
+                              router.push(buildHref(item));
+                              setOpen(false);
+                            }}
+                          >
+                            <FaChevronRight className="text-[10px] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                            <span>{item.name}</span>
+                          </button>
+                        </DropdownMenu.Item>
+                      ))}
+                    </div>
+                  ) : (
+                    // Original layout untuk category items dengan grouping
+                    filteredItems.map((item) => {
+                      // Jika item punya subItems (level 3), render sebagai group
+                      if (item.isGroup && item.subItems?.length > 0) {
+                        return (
+                          <div key={`${activeKey}-${item.id ?? item.slug}`} className="space-y-2">
+                            <DropdownMenu.Item asChild>
+                              <button
+                                className="group flex items-center gap-2 text-xs font-bold text-neutral-900 tracking-wide hover:text-primary-700 transition-colors cursor-pointer"
+                                onClick={() => {
+                                  router.push(buildHref(item));
+                                  setOpen(false);
+                                }}
+                              >
+                                <FaChevronRight className="text-[10px] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                                <span>{item.name}</span>
+                              </button>
+                            </DropdownMenu.Item>
+                            <div className="grid grid-cols-3 gap-0">
+                              {item.subItems.map((subItem) => (
+                                <DropdownMenu.Item
+                                  key={`${activeKey}-${item.id}-${subItem.id ?? subItem.slug}`}
+                                  asChild
+                                >
+                                  <button
+                                    className="rounded-lg py-2 text-xs text-neutral-400 text-left transition-all duration-150 hover:text-primary-700 font-semibold"
+                                    onClick={() => {
+                                      router.push(buildHref(subItem));
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {subItem.name}
+                                  </button>
+                                </DropdownMenu.Item>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      // Item biasa tanpa subItems
+                      return (
+                        <DropdownMenu.Item
+                          key={`${activeKey}-${item.id ?? item.slug}`}
+                          asChild
+                        >
+                          <button
+                            className="group flex items-center gap-2 rounded-lg py-2 text-xs text-neutral-400 text-left transition-all duration-150 hover:text-primary-700 font-semibold w-full"
+                            onClick={() => {
+                              router.push(buildHref(item));
+                              setOpen(false);
+                            }}
+                          >
+                            <FaChevronRight className="text-[10px] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                            <span>{item.name}</span>
+                          </button>
+                        </DropdownMenu.Item>
+                      );
+                    })
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-gray-500">
