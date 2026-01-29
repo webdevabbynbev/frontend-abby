@@ -11,6 +11,7 @@ export function MobileCartActionBar({
   loadingCheckout,
   onToggleSelectAll,
   onCheckout,
+  onBulkDelete,
 }) {
   return (
     <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
@@ -48,15 +49,30 @@ export function MobileCartActionBar({
                 </span>
               </div>
             </div>
-            <Button
-              variant="primary"
-              size="md"
-              className="ml-auto rounded-full px-6"
-              disabled={loadingCheckout || selectedCount === 0}
-              onClick={onCheckout}
-            >
-              {loadingCheckout ? "Processing..." : "Checkout"}
-            </Button>
+            <div className="ml-auto flex gap-2">
+              {onBulkDelete && (
+                <Button
+                  variant="error"
+                  size="md"
+                  className="rounded-full px-4"
+                  disabled={loadingCheckout || selectedCount === 0}
+                  onClick={onBulkDelete}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                size="md"
+                className="rounded-full px-6"
+                disabled={loadingCheckout || selectedCount === 0}
+                onClick={onCheckout}
+              >
+                {loadingCheckout ? "Processing..." : "Checkout"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

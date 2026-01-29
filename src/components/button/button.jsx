@@ -15,28 +15,31 @@ export function Button({
   ...props
 }) {
   const baseStyles =
-    "inline-flex items-center justify-center font-bold rounded-[24px] " +
-    "p-0 leading-none select-none transition-colors " +
-    "disabled:opacity-50 disabled:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400";
+    "inline-flex items-center justify-center font-semibold rounded-xl " +
+    "leading-none select-none transition-all duration-200 " +
+    "disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md";
 
   const variants = {
     primary:
-      "bg-primary-700 text-white hover:bg-primary-600 focus:bg-primary-800 transition-all duration-200 cursor-pointer",
+      "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-2 focus:ring-primary-200",
     secondary:
-      "bg-secondary-100 text-primary-700 hover:bg-secondary-200 focus:bg-Secondary300 transition-all duration-200 cursor-pointer",
+      "bg-secondary-100 text-primary-700 hover:bg-secondary-200 active:bg-secondary-300 focus:ring-2 focus:ring-secondary-200 border border-secondary-200",
     tertiary:
-      "bg-transparent border border-transparent font-bold text-primary-700 hover:bg-secondary-100 transition-all duration-200 cursor-pointer",
+      "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 active:bg-neutral-100 focus:ring-2 focus:ring-neutral-200",
+    success:
+      "bg-success-500 text-white hover:bg-success-600 active:bg-success-700 focus:ring-2 focus:ring-success-200",
+    warning:
+      "bg-warning-400 text-neutral-900 hover:bg-warning-500 active:bg-warning-600 focus:ring-2 focus:ring-warning-200",
     error:
-      "bg-transparent border border-transparent font-bold text-error-700 hover:bg-error-50 transition-all duration-200 cursor-pointer",
+      "bg-error-500 text-white hover:bg-error-600 active:bg-error-700 focus:ring-2 focus:ring-error-200",
     outline:
-      "bg-transparent border border-primary-700 text-primary-700 " +
-      "hover:bg-primary-50 focus:bg-primary-100 transition-all duration-200 cursor-pointer",
+      "bg-transparent border-2 border-primary-600 text-primary-700 hover:bg-primary-50 hover:border-primary-700 active:bg-primary-100 focus:ring-2 focus:ring-primary-200",
   };
 
   const sizes = {
-    sm: "h-6 px-2 text-xs", // ~36px tinggi
-    md: "h-8 px-4 text-sm", // ~40px tinggi
-    lg: "h-12 px-4 text-base", // ~52px tinggi
+    sm: "h-8 px-3 text-xs gap-1.5",
+    md: "h-10 px-5 text-sm gap-2",
+    lg: "h-12 px-6 text-base gap-2.5",
   };
 
   const iconColors = {

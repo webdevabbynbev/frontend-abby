@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { FaStar } from "react-icons/fa";
+import { FaChevronRight } from "react-icons/fa6";
 import {
   formatToRupiah,
   getDiscountPercent,
@@ -12,6 +14,7 @@ import {
 import { toast } from "sonner";
 import axios from "@/lib/axios.js";
 import { updateCartCache } from "@/utils/cartCache";
+import { addToGuestCart } from "@/utils/guestCart";
 import { useAuth } from "@/context/AuthContext";
 
 import {
@@ -394,6 +397,20 @@ export default function ProductDetailClient({ product }) {
         return;
       }
 
+      // Guest users: add to localStorage
+      if (!user) {
+        const updatedCart = addToGuestCart(product, variant, Number(qty) || 1);
+        
+        // Trigger cart update event for badge
+        if (typeof window !== "undefined") {
+          updateCartCache(updatedCart);
+        }
+        
+        toast("Produk berhasil dimasukkan ke keranjang");
+        return;
+      }
+
+      // Authenticated users: add via API
       const payload = {
         product_id: product.id,
         variant_id: variant?.id ?? 0,
@@ -408,17 +425,16 @@ export default function ProductDetailClient({ product }) {
         try {
           const cartRes = await axios.get("/cart");
           const items =
+            cartRes.data?.serve?.data ||
             cartRes.data?.data?.items ||
             cartRes.data?.data ||
-            cartRes.data?.serve ||
             [];
           updateCartCache(Array.isArray(items) ? items : []);
         } catch (err) {
-          console.warn("Failed to sync cart:", err);
+          // Failed to sync cart
         }
       }
     } catch (error) {
-      console.error("Gagal menambah ke keranjang", error);
       const isUnauthorized = error?.response?.status === 401;
       const msg = isUnauthorized
         ? "Sesi kamu habis. Silakan login ulang."
@@ -561,10 +577,22 @@ export default function ProductDetailClient({ product }) {
 
               {/* Right Content */}
               <div className="Content-right w-full space-y-4 lg:px-10 ">
-                <div className="title-product" href={brandSlug ? `/brand/${brandSlug}` : "#"}>
-                  <h2 className="text-xl font-bold text-neutral-900">
-                    {brandName}
-                  </h2>
+                <div className="title-product space-y-1">
+                  {brandSlug ? (
+                    <Link 
+                      href={`/brand/${brandSlug}`}
+                      className="flex items-center gap-1.5 text-primary-600 hover:text-primary-700 transition-colors w-fit group"
+                    >
+                      <h2 className="text-lg font-bold">
+                        {brandName}
+                      </h2>
+                      <FaChevronRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  ) : (
+                    <h2 className="text-lg font-bold text-neutral-900">
+                      {brandName}
+                    </h2>
+                  )}
                   <h3 className="text-md font-medium text-neutral-900">{product?.name}</h3>
                 </div>
 

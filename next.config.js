@@ -9,6 +9,7 @@ const nextConfig = {
       { protocol: "https", hostname: "ibyteimg.com", pathname: "/**" },
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
       { protocol: "https", hostname: "blog.abbynbev.com", pathname: "/**" },
+      { protocol: "https", hostname: "abbynbev-assets-prod.s3.ap-southeast-1.amazonaws.com", pathname: "/**" },
     ],
   },
   async rewrites() {
@@ -29,6 +30,13 @@ const nextConfig = {
       ...(config.ignoreWarnings || []),
       { module: /supabase/ },
     ];
+    
+    // Prevent webpack from trying to parse Supabase source files
+    config.module = {
+      ...config.module,
+      exprContextCritical: false,
+    };
+    
     return config;
   },
 };

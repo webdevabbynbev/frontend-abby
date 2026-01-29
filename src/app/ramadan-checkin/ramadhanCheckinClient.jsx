@@ -31,7 +31,7 @@ import { getImageUrl } from "@/utils/getImageUrl";
 
 const Wheel = dynamic(
   () => import("react-custom-roulette-r19").then((mod) => mod.Wheel),
-  { ssr: false }
+  { ssr: false },
 );
 
 // =======================
@@ -47,6 +47,13 @@ const BRAND_BORDER_STRONG = "#FECCDF";
 const BRAND_ACCENT = "#F83C77";
 const BRAND_ACCENT_SOFT = "#FFAFCC";
 
+// =======================
+// RAMADAN CONFIG
+// =======================
+const TOTAL_DAYS = 30;
+const MAX_EXEMPT_DAYS = 21;
+const FASTING_TICKET_THRESHOLD = 30;
+
 // --- UTILS ---
 const formatToRupiah = (number) =>
   new Intl.NumberFormat("id-ID", {
@@ -55,6 +62,194 @@ const formatToRupiah = (number) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(number);
+
+// =======================
+// MODALS
+// =======================
+const SpinWheelModal = ({ open, onClose, prizes, tickets, onSpin }) => {
+  const [mustSpin, setMustSpin] = useState(false);
+  const [prizeNumber, setPrizeNumber] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+
+  const wheelData = useMemo(() => {
+    if (!prizes || !prizes.length) return [{ option: "Hadiah" }];
+    return prizes.map((p) => ({
+      option: String(p?.name ?? p?.label ?? p?.title ?? p?.prize ?? p),
+    }));
+  }, [prizes]);
+
+  const handleSpinClick = async () => {
+    if (spinning || mustSpin || tickets <= 0) return;
+    setSpinning(true);
+    try {
+      const prize = await onSpin?.();
+      const targetLabel = String(
+        prize?.name ?? prize?.label ?? prize?.title ?? prize ?? "",
+      ).toLowerCase();
+      const idx = wheelData.findIndex(
+        (d) => String(d.option).toLowerCase() === targetLabel,
+      );
+      const target =
+        idx >= 0 ? idx : Math.floor(Math.random() * wheelData.length);
+      setPrizeNumber(target);
+      setMustSpin(true);
+    } finally {
+      setSpinning(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-4"
+        style={{ borderColor: BRAND_BORDER }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+            <Sparkles size={18} style={{ color: BRAND_PRIMARY }} /> Spin Wheel
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 bg-gray-50"
+            style={{ color: `${BRAND_PRIMARY}66` }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-full flex items-center justify-center">
+            <Wheel
+              mustStartSpinning={mustSpin}
+              prizeNumber={prizeNumber}
+              data={wheelData}
+              backgroundColors={[BRAND_SOFT2, BRAND_SOFT]}
+              textColors={[BRAND_DARK]}
+              onStopSpinning={() => setMustSpin(false)}
+              outerBorderColor={BRAND_BORDER_STRONG}
+              innerBorderColor={BRAND_BORDER}
+              radiusLineColor={BRAND_BORDER_STRONG}
+              fontSize={12}
+            />
+          </div>
+
+          <div className="text-xs text-gray-500">
+            Tiket tersedia: <b>{tickets || 0}</b>
+          </div>
+
+          <button
+            onClick={handleSpinClick}
+            disabled={spinning || mustSpin || tickets <= 0}
+            className="w-full rounded-2xl px-4 py-3 text-sm font-extrabold transition border-2 active:scale-95 disabled:opacity-60"
+            style={{
+              backgroundColor: BRAND_PRIMARY,
+              color: "#fff",
+              borderColor: BRAND_PRIMARY,
+            }}
+          >
+            {spinning || mustSpin ? "Memutar..." : "Mulai Spin"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ClaimTicketModal = ({ open, onClose, onSpinNow, onSpinLater }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-4"
+        style={{ borderColor: BRAND_BORDER }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+            <Gift size={18} style={{ color: BRAND_PRIMARY }} /> Tiket Spin
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 bg-gray-50"
+            style={{ color: `${BRAND_PRIMARY}66` }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-5">
+          Kamu berhasil mendapatkan tiket spin. Ingin spin sekarang?
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onSpinLater}
+            className="flex-1 rounded-2xl px-4 py-3 text-sm font-extrabold transition border-2 active:scale-95"
+            style={{
+              backgroundColor: BRAND_SOFT2,
+              color: BRAND_PRIMARY,
+              borderColor: BRAND_BORDER,
+            }}
+          >
+            Nanti
+          </button>
+          <button
+            onClick={onSpinNow}
+            className="flex-1 rounded-2xl px-4 py-3 text-sm font-extrabold transition border-2 active:scale-95"
+            style={{
+              backgroundColor: BRAND_PRIMARY,
+              color: "#fff",
+              borderColor: BRAND_PRIMARY,
+            }}
+          >
+            Spin Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OfferModal = ({ open, onClose, recommendations, loading }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        className="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl border-4"
+        style={{ borderColor: BRAND_BORDER }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+            <Gift size={18} style={{ color: BRAND_PRIMARY }} /> Rekomendasi Hari
+            Ini
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 bg-gray-50"
+            style={{ color: `${BRAND_PRIMARY}66` }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="text-center text-sm text-gray-500 py-10">
+            Memuat rekomendasi...
+          </div>
+        ) : !recommendations?.length ? (
+          <div className="text-center text-sm text-gray-500 py-10">
+            Rekomendasi belum tersedia.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {recommendations.map((item) => (
+              <RecommendationCard key={item.id} data={item} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // =======================
 // RECOMMENDATION CARD
@@ -186,10 +381,19 @@ export default function RamadanCheckinClient() {
   const [claimError, setClaimError] = useState("");
   const [pendingTicketNotice, setPendingTicketNotice] = useState(false);
 
+  const saveSpinPrize = (prize) => {
+    if (!prize) return;
+    const title = String(prize?.name ?? prize?.title ?? "Selamat!");
+    const quote = String(
+      prize?.quote ?? prize?.description ?? "Hadiah akan diproses.",
+    );
+    setSuccessModal({ open: true, title, quote });
+  };
+
   const checkinDetail = status.checkedData.find((d) => d.date === selectedDate);
   const isSelectedChecked = status.checkedDates.includes(selectedDate);
   const isSelectedExempt = status.exemptDates.some(
-    (row) => row.date === selectedDate
+    (row) => row.date === selectedDate,
   );
   const isToday = selectedDate === todayValue;
   const isExemptLimitReached = status.exemptCount >= MAX_EXEMPT_DAYS;
@@ -324,7 +528,7 @@ export default function RamadanCheckinClient() {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(
-          `${shareData.title}\n${shareData.text}\n${shareData.url}`
+          `${shareData.title}\n${shareData.text}\n${shareData.url}`,
         );
         alert("Link dan pesan berhasil disalin ke clipboard!");
       }
@@ -346,7 +550,7 @@ export default function RamadanCheckinClient() {
       setShowClaimTicket(true);
     } catch (error) {
       setClaimError(
-        error?.response?.data?.message || "Gagal mengklaim tiket spin."
+        error?.response?.data?.message || "Gagal mengklaim tiket spin.",
       );
     } finally {
       setClaimingTicket(false);
@@ -807,7 +1011,7 @@ export default function RamadanCheckinClient() {
                     {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map(
                       (d) => (
                         <div key={d}>{d}</div>
-                      )
+                      ),
                     )}
                   </div>
 
@@ -818,13 +1022,13 @@ export default function RamadanCheckinClient() {
                     {calendarDays.days.map((day) => {
                       const value = format(day, "yyyy-MM-dd");
                       const checkinInfo = status.checkedData.find(
-                        (d) => d.date === value
+                        (d) => d.date === value,
                       );
                       const isChecked = !!checkinInfo;
                       const isSelected = value === selectedDate;
                       const isOutside = !isSameMonth(day, currentMonth);
                       const isExempt = status.exemptDates.some(
-                        (r) => r.date === value
+                        (r) => r.date === value,
                       );
                       const isDayToday = value === todayValue;
 
@@ -844,10 +1048,10 @@ export default function RamadanCheckinClient() {
                               isChecked
                                 ? "bg-linear-to-br from-pink-500 to-pink-100 text-white shadow-md shadow-pink-200"
                                 : isExempt
-                                ? "bg-amber-100 text-amber-700"
-                                : isDayToday
-                                ? "bg-white"
-                                : "bg-white text-gray-500"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : isDayToday
+                                    ? "bg-white"
+                                    : "bg-white text-gray-500"
                             }
                           `}
                           style={{
@@ -900,7 +1104,7 @@ export default function RamadanCheckinClient() {
                           <span className="font-bold">
                             {
                               status.exemptDates.find(
-                                (r) => r.date === selectedDate
+                                (r) => r.date === selectedDate,
                               )?.reason
                             }
                           </span>

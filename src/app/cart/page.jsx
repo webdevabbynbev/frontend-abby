@@ -9,19 +9,29 @@ async function getCart() {
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  const res = await fetch(`${baseUrl}/cart`, {
-    headers: {
-      cookie: cookieHeader,
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+  try {
+    const res = await fetch(`${baseUrl}/cart`, {
+      headers: {
+        cookie: cookieHeader,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
 
-  if (!res.ok) return [];
-  const json = await res.json();
+    if (!res.ok) {
+      console.log('[SSR] Cart fetch failed:', res.status);
+      return [];
+    }
+    
+    const json = await res.json();
+    console.log('[SSR] Cart fetched successfully');
 
-  const items = json?.data?.items || json?.data || json?.serve || [];
-  return Array.isArray(items) ? items : [];
+    const items = json?.serve?.data || json?.data?.items || json?.data || [];
+    return Array.isArray(items) ? items : [];
+  } catch (error) {
+    console.error('[SSR] Cart fetch error:', error);
+    return [];
+  }
 }
 
 export default async function CartPage() {

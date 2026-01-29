@@ -11,13 +11,8 @@ export function ProgressBar({
 }) {
   const progress = Math.min(100, Math.max(0, Number(value) || 0));
 
-  // warna adaptif (flash sale friendly)
-  const barColor =
-    progress <= 20
-      ? "bg-linear-to-r from-primary-700 to-secondary-300"
-      : progress <= 50
-      ? "bg-linear-to-r from-primary-600 to-secondary-300"
-      : "bg-linear-to-r from-primary-600 to-secondary-300";
+  // warna adaptif (flash sale friendly) - use fixed gradient class
+  const barColor = "bg-gradient-to-r from-primary-600 to-secondary-300";
 
   return (
     <div className={`w-full ${className}`}>

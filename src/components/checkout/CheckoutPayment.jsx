@@ -36,6 +36,8 @@ function calcVoucherDiscount(v, subTotal, shippingPrice) {
 }
 
 export default function CheckoutPayment({
+  isGuest = false,
+  hasShippingAddress = false,
   subtotal,
   checkoutCount,
   confirmedShipping,
@@ -43,7 +45,6 @@ export default function CheckoutPayment({
   loadingCart,
   loadingAddr,
   loadingShip,
-  selectedAddressId,
 
   selectedPayment,
   setSelectedPayment,
@@ -116,20 +117,21 @@ export default function CheckoutPayment({
         ))}
       </div>
 
-      {/* VOUCHER PICKER */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold">Voucher</div>
+      {/* VOUCHER PICKER - Only for authenticated users */}
+      {!isGuest && (
+        <div className="mt-6">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">Voucher</div>
 
-          <Dialog open={voucherOpen} onOpenChange={setVoucherOpen}>
-            <DialogTrigger asChild>
-              <button
-                disabled={loadingPay}
-                className="px-3 py-2 rounded-full border hover:bg-gray-50 text-sm disabled:opacity-50"
-              >
-                Pilih Voucher
-              </button>
-            </DialogTrigger>
+            <Dialog open={voucherOpen} onOpenChange={setVoucherOpen}>
+              <DialogTrigger asChild>
+                <button
+                  disabled={loadingPay}
+                  className="px-3 py-2 rounded-full border hover:bg-gray-50 text-sm disabled:opacity-50"
+                >
+                  Pilih Voucher
+                </button>
+              </DialogTrigger>
 
             <DialogContent className="max-w-lg">
               <DialogHeader>
@@ -216,6 +218,18 @@ export default function CheckoutPayment({
           <div className="mt-2 text-xs text-gray-500 italic">Belum pakai voucher</div>
         )}
       </div>
+      )}
+
+      {/* Guest user info message */}
+      {isGuest && (
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <span className="font-semibold">ℹ️ Checkout sebagai Guest</span>
+            <br />
+            Voucher eksklusif hanya tersedia untuk member yang sudah terdaftar.
+          </p>
+        </div>
+      )}
 
       {/* REFERRAL CODE */}
       <div className="mt-6">

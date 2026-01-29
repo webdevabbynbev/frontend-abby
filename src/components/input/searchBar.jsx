@@ -93,9 +93,12 @@ export function SearchBar({
 
   // Trigger suggestions when query changes
   useEffect(() => {
-    fetchSuggestions(trimmed);
+    // Only fetch suggestions if input is focused (open is true) and there's a query
+    if (open && trimmed) {
+      fetchSuggestions(trimmed);
+    }
     return () => clearTimeout(debounceRef.current);
-  }, [trimmed, per_page]);
+  }, [trimmed, per_page, open]);
 
   const getProductHref = (p) => {
     if (p?.slug) return `/${p.slug}`;
